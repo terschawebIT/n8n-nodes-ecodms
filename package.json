@@ -13,11 +13,11 @@
   "homepage": "https://www.ecodms.de",
   "author": {
     "name": "Niko Terschawetz",
-    "email": "niko.terschawetz@gmail.com"
+    "email": "nt@terschaweb.de"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nikoterschawetz/n8n-nodes-ecodms.git"
+    "url": "https://github.com/terschawebIT/n8n-nodes-ecodms.git"
   },
   "engines": {
     "node": ">=18.10",
