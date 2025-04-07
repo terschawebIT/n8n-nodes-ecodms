@@ -13,18 +13,17 @@ import {
 
 export const Resource = {
 	Document: 'document',
-	Folder: 'folder',
+	Archive: 'archive',
 	Search: 'search',
+	Thumbnail: 'thumbnail',
 } as const;
 
 export const Operation = {
-	Create: 'create',
-	Read: 'read',
-	Update: 'update',
-	Delete: 'delete',
+	Get: 'get',
 	List: 'list',
-	Download: 'download',
 	Upload: 'upload',
+	Search: 'search',
+	GetInfo: 'getInfo',
 } as const;
 
 export class EcoDMS implements INodeType {
@@ -41,7 +40,6 @@ export class EcoDMS implements INodeType {
 		},
 		inputs: ['main'],
 		outputs: ['main'],
-		usableAsTool: true,
 		credentials: [
 			{
 				name: 'ecoDmsApi',
@@ -59,18 +57,23 @@ export class EcoDMS implements INodeType {
 						value: Resource.Document,
 					},
 					{
-						name: 'Ordner',
-						value: Resource.Folder,
+						name: 'Archiv',
+						value: Resource.Archive,
 					},
 					{
 						name: 'Suche',
 						value: Resource.Search,
 					},
+					{
+						name: 'Thumbnail',
+						value: Resource.Thumbnail,
+					},
 				],
-				default: 'document',
+				default: Resource.Document,
 				noDataExpression: true,
 				required: true,
 			},
+			// Dokument-Operationen
 			{
 				displayName: 'Operation',
 				name: 'operation',
@@ -82,67 +85,45 @@ export class EcoDMS implements INodeType {
 				},
 				options: [
 					{
-						name: 'Erstellen',
-						value: Operation.Create,
-						description: 'Erstelle ein Dokument',
-						action: 'Erstelle ein Dokument',
+						name: 'Dokument herunterladen',
+						value: Operation.Get,
+						description: 'Ein Dokument herunterladen',
+						action: 'Ein Dokument herunterladen',
 					},
 					{
-						name: 'Abrufen',
-						value: Operation.Read,
-						description: 'Dokument abrufen',
-						action: 'Dokument abrufen',
-					},
-					{
-						name: 'Herunterladen',
-						value: Operation.Download,
-						description: 'Dokument herunterladen',
-						action: 'Dokument herunterladen',
-					},
-					{
-						name: 'Hochladen',
+						name: 'Dokument hochladen',
 						value: Operation.Upload,
-						description: 'Dokument hochladen',
-						action: 'Dokument hochladen',
+						description: 'Ein Dokument hochladen',
+						action: 'Ein Dokument hochladen',
 					},
 				],
-				default: 'read',
+				default: Operation.Get,
 				noDataExpression: true,
 				required: true,
 			},
+			// Archiv-Operationen
 			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
 				displayOptions: {
 					show: {
-						resource: [Resource.Folder],
+						resource: [Resource.Archive],
 					},
 				},
 				options: [
 					{
-						name: 'Erstellen',
-						value: Operation.Create,
-						description: 'Erstelle einen Ordner',
-						action: 'Erstelle einen Ordner',
-					},
-					{
-						name: 'Abrufen',
-						value: Operation.Read,
-						description: 'Ordner abrufen',
-						action: 'Ordner abrufen',
-					},
-					{
-						name: 'Auflisten',
+						name: 'Archive abrufen',
 						value: Operation.List,
-						description: 'Ordner auflisten',
-						action: 'Ordner auflisten',
+						description: 'Alle verfügbaren Archive abrufen',
+						action: 'Archive abrufen',
 					},
 				],
-				default: 'read',
+				default: Operation.List,
 				noDataExpression: true,
 				required: true,
 			},
+			// Such-Operationen
 			{
 				displayName: 'Operation',
 				name: 'operation',
@@ -154,17 +135,61 @@ export class EcoDMS implements INodeType {
 				},
 				options: [
 					{
-						name: 'Suchen',
-						value: Operation.List,
-						description: 'Dokumente suchen',
-						action: 'Dokumente suchen',
+						name: 'Dokumente suchen',
+						value: Operation.Search,
+						description: 'Nach Dokumenten suchen',
+						action: 'Nach Dokumenten suchen',
 					},
 				],
-				default: 'list',
+				default: Operation.Search,
 				noDataExpression: true,
 				required: true,
 			},
-			// Dokument-ID für Lesen/Download
+			// Thumbnail-Operationen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+					},
+				},
+				options: [
+					{
+						name: 'Thumbnail herunterladen',
+						value: Operation.Get,
+						description: 'Ein Thumbnail herunterladen',
+						action: 'Ein Thumbnail herunterladen',
+					},
+				],
+				default: Operation.Get,
+				noDataExpression: true,
+				required: true,
+			},
+			// Lizenzinformationen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: ['license'],
+					},
+				},
+				options: [
+					{
+						name: 'Lizenzinformationen abrufen',
+						value: Operation.GetInfo,
+						description: 'Lizenzinformationen abrufen',
+						action: 'Lizenzinformationen abrufen',
+					},
+				],
+				default: Operation.GetInfo,
+				noDataExpression: true,
+				required: true,
+			},
+			// Parameter für Dokument herunterladen
 			{
 				displayName: 'Dokument-ID',
 				name: 'documentId',
@@ -173,43 +198,133 @@ export class EcoDMS implements INodeType {
 				displayOptions: {
 					show: {
 						resource: [Resource.Document],
-						operation: [Operation.Read, Operation.Download],
+						operation: [Operation.Get],
 					},
 				},
 				default: '',
-				description: 'ID des Dokuments',
+				description: 'ID des Dokuments, das heruntergeladen werden soll',
 			},
-			// Ordner-ID für Lesen/Auflisten
-			{
-				displayName: 'Ordner-ID',
-				name: 'folderId',
-				type: 'string',
-				required: true,
-				displayOptions: {
-					show: {
-						resource: [Resource.Folder],
-						operation: [Operation.Read, Operation.List],
-					},
-				},
-				default: '',
-				description: 'ID des Ordners',
-			},
-			// Datei für Upload
 			{
 				displayName: 'Binäre Eigenschaft',
 				name: 'binaryPropertyName',
 				type: 'string',
-				required: true,
+				default: 'data',
+				displayOptions: {
+					show: {
+						resource: [Resource.Document],
+						operation: [Operation.Get],
+					},
+				},
+				description: 'Name der binären Eigenschaft, in der das heruntergeladene Dokument gespeichert werden soll',
+			},
+			// Parameter für Dokument hochladen
+			{
+				displayName: 'Binäre Eigenschaft',
+				name: 'binaryPropertyName',
+				type: 'string',
+				default: 'data',
 				displayOptions: {
 					show: {
 						resource: [Resource.Document],
 						operation: [Operation.Upload],
 					},
 				},
-				default: 'data',
+				required: true,
 				description: 'Name der binären Eigenschaft, die die hochzuladende Datei enthält',
 			},
-			// Suchparameter
+			{
+				displayName: 'Zusätzliche Felder',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Feld hinzufügen',
+				default: {},
+				displayOptions: {
+					show: {
+						resource: [Resource.Document],
+						operation: [Operation.Upload],
+					},
+				},
+				options: [
+					{
+						displayName: 'Titel',
+						name: 'title',
+						type: 'string',
+						default: '',
+						description: 'Titel des Dokuments',
+					},
+					{
+						displayName: 'Beschreibung',
+						name: 'description',
+						type: 'string',
+						default: '',
+						description: 'Beschreibung des Dokuments',
+					},
+					{
+						displayName: 'Dokumenten-Typ',
+						name: 'documentType',
+						type: 'string',
+						default: '',
+						description: 'Typ des Dokuments',
+					},
+				],
+			},
+			// Parameter für Thumbnail
+			{
+				displayName: 'Dokument-ID',
+				name: 'documentId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+						operation: [Operation.Get],
+					},
+				},
+				default: '',
+				description: 'ID des Dokuments, für das ein Thumbnail abgerufen werden soll',
+			},
+			{
+				displayName: 'Seitenzahl',
+				name: 'pageNumber',
+				type: 'number',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+						operation: [Operation.Get],
+					},
+				},
+				default: 1,
+				description: 'Seitenzahl des Dokuments, für die das Thumbnail abgerufen werden soll',
+			},
+			{
+				displayName: 'Höhe',
+				name: 'height',
+				type: 'number',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+						operation: [Operation.Get],
+					},
+				},
+				default: 300,
+				description: 'Höhe des Thumbnails in Pixeln',
+			},
+			{
+				displayName: 'Binäre Eigenschaft',
+				name: 'binaryPropertyName',
+				type: 'string',
+				default: 'data',
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+						operation: [Operation.Get],
+					},
+				},
+				description: 'Name der binären Eigenschaft, in der das Thumbnail gespeichert werden soll',
+			},
+			// Parameter für Suche
 			{
 				displayName: 'Suchparameter',
 				name: 'searchParameters',
@@ -219,7 +334,7 @@ export class EcoDMS implements INodeType {
 				displayOptions: {
 					show: {
 						resource: [Resource.Search],
-						operation: [Operation.List],
+						operation: [Operation.Search],
 					},
 				},
 				options: [
@@ -228,7 +343,7 @@ export class EcoDMS implements INodeType {
 						name: 'query',
 						type: 'string',
 						default: '',
-						description: 'Suchbegriff für die Volltextsuche',
+						description: 'Suchbegriff für die Suche',
 					},
 					{
 						displayName: 'Maximale Ergebnisse',
@@ -247,119 +362,171 @@ export class EcoDMS implements INodeType {
 		const items = this.getInputData();
 		const returnData: INodeExecutionData[] = [];
 		let responseData;
-
-		// Authentifizierungsdaten abrufen
+		
+		// Credentials abrufen
 		const credentials = await this.getCredentials('ecoDmsApi');
-		const serverUrl = credentials.serverUrl as string;
-
-		// Session erstellen (bei jedem Aufruf erforderlich)
-		const sessionData = await this.helpers.httpRequest({
-			url: `${serverUrl}/api/session`,
-			method: 'POST',
-			body: {
-				username: credentials.username,
-				password: credentials.password,
-				mandant: credentials.mandant,
-			},
-			json: true,
-		});
-
-		const sessionId = sessionData.sessionId;
-		if (!sessionId) {
-			throw new NodeOperationError(this.getNode(), 'Konnte keine Session erstellen');
-		}
-
-		// Ressource und Operation abrufen
+		
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
+		// Verbindung zum Server herstellen
+		let sessionActive = false;
+		
 		try {
-			if (resource === 'document') {
-				if (operation === 'read') {
-					// Dokument-Metadaten abrufen
-					const documentId = this.getNodeParameter('documentId', 0) as string;
-
+			// Für Ressourcen, die keine Authentifizierung benötigen
+			if (
+				(resource === 'archive' && operation === 'list') ||
+				(resource === 'license' && operation === 'getInfo')
+			) {
+				if (resource === 'archive' && operation === 'list') {
+					// Archiv-Liste abrufen
 					responseData = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/documents/${documentId}`,
+						url: `${credentials.serverUrl as string}/api/archives`,
 						method: 'GET',
 						headers: {
-							'X-Session-ID': sessionId,
+							'Accept': 'application/json',
 						},
 						json: true,
 					});
-				} else if (operation === 'download') {
-					// Dokument herunterladen
-					const documentId = this.getNodeParameter('documentId', 0) as string;
-
-					const data = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/documents/${documentId}/content`,
+				} else if (resource === 'license' && operation === 'getInfo') {
+					// Lizenzinformationen abrufen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/licenseInfo`,
 						method: 'GET',
 						headers: {
-							'X-Session-ID': sessionId,
+							'Accept': 'application/json',
 						},
-						encoding: null,
-						resolveWithFullResponse: true,
+						json: true,
 					});
-
-					const newItem: INodeExecutionData = {
-						json: items[0].json,
-						binary: {},
-					};
-
-					if (items[0].binary !== undefined) {
-						// Wenn es bereits binäre Daten gibt, diese kopieren
-						newItem.binary = items[0].binary;
-					}
-
-					// Dateiname aus Content-Disposition-Header extrahieren oder fallback verwenden
-					const contentDisposition = data.headers['content-disposition'] as string;
-					let fileName = `document_${documentId}.pdf`;
-					if (contentDisposition) {
-						const match = contentDisposition.match(/filename="(.+)"/);
-						if (match) {
-							fileName = match[1];
-						}
-					}
-
-					// Mime-Typ aus Content-Type-Header extrahieren oder fallback verwenden
-					const contentType = data.headers['content-type'] as string || 'application/pdf';
-
-					// Binäre Daten hinzufügen
-					newItem.binary!.data = await this.helpers.prepareBinaryData(
-						Buffer.from(data.body as string, BINARY_ENCODING),
-						fileName,
-						contentType,
-					);
-
-					responseData = [newItem];
-				} else if (operation === 'upload') {
-					// Funktionalität für Dokument-Upload implementieren
-					const binaryPropertyName = this.getNodeParameter('binaryPropertyName', 0) as string;
-
-					if (items[0].binary === undefined) {
-						throw new NodeOperationError(this.getNode(), 'Keine binären Daten gefunden');
-					}
-
-					const binaryData = items[0].binary[binaryPropertyName];
-					if (binaryData === undefined) {
-						throw new NodeOperationError(
-							this.getNode(),
-							`Keine binären Daten in der Eigenschaft "${binaryPropertyName}" gefunden`,
-						);
-					}
-
-					const dataBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
-
-					// Hier würde der eigentliche Upload-Code für ecoDMS stehen
-					// Dies ist nur ein Platzhalter und muss durch den tatsächlichen API-Aufruf ersetzt werden
-					responseData = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/documents`,
+				}
+			} else {
+				// Verbindung zum Archiv herstellen
+				const archiveId = credentials.archiveId as string;
+				const apiKey = credentials.apiKey as string;
+				
+				if (apiKey) {
+					// Wenn API-Key vorhanden, dann POST-Anfrage
+					await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/connect/${archiveId}`,
 						method: 'POST',
 						headers: {
-							'X-Session-ID': sessionId,
-							'Content-Type': 'multipart/form-data',
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
 						},
-						formData: {
+						body: {
+							apiKey,
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else {
+					// Ohne API-Key, GET-Anfrage
+					await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/connect/${archiveId}`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				}
+				
+				sessionActive = true;
+				
+				// Status prüfen, um die Authentifizierung zu verifizieren
+				await this.helpers.httpRequest({
+					url: `${credentials.serverUrl as string}/api/status`,
+					method: 'GET',
+					headers: {
+						'Accept': 'application/json',
+					},
+					json: true,
+					auth: {
+						username: credentials.username as string,
+						password: credentials.password as string,
+					},
+				});
+				
+				// Die eigentliche Operation ausführen
+				if (resource === 'document') {
+					if (operation === 'get') {
+						// Dokument herunterladen
+						const documentId = this.getNodeParameter('documentId', 0) as string;
+						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', 0) as string;
+						
+						// Für Dokument-Download müssen wir */* als Accept-Header verwenden
+						const data = await this.helpers.httpRequest({
+							url: `${credentials.serverUrl as string}/api/document/${documentId}`,
+							method: 'GET',
+							headers: {
+								'Accept': '*/*',
+							},
+							encoding: null,
+							resolveWithFullResponse: true,
+							auth: {
+								username: credentials.username as string,
+								password: credentials.password as string,
+							},
+						});
+						
+						const newItem: INodeExecutionData = {
+							json: items[0].json,
+							binary: {},
+						};
+						
+						if (items[0].binary !== undefined) {
+							newItem.binary = items[0].binary;
+						}
+						
+						// Dateiname aus Content-Disposition-Header extrahieren oder fallback verwenden
+						const contentDisposition = data.headers['content-disposition'] as string;
+						let fileName = `document_${documentId}.pdf`;
+						if (contentDisposition) {
+							const match = contentDisposition.match(/filename="(.+)"/);
+							if (match) {
+								fileName = match[1];
+							}
+						}
+						
+						// Mime-Typ aus Content-Type-Header extrahieren oder fallback verwenden
+						const contentType = data.headers['content-type'] as string || 'application/octet-stream';
+						
+						// Binäre Daten hinzufügen
+						newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+							Buffer.from(data.body as string, BINARY_ENCODING),
+							fileName,
+							contentType,
+						);
+						
+						responseData = [newItem];
+					} else if (operation === 'upload') {
+						// Dokument hochladen
+						const binaryPropertyName = this.getNodeParameter('binaryPropertyName', 0) as string;
+						const additionalFields = this.getNodeParameter('additionalFields', 0) as IDataObject;
+						
+						if (items[0].binary === undefined) {
+							throw new NodeOperationError(this.getNode(), 'Keine binären Daten gefunden');
+						}
+						
+						const binaryData = items[0].binary[binaryPropertyName];
+						if (binaryData === undefined) {
+							throw new NodeOperationError(
+								this.getNode(),
+								`Keine binären Daten in der Eigenschaft "${binaryPropertyName}" gefunden`,
+							);
+						}
+						
+						const dataBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+						
+						// Formdata für den Upload erstellen
+						const formData: IDataObject = {
 							file: {
 								value: dataBuffer,
 								options: {
@@ -367,39 +534,36 @@ export class EcoDMS implements INodeType {
 									contentType: binaryData.mimeType,
 								},
 							},
-						},
-						json: true,
-					});
-				}
-			} else if (resource === 'folder') {
-				if (operation === 'read') {
-					// Ordner-Details abrufen
-					const folderId = this.getNodeParameter('folderId', 0) as string;
-
-					responseData = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/folders/${folderId}`,
-						method: 'GET',
-						headers: {
-							'X-Session-ID': sessionId,
-						},
-						json: true,
-					});
-				} else if (operation === 'list') {
-					// Ordnerinhalt auflisten
-					const folderId = this.getNodeParameter('folderId', 0) as string;
-
-					responseData = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/folders/${folderId}/content`,
-						method: 'GET',
-						headers: {
-							'X-Session-ID': sessionId,
-						},
-						json: true,
-					});
-				}
-			} else if (resource === 'search') {
-				if (operation === 'list') {
-					// Suche nach Dokumenten
+						};
+						
+						// Zusätzliche Felder hinzufügen
+						if (additionalFields.title) {
+							formData.title = additionalFields.title;
+						}
+						if (additionalFields.description) {
+							formData.description = additionalFields.description;
+						}
+						if (additionalFields.documentType) {
+							formData.documentType = additionalFields.documentType;
+						}
+						
+						// Dokument hochladen
+						responseData = await this.helpers.httpRequest({
+							url: `${credentials.serverUrl as string}/api/document`,
+							method: 'POST',
+							formData,
+							headers: {
+								'Accept': 'application/json',
+							},
+							json: true,
+							auth: {
+								username: credentials.username as string,
+								password: credentials.password as string,
+							},
+						});
+					}
+				} else if (resource === 'search' && operation === 'search') {
+					// Suche ausführen
 					const searchParameters = this.getNodeParameter('searchParameters', 0) as IDataObject;
 					
 					const requestBody: IDataObject = {};
@@ -409,49 +573,75 @@ export class EcoDMS implements INodeType {
 					if (searchParameters.limit) {
 						requestBody.limit = searchParameters.limit;
 					}
-
+					
 					responseData = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/search`,
+						url: `${credentials.serverUrl as string}/api/search`,
 						method: 'POST',
+						body: requestBody,
 						headers: {
-							'X-Session-ID': sessionId,
+							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: requestBody,
 						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
 					});
+				} else if (resource === 'thumbnail' && operation === 'get') {
+					// Thumbnail herunterladen
+					const documentId = this.getNodeParameter('documentId', 0) as string;
+					const pageNumber = this.getNodeParameter('pageNumber', 0) as number;
+					const height = this.getNodeParameter('height', 0) as number;
+					const binaryPropertyName = this.getNodeParameter('binaryPropertyName', 0) as string;
+					
+					// Für Thumbnail-Download müssen wir */* als Accept-Header verwenden
+					const data = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/thumbnail/${documentId}/page/${pageNumber}/height/${height}`,
+						method: 'GET',
+						headers: {
+							'Accept': '*/*',
+						},
+						encoding: null,
+						resolveWithFullResponse: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+					
+					const newItem: INodeExecutionData = {
+						json: items[0].json,
+						binary: {},
+					};
+					
+					if (items[0].binary !== undefined) {
+						newItem.binary = items[0].binary;
+					}
+					
+					// Für Thumbnails verwenden wir einen standardmäßigen Dateinamen
+					const fileName = `thumbnail_${documentId}_page${pageNumber}.jpg`;
+					
+					// Binäre Daten hinzufügen
+					newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+						Buffer.from(data.body as string, BINARY_ENCODING),
+						fileName,
+						'image/jpeg',
+					);
+					
+					responseData = [newItem];
 				}
 			}
-
-			// Session beenden
-			await this.helpers.httpRequest({
-				url: `${serverUrl}/api/session/${sessionId}`,
-				method: 'DELETE',
-				json: true,
-			});
-
+			
 			// Wenn responseData ein Array ist, jedes Element verarbeiten
 			if (Array.isArray(responseData)) {
 				returnData.push(...responseData);
 			} else if (responseData !== undefined) {
 				returnData.push({ json: responseData });
 			}
-
+			
 			return [returnData];
 		} catch (error) {
-			// Session trotz Fehler beenden
-			if (sessionId) {
-				try {
-					await this.helpers.httpRequest({
-						url: `${serverUrl}/api/session/${sessionId}`,
-						method: 'DELETE',
-						json: true,
-					});
-				} catch (e) {
-					// Fehler beim Beenden der Session ignorieren
-				}
-			}
-
 			// Fehler werfen
 			throw error;
 		}

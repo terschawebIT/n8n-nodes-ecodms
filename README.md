@@ -19,21 +19,45 @@ npm install n8n-nodes-ecodms
 
 Diese Node unterstützt folgende Funktionen:
 
-- **Dokumente**: Dokumente abrufen, herunterladen und hochladen
-- **Ordner**: Ordner abrufen und auflisten
+- **Dokumente**: Dokumente herunterladen und hochladen
+- **Archive**: Verfügbare Archive auflisten
 - **Suche**: Dokumente nach verschiedenen Kriterien suchen
+- **Thumbnails**: Vorschaubilder von Dokumenten herunterladen
+- **Lizenzinformationen**: Informationen zur ecoDMS-Lizenz abrufen
 
 ## Konfiguration
 
 Um die ecoDMS-Node zu verwenden, benötigen Sie:
 
-1. Die URL Ihres ecoDMS-Servers
+1. Die URL Ihres ecoDMS-Servers (mit Port, z.B. http://ecodms.example.com:8080)
 2. Einen gültigen Benutzernamen und Passwort
-3. Den Namen des Mandanten
+3. Die ID des ecoDMS-Archivs (kann über die API-Funktion "Archive abrufen" ermittelt werden)
+4. Optional: Den API-Key, falls dieser aktiviert wurde
+
+## API-Hinweise
+
+Die ecoDMS-API verwendet HTTP Basic Authentication und benötigt für bestimmte Funktionen spezielle Accept-Header:
+
+- Standardmäßig werden Antworten im format `application/json` zurückgegeben
+- Für Dokument-Downloads und Thumbnails muss der Accept-Header `*/*` verwendet werden
+- Die API unterstützt nur UTF-8-Kodierung
+
+Beachten Sie, dass für die Verwendung der API sogenannte "API connects" benötigt werden:
+- 1 API connect = 1 monatlicher Upload oder Download über die ecoDMS API
+- Die Anzahl der verfügbaren API connects wird mit dem ersten Upload oder Download in einem neuen Monat zurückgesetzt
 
 ## Nutzung
 
-Nach der Installation können Sie die ecoDMS-Node in Ihren Workflows verwenden. Wählen Sie die gewünschte Ressource (Dokument, Ordner, Suche) und die entsprechende Operation aus.
+Nach der Installation können Sie die ecoDMS-Node in Ihren Workflows verwenden:
+
+1. Wählen Sie die gewünschte Ressource (Dokument, Archiv, Suche, Thumbnail)
+2. Wählen Sie die entsprechende Operation
+3. Konfigurieren Sie die erforderlichen Parameter
+
+Beispiele für typische Anwendungsfälle:
+- Dokumente aus anderen Systemen automatisiert in ecoDMS archivieren
+- Suchergebnisse aus ecoDMS in anderen Systemen weiterverwenden
+- Dokumenten-Thumbnails in Weboberflächen anzeigen
 
 ## Entwicklung
 

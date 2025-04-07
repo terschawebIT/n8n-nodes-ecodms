@@ -20,8 +20,9 @@ export class EcoDmsApi implements ICredentialType {
 			name: 'serverUrl',
 			type: 'string',
 			default: '',
-			placeholder: 'https://ecodms.example.com',
+			placeholder: 'http://ecodms.example.com:8080',
 			required: true,
+			description: 'Die URL des ecoDMS-Servers inkl. Port, z.B. http://ecodms.example.com:8080',
 		},
 		{
 			displayName: 'Benutzername',
@@ -41,18 +42,32 @@ export class EcoDmsApi implements ICredentialType {
 			required: true,
 		},
 		{
-			displayName: 'Mandant',
-			name: 'mandant',
+			displayName: 'Archiv-ID',
+			name: 'archiveId',
 			type: 'string',
 			default: '',
 			required: true,
+			description: 'Die ID des ecoDMS-Archivs. Kann über /api/archives abgerufen werden.',
+		},
+		{
+			displayName: 'API-Key',
+			name: 'apiKey',
+			type: 'string',
+			default: '',
+			required: false,
+			description: 'Der optionale API-Key, falls dieser aktiviert wurde',
 		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
 		type: 'generic',
 		properties: {
+			auth: {
+				username: '={{$credentials.username}}',
+				password: '={{$credentials.password}}',
+			},
 			headers: {
+				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
 		},
@@ -61,13 +76,8 @@ export class EcoDmsApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.serverUrl}}',
-			url: '/api/session',
-			method: 'POST',
-			body: {
-				username: '={{$credentials.username}}',
-				password: '={{$credentials.password}}',
-				mandant: '={{$credentials.mandant}}',
-			},
+			url: '/api/test',
+			method: 'GET',
 		},
 	};
 } 

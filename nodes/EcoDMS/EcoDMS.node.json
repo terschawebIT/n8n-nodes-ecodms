@@ -2,16 +2,16 @@
 	"node": "n8n-nodes-base.ecodms",
 	"nodeVersion": "1.0",
 	"codexVersion": "1.0",
-	"categories": ["Documents", "Storage"],
+	"categories": ["Documents", "Data & Storage"],
 	"resources": {
 		"credentialDocumentation": [
 			{
-				"url": ""
+				"url": "https://www.ecodms.de/index.php/de/api-schnittstelle"
 			}
 		],
 		"primaryDocumentation": [
 			{
-				"url": ""
+				"url": "https://www.ecodms.de/index.php/de/api-schnittstelle"
 			}
 		]
 	}
