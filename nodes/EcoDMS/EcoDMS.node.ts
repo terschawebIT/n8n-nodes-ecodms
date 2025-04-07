@@ -3321,9 +3321,26 @@ export class EcoDMS implements INodeType {
 		
 		// Wenn responseData ein Array ist, jedes Element verarbeiten
 		if (Array.isArray(responseData)) {
-			returnData.push(...responseData);
+			for (const item of responseData) {
+				if (typeof item === 'object') {
+					returnData.push({ json: item });
+				} else {
+					returnData.push({ json: { data: item } });
+				}
+			}
 		} else if (responseData !== undefined) {
-			returnData.push({ json: responseData });
+			// Sicherstellen, dass responseData ein Objekt ist
+			if (typeof responseData === 'object') {
+				returnData.push({ json: responseData });
+			} else {
+				// Primitive Werte (strings, numbers, etc.) in ein Objekt verpacken
+				returnData.push({ json: { data: responseData } });
+			}
+		}
+		
+		// Sicherstellen, dass wir mindestens ein Element zurückgeben
+		if (returnData.length === 0) {
+			returnData.push({ json: { success: true } });
 		}
 		
 		return [returnData];
