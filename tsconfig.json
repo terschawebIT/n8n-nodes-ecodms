@@ -9,7 +9,11 @@
     "useUnknownInCatchVariables": false,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist/",
-    "rootDir": "./"
+    "rootDir": "./",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "types": ["node"]
   },
   "include": ["credentials/**/*", "nodes/**/*", "nodes/**/*.json"]
 } 
