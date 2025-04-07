@@ -1,19 +1,23 @@
 {
   "name": "n8n-nodes-ecodms",
   "version": "0.1.0",
-  "description": "Custom n8n node for ecoDMS",
+  "description": "Custom n8n node for ecoDMS document management system",
   "keywords": [
-    "n8n-community-node-package"
+    "n8n-community-node-package",
+    "ecoDMS",
+    "DMS",
+    "Dokumentenmanagement",
+    "document management"
   ],
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://www.ecodms.de",
   "author": {
     "name": "Niko Terschawetz",
-    "email": "niko.terschawetz@example.com"
+    "email": "niko.terschawetz@gmail.com"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/example/n8n-nodes-ecodms.git"
+    "url": "https://github.com/nikoterschawetz/n8n-nodes-ecodms.git"
   },
   "engines": {
     "node": ">=18.10",
@@ -48,11 +52,11 @@
     "eslint": "^8.56.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.1",
     "gulp": "^4.0.2",
-    "n8n-workflow": "*",
+    "n8n-workflow": "^1.82.0",
     "prettier": "^3.3.2",
     "typescript": "^5.5.3"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
   }
-} 
+}

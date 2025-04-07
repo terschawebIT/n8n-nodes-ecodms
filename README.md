@@ -19,9 +19,27 @@ npm install n8n-nodes-ecodms
 
 Diese Node unterstützt folgende Funktionen:
 
-- **Dokumente**: Dokumente herunterladen und hochladen
-- **Archive**: Verfügbare Archive auflisten
-- **Suche**: Dokumente nach verschiedenen Kriterien suchen
+- **Dokumente**: 
+  - Dokumente herunterladen und hochladen
+  - Spezifische Klassifikationen von Dokumenten abrufen
+  - Klassifikationen erstellen und aktualisieren
+  - Dokument-Verknüpfungen hinzufügen und entfernen
+  - Versionen zu bestehenden Dokumenten hinzufügen
+  - Duplikate prüfen
+  - Template-Erkennung für Dokumente
+- **Archive**: Verfügbare Archive auflisten und verbinden
+- **Suche**: 
+  - Einfache und erweiterte Dokumentsuche
+  - Komplexe Suchfilter mit mehreren Kriterien
+  - Sortierung und Filterung von Suchergebnissen
+- **Ordner**: 
+  - Komplette Ordnerstruktur abrufen
+  - Ordner und Unterordner erstellen
+  - Ordner-Attribute bearbeiten
+  - Berechtigungen für Ordner festlegen
+- **Klassifikation**:
+  - Klassifikationsattribute abrufen (normal und detailliert)
+  - Dokumenttyp-Klassifikationen abrufen
 - **Thumbnails**: Vorschaubilder von Dokumenten herunterladen
 - **Lizenzinformationen**: Informationen zur ecoDMS-Lizenz abrufen
 

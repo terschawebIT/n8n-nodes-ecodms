@@ -9,7 +9,7 @@ import {
 export class EcoDmsApi implements ICredentialType {
 	name = 'ecoDmsApi';
 	displayName = 'ecoDMS API';
-	documentationUrl = '';
+	documentationUrl = 'https://www.ecodms.de/index.php/de/api-schnittstelle';
 	icon: Icon = {
 		light: 'file:ecoDms.svg',
 		dark: 'file:ecoDms.svg',
@@ -76,7 +76,7 @@ export class EcoDmsApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.serverUrl}}',
-			url: '/api/test',
+			url: '/api/status',
 			method: 'GET',
 		},
 	};
