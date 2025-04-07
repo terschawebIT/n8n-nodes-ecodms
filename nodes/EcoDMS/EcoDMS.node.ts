@@ -1912,6 +1912,9 @@ export class EcoDMS implements INodeType {
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
+		// Session-Cookie für diese Ausführung speichern
+		let sessionCookie = '';
+		
 		// Verbindung zum Server herstellen
 		let sessionActive = false;
 		
@@ -1938,9 +1941,10 @@ export class EcoDMS implements INodeType {
 					
 					const apiKey = additionalFields.apiKey as string || undefined;
 					
+					let connectResponse;
 					if (apiKey) {
 						// Wenn API-Key vorhanden, dann POST-Anfrage
-						responseData = await this.helpers.httpRequest({
+						connectResponse = await this.helpers.httpRequest({
 							url: `${credentials.serverUrl as string}/api/connect/${archiveName}`,
 							method: 'POST',
 							headers: {
@@ -1955,10 +1959,11 @@ export class EcoDMS implements INodeType {
 								username: credentials.username as string,
 								password: credentials.password as string,
 							},
+							returnFullResponse: true,
 						});
 					} else {
 						// Ohne API-Key, GET-Anfrage
-						responseData = await this.helpers.httpRequest({
+						connectResponse = await this.helpers.httpRequest({
 							url: `${credentials.serverUrl as string}/api/connect/${archiveName}`,
 							method: 'GET',
 							headers: {
@@ -1969,27 +1974,50 @@ export class EcoDMS implements INodeType {
 								username: credentials.username as string,
 								password: credentials.password as string,
 							},
+							returnFullResponse: true,
 						});
 					}
 					
+					// Cookie aus der Antwort extrahieren, falls vorhanden
+					if (connectResponse.headers && connectResponse.headers['set-cookie']) {
+						const cookies = connectResponse.headers['set-cookie'];
+						if (Array.isArray(cookies)) {
+							sessionCookie = cookies.join('; ');
+						} else {
+							sessionCookie = cookies;
+						}
+					}
+					
 					// Nach erfolgreicher Verbindung Status prüfen
-					const statusData = await this.helpers.httpRequest({
+					const statusResponse = await this.helpers.httpRequest({
 						url: `${credentials.serverUrl as string}/api/status`,
 						method: 'GET',
 						headers: {
 							'Accept': 'application/json',
+							'Cookie': sessionCookie,
 						},
 						json: true,
 						auth: {
 							username: credentials.username as string,
 							password: credentials.password as string,
 						},
+						returnFullResponse: true,
 					});
+					
+					// Cookie aktualisieren, falls in der Statusantwort neue Cookies gesetzt wurden
+					if (statusResponse.headers && statusResponse.headers['set-cookie']) {
+						const cookies = statusResponse.headers['set-cookie'];
+						if (Array.isArray(cookies)) {
+							sessionCookie = cookies.join('; ');
+						} else {
+							sessionCookie = cookies;
+						}
+					}
 					
 					// Status zur Antwort hinzufügen
 					responseData = {
-						connection: responseData,
-						status: statusData,
+						connection: connectResponse.data,
+						status: statusResponse.data,
 					};
 				} else if (resource === 'license' && operation === 'getInfo') {
 					// Lizenzinformationen abrufen
@@ -2007,9 +2035,10 @@ export class EcoDMS implements INodeType {
 				const archiveId = credentials.archiveId as string;
 				const apiKey = credentials.apiKey as string;
 				
+				let connectResponse;
 				if (apiKey) {
 					// Wenn API-Key vorhanden, dann POST-Anfrage
-					await this.helpers.httpRequest({
+					connectResponse = await this.helpers.httpRequest({
 						url: `${credentials.serverUrl as string}/api/connect/${archiveId}`,
 						method: 'POST',
 						headers: {
@@ -2024,10 +2053,11 @@ export class EcoDMS implements INodeType {
 							username: credentials.username as string,
 							password: credentials.password as string,
 						},
+						returnFullResponse: true,
 					});
 				} else {
 					// Ohne API-Key, GET-Anfrage
-					await this.helpers.httpRequest({
+					connectResponse = await this.helpers.httpRequest({
 						url: `${credentials.serverUrl as string}/api/connect/${archiveId}`,
 						method: 'GET',
 						headers: {
@@ -2038,24 +2068,47 @@ export class EcoDMS implements INodeType {
 							username: credentials.username as string,
 							password: credentials.password as string,
 						},
+						returnFullResponse: true,
 					});
+				}
+				
+				// Cookie aus der Antwort extrahieren, falls vorhanden
+				if (connectResponse.headers && connectResponse.headers['set-cookie']) {
+					const cookies = connectResponse.headers['set-cookie'];
+					if (Array.isArray(cookies)) {
+						sessionCookie = cookies.join('; ');
+					} else {
+						sessionCookie = cookies;
+					}
 				}
 				
 				sessionActive = true;
 				
 				// Status prüfen, um die Authentifizierung zu verifizieren
-				await this.helpers.httpRequest({
+				const statusResponse = await this.helpers.httpRequest({
 					url: `${credentials.serverUrl as string}/api/status`,
 					method: 'GET',
 					headers: {
 						'Accept': 'application/json',
+						'Cookie': sessionCookie,
 					},
 					json: true,
 					auth: {
 						username: credentials.username as string,
 						password: credentials.password as string,
 					},
+					returnFullResponse: true,
 				});
+				
+				// Cookie aktualisieren, falls in der Statusantwort neue Cookies gesetzt wurden
+				if (statusResponse.headers && statusResponse.headers['set-cookie']) {
+					const cookies = statusResponse.headers['set-cookie'];
+					if (Array.isArray(cookies)) {
+						sessionCookie = cookies.join('; ');
+					} else {
+						sessionCookie = cookies;
+					}
+				}
 				
 				// Die eigentliche Operation ausführen
 				if (resource === 'document') {
@@ -2070,6 +2123,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': '*/*',
+								'Cookie': sessionCookie,
 							},
 							encoding: 'arraybuffer',
 							returnFullResponse: true,
@@ -2166,6 +2220,7 @@ export class EcoDMS implements INodeType {
 							headers: {
 								'Accept': 'application/json',
 								'Content-Type': `multipart/form-data; boundary=${boundary}`,
+								'Cookie': sessionCookie,
 							},
 							body: Buffer.concat(multipartData),
 							json: true,
@@ -2532,6 +2587,7 @@ export class EcoDMS implements INodeType {
 							headers: {
 								'Accept': 'application/json',
 								'Content-Type': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2566,6 +2622,7 @@ export class EcoDMS implements INodeType {
 							headers: {
 								'Accept': 'application/json',
 								'Content-Type': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2682,6 +2739,7 @@ export class EcoDMS implements INodeType {
 							headers: {
 								'Accept': 'application/json',
 								'Content-Type': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2742,6 +2800,7 @@ export class EcoDMS implements INodeType {
 							headers: {
 								'Accept': 'application/json',
 								'Content-Type': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2781,14 +2840,17 @@ export class EcoDMS implements INodeType {
 						
 						// Duplikate prüfen
 						responseData = await this.helpers.httpRequest({
-							url: `${credentials.serverUrl as string}/api/checkDuplicates/${maxMatchValue}`,
+							url: `${credentials.serverUrl as string}/api/document/checkDuplicates`,
 							method: 'POST',
-							body: buffer,
-							headers: {
-								'Content-Type': 'application/octet-stream',
+							body: {
+								hash: buffer.toString('base64'),
 							},
-							encoding: 'arraybuffer',
-							json: false,
+							headers: {
+								'Accept': 'application/json',
+								'Content-Type': 'application/json',
+								'Cookie': sessionCookie,
+							},
+							json: true,
 							auth: {
 								username: credentials.username as string,
 								password: credentials.password as string,
@@ -2951,6 +3013,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2967,6 +3030,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2981,6 +3045,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -2995,6 +3060,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': 'application/json',
+								'Cookie': sessionCookie,
 							},
 							json: true,
 							auth: {
@@ -3014,6 +3080,7 @@ export class EcoDMS implements INodeType {
 							method: 'GET',
 							headers: {
 								'Accept': '*/*',
+								'Cookie': sessionCookie,
 							},
 							encoding: 'arraybuffer',
 							returnFullResponse: true,
@@ -3073,6 +3140,7 @@ export class EcoDMS implements INodeType {
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
+							'Cookie': sessionCookie,
 						},
 						json: true,
 						auth: {
@@ -3107,6 +3175,7 @@ export class EcoDMS implements INodeType {
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
+							'Cookie': sessionCookie,
 						},
 						json: true,
 						auth: {
@@ -3379,6 +3448,7 @@ export class EcoDMS implements INodeType {
 						method: 'GET',
 						headers: {
 							'Accept': 'application/json',
+							'Cookie': sessionCookie,
 						},
 						json: true,
 						auth: {
