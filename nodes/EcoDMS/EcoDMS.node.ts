@@ -78,6 +78,7 @@ export class EcoDMS implements INodeType {
 				required: true,
 			},
 		],
+		usableAsTool: true,
 		properties: [
 			{
 				displayName: 'Resource',
@@ -87,34 +88,42 @@ export class EcoDMS implements INodeType {
 					{
 						name: 'Dokument',
 						value: Resource.Document,
+						description: 'Dokumente im ecoDMS-System hochladen, herunterladen oder verwalten',
 					},
 					{
 						name: 'Archiv',
 						value: Resource.Archive,
+						description: 'Mit ecoDMS-Archiven arbeiten und Verbindungen verwalten',
 					},
 					{
 						name: 'Suche',
 						value: Resource.Search,
+						description: 'Einfache oder erweiterte Suche nach Dokumenten im ecoDMS-System',
 					},
 					{
 						name: 'Thumbnail',
 						value: Resource.Thumbnail,
+						description: 'Vorschaubilder von Dokumenten abrufen',
 					},
 					{
 						name: 'Lizenz',
 						value: Resource.License,
+						description: 'Lizenzinformationen des ecoDMS-Systems abrufen',
 					},
 					{
 						name: 'Ordner',
 						value: Resource.Folder,
+						description: 'Ordner im ecoDMS-System erstellen und verwalten',
 					},
 					{
 						name: 'Klassifikation',
 						value: Resource.Classification,
+						description: 'Dokumente klassifizieren und Klassifikationsattribute verwalten',
 					},
 					{
 						name: 'Dokumenttyp',
 						value: Resource.DocumentType,
+						description: 'Dokumenttypen und deren Klassifikationsregeln abrufen',
 					},
 				],
 				default: Resource.Document,
