@@ -8,23 +8,27 @@ set -e
 echo "=== n8n ecoDMS-Node Update und Deployment ==="
 
 # Repository aktualisieren
-echo "[1/5] Git Repository aktualisieren..."
+echo "[1/6] Git Repository aktualisieren..."
 git pull
 
+# Abhängigkeiten installieren
+echo "[2/6] Abhängigkeiten installieren..."
+pnpm install
+
 # Projekt bauen
-echo "[2/5] Projekt bauen mit pnpm..."
+echo "[3/6] Projekt bauen mit pnpm..."
 pnpm build
 
 # Dateien kopieren
-echo "[3/5] Dateien in n8n Custom-Verzeichnis kopieren..."
+echo "[4/6] Dateien in n8n Custom-Verzeichnis kopieren..."
 cp -r dist/* /home/n8n/.n8n/custom/
 
 # Berechtigungen setzen
-echo "[4/5] Berechtigungen für n8n-Benutzer setzen..."
+echo "[5/6] Berechtigungen für n8n-Benutzer setzen..."
 chown -R n8n:n8n /home/n8n/.n8n/custom/
 
 # n8n-Dienst neustarten
-echo "[5/5] n8n-Dienst neustarten..."
+echo "[6/6] n8n-Dienst neustarten..."
 systemctl restart n8n
 
 echo "=== Deployment abgeschlossen ===" 
