@@ -19,6 +19,8 @@ export const Resource = {
 	Thumbnail: 'thumbnail',
 	License: 'license',
 	Folder: 'folder',
+	Classification: 'classification',
+	DocumentType: 'documentType',
 } as const;
 
 export const Operation = {
@@ -106,6 +108,14 @@ export class EcoDMS implements INodeType {
 						name: 'Ordner',
 						value: Resource.Folder,
 					},
+					{
+						name: 'Klassifikation',
+						value: Resource.Classification,
+					},
+					{
+						name: 'Dokumenttyp',
+						value: Resource.DocumentType,
+					},
 				],
 				default: Resource.Document,
 				noDataExpression: true,
@@ -133,6 +143,12 @@ export class EcoDMS implements INodeType {
 						value: Operation.GetDocumentWithClassification,
 						description: 'Ein Dokument mit einer bestimmten Klassifikations-ID herunterladen',
 						action: 'Ein Dokument mit Klassifikation herunterladen',
+					},
+					{
+						name: 'Dokumentinformationen abrufen',
+						value: Operation.GetDocumentInfo,
+						description: 'Informationen zu einem Dokument abrufen',
+						action: 'Dokumentinformationen abrufen',
 					},
 					{
 						name: 'Dokument hochladen',
@@ -165,88 +181,22 @@ export class EcoDMS implements INodeType {
 						action: 'Templates für eine Datei abrufen',
 					},
 					{
-						name: 'Klassifikation mit Template-Erkennung abrufen',
-						value: Operation.GetClassificationWithTemplateRecognition,
-						description: 'Klassifikationen mit dynamischer Formularverarbeitung abrufen',
-						action: 'Klassifikation mit Template-Erkennung abrufen',
-					},
-					{
-						name: 'Dokumentverknüpfungen entfernen',
-						value: Operation.RemoveDocumentLink,
-						description: 'Verknüpfungen zwischen Dokumentklassifikationen entfernen',
-						action: 'Dokumentverknüpfungen entfernen',
-					},
-					{
-						name: 'Dokumente verknüpfen',
-						value: Operation.LinkToDocuments,
-						description: 'Verknüpfungen zwischen Dokumentklassifikationen hinzufügen',
-						action: 'Dokumente verknüpfen',
-					},
-					{
-						name: 'Neue Klassifikation erstellen',
-						value: Operation.CreateNewClassify,
-						description: 'Zusätzliche Klassifikation für ein Dokument erstellen',
-						action: 'Neue Klassifikation erstellen',
-					},
-					{
-						name: 'Inbox-Dokument klassifizieren',
-						value: Operation.ClassifyInboxDocument,
-						description: 'Ein Inbox-Dokument klassifizieren oder eine bestehende Klassifikation aktualisieren',
-						action: 'Inbox-Dokument klassifizieren',
-					},
-					{
-						name: 'Dokument-Klassifikation aktualisieren',
-						value: Operation.ClassifyDocument,
-						description: 'Eine bestehende Dokumentklassifikation aktualisieren',
-						action: 'Dokument-Klassifikation aktualisieren',
-					},
-					{
-						name: 'Duplikate prüfen',
+						name: 'Duplizierungscheck durchführen',
 						value: Operation.CheckDuplicates,
-						description: 'Prüfen, ob Duplikate für eine Datei im Archiv existieren',
-						action: 'Duplikate prüfen',
+						description: 'Prüfen, ob ein Dokument bereits im System vorhanden ist',
+						action: 'Duplizierungscheck durchführen',
 					},
 					{
 						name: 'Version mit PDF hinzufügen',
 						value: Operation.AddVersionWithPdf,
-						description: 'Eine neue Version mit PDF zu einem bestehenden Dokument hinzufügen',
+						description: 'Eine neue Version mit PDF zu einem Dokument hinzufügen',
 						action: 'Version mit PDF hinzufügen',
 					},
 					{
 						name: 'Version hinzufügen',
 						value: Operation.AddVersion,
-						description: 'Eine neue Version zu einem bestehenden Dokument hinzufügen',
+						description: 'Eine neue Version zu einem Dokument hinzufügen',
 						action: 'Version hinzufügen',
-					},
-					{
-						name: 'Dokumenttypen abrufen',
-						value: Operation.GetTypes,
-						description: 'Liste aller definierten Dokumenttypen abrufen',
-						action: 'Dokumenttypen abrufen',
-					},
-					{
-						name: 'Dokumenttyp-Klassifikationen abrufen',
-						value: Operation.GetTypeClassifications,
-						description: 'Erforderliche und versteckte Klassifikationen für einen Dokumenttyp abrufen',
-						action: 'Dokumenttyp-Klassifikationen abrufen',
-					},
-					{
-						name: 'Dokumentinformationen abrufen',
-						value: Operation.GetDocumentInfo,
-						description: 'Detaillierte Informationen zu einem archivierten Dokument abrufen',
-						action: 'Dokumentinformationen abrufen',
-					},
-					{
-						name: 'Klassifikationsattribute abrufen',
-						value: Operation.GetClassifyAttributes,
-						description: 'Liste aller verfügbaren Klassifikationsattribute in ecoDMS abrufen',
-						action: 'Klassifikationsattribute abrufen',
-					},
-					{
-						name: 'Detaillierte Klassifikationsattribute abrufen',
-						value: Operation.GetClassifyAttributesDetail,
-						description: 'Detaillierte Informationen zu allen verfügbaren Klassifikationsattributen in ecoDMS abrufen',
-						action: 'Detaillierte Klassifikationsattribute abrufen',
 					},
 				],
 				default: Operation.Get,
@@ -1897,6 +1847,206 @@ export class EcoDMS implements INodeType {
 				},
 				description: 'Name der binären Eigenschaft, in der das heruntergeladene Dokument gespeichert werden soll',
 			},
+			// Klassifikations-Operationen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+					},
+				},
+				options: [
+					{
+						name: 'Klassifikationsattribute abrufen',
+						value: Operation.GetClassifyAttributes,
+						description: 'Alle verfügbaren Klassifikationsattribute abrufen',
+						action: 'Klassifikationsattribute abrufen',
+					},
+					{
+						name: 'Detaillierte Klassifikationsattribute abrufen',
+						value: Operation.GetClassifyAttributesDetail,
+						description: 'Detaillierte Informationen zu Klassifikationsattributen abrufen',
+						action: 'Detaillierte Klassifikationsattribute abrufen',
+					},
+					{
+						name: 'Neue Klassifikation erstellen',
+						value: Operation.CreateNewClassify,
+						description: 'Zusätzliche Klassifikation für ein Dokument erstellen',
+						action: 'Neue Klassifikation erstellen',
+					},
+					{
+						name: 'Inbox-Dokument klassifizieren',
+						value: Operation.ClassifyInboxDocument,
+						description: 'Ein Inbox-Dokument klassifizieren oder eine bestehende Klassifikation aktualisieren',
+						action: 'Inbox-Dokument klassifizieren',
+					},
+					{
+						name: 'Dokument-Klassifikation aktualisieren',
+						value: Operation.ClassifyDocument,
+						description: 'Eine bestehende Dokumentklassifikation aktualisieren',
+						action: 'Dokument-Klassifikation aktualisieren',
+					},
+					{
+						name: 'Dokumentverknüpfungen entfernen',
+						value: Operation.RemoveDocumentLink,
+						description: 'Verknüpfungen zwischen Dokumentklassifikationen entfernen',
+						action: 'Dokumentverknüpfungen entfernen',
+					},
+					{
+						name: 'Dokumente verknüpfen',
+						value: Operation.LinkToDocuments,
+						description: 'Verknüpfungen zwischen Dokumentklassifikationen hinzufügen',
+						action: 'Dokumente verknüpfen',
+					},
+				],
+				default: Operation.GetClassifyAttributes,
+				noDataExpression: true,
+				required: true,
+			},
+			// Dokumenttyp-Operationen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				displayOptions: {
+					show: {
+						resource: [Resource.DocumentType],
+					},
+				},
+				options: [
+					{
+						name: 'Dokumenttypen abrufen',
+						value: Operation.GetTypes,
+						description: 'Alle verfügbaren Dokumenttypen abrufen',
+						action: 'Dokumenttypen abrufen',
+					},
+					{
+						name: 'Dokumenttyp-Klassifikationen abrufen',
+						value: Operation.GetTypeClassifications,
+						description: 'Erforderliche und versteckte Klassifikationen für einen Dokumenttyp abrufen',
+						action: 'Dokumenttyp-Klassifikationen abrufen',
+					},
+				],
+				default: Operation.GetTypes,
+				noDataExpression: true,
+				required: true,
+			},
+			// Parameter für Dokumenttyp-Operationen
+			{
+				displayName: 'Dokumenttyp-ID',
+				name: 'docTypeId',
+				type: 'number',
+				default: 0,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.DocumentType],
+						operation: [Operation.GetTypeClassifications],
+					},
+				},
+				description: 'Die ID des Dokumenttyps, für den die Klassifikationen abgerufen werden sollen',
+			},
+			// Parameter für Klassifikations-Operationen
+			{
+				displayName: 'Dokument-ID',
+				name: 'docId',
+				type: 'number',
+				default: 0,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.CreateNewClassify],
+					},
+				},
+				description: 'Die ID des Dokuments, für das eine neue Klassifikation erstellt werden soll',
+			},
+			{
+				displayName: 'Dokument-ID',
+				name: 'docId',
+				type: 'number',
+				default: 0,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyInboxDocument],
+					},
+				},
+				description: 'Die ID des Inbox-Dokuments, das klassifiziert werden soll',
+			},
+			{
+				displayName: 'Klassifikations-ID',
+				name: 'clDocId',
+				type: 'number',
+				default: 0,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyDocument],
+					},
+				},
+				description: 'Die ID der Dokumentklassifikation, die aktualisiert werden soll',
+			},
+			{
+				displayName: 'Klassifikations-ID',
+				name: 'clDocId',
+				type: 'number',
+				default: 0,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.RemoveDocumentLink, Operation.LinkToDocuments],
+					},
+				},
+				description: 'Die ID der Dokumentklassifikation, für die Links entfernt oder hinzugefügt werden sollen',
+			},
+			{
+				displayName: 'Link-IDs',
+				name: 'linkIds',
+				type: 'string',
+				default: '',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.RemoveDocumentLink],
+					},
+				},
+				description: 'Kommagetrennte Liste von Klassifikations-IDs, die entfernt werden sollen (z.B. "4,5,6")',
+			},
+			{
+				displayName: 'Link-IDs',
+				name: 'linkIds',
+				type: 'string',
+				default: '',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.LinkToDocuments],
+					},
+				},
+				description: 'Kommagetrennte Liste von Klassifikations-IDs, die hinzugefügt werden sollen (z.B. "4,5,6")',
+			},
+			{
+				displayName: 'Felder',
+				name: 'fields',
+				type: 'json',
+				default: '{}',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.CreateNewClassify, Operation.ClassifyInboxDocument, Operation.ClassifyDocument],
+					},
+				},
+				description: 'Die Klassifikationsfelder im JSON-Format',
+			},
 		],
 	};
 
@@ -3316,6 +3466,203 @@ export class EcoDMS implements INodeType {
 						password: credentials.password as string,
 					},
 				});
+			} else if (resource === 'documentType') {
+				if (operation === 'getTypes') {
+					// Dokumenttypen abrufen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/types`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'getTypeClassifications') {
+					// Dokumenttyp-Klassifikationen abrufen
+					const docTypeId = this.getNodeParameter('docTypeId', 0) as number;
+					
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/typeClassifications/${docTypeId}`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				}
+			} else if (resource === 'classification') {
+				if (operation === 'getClassifyAttributes') {
+					// Klassifikationsattribute abrufen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/classifyAttributes`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'getClassifyAttributesDetail') {
+					// Detaillierte Klassifikationsattribute abrufen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'createNewClassify') {
+					// Neue Klassifikation erstellen
+					const docId = this.getNodeParameter('docId', 0) as number;
+					const fields = this.getNodeParameter('fields', 0) as IDataObject;
+					
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/document/${docId}/classify`,
+						method: 'POST',
+						body: fields,
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'classifyInboxDocument') {
+					// Inbox-Dokument klassifizieren
+					const docId = this.getNodeParameter('docId', 0) as number;
+					const fields = this.getNodeParameter('fields', 0) as IDataObject;
+					
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/inbox/${docId}/classify`,
+						method: 'POST',
+						body: fields,
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'classifyDocument') {
+					// Dokument-Klassifikation aktualisieren
+					const clDocId = this.getNodeParameter('clDocId', 0) as number;
+					const fields = this.getNodeParameter('fields', 0) as IDataObject;
+					
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/documentClassification/${clDocId}`,
+						method: 'PUT',
+						body: fields,
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'removeDocumentLink') {
+					// Dokumentverknüpfungen entfernen
+					const clDocId = this.getNodeParameter('clDocId', 0) as number;
+					const linkIdsParam = this.getNodeParameter('linkIds', 0) as string;
+					
+					// Prüfen, ob mindestens eine ID angegeben wurde
+					if (!linkIdsParam || linkIdsParam.trim() === '') {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Es muss mindestens eine Klassifikations-ID zum Entfernen angegeben werden',
+						);
+					}
+					
+					// String in Array von Zahlen umwandeln
+					const linkIdsArray = linkIdsParam.split(',').map(id => parseInt(id.trim(), 10));
+					
+					// Fehler werfen, wenn ungültige IDs vorhanden sind
+					if (linkIdsArray.some(id => isNaN(id))) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Ungültige Klassifikations-IDs. Bitte geben Sie gültige Zahlen an, durch Kommas getrennt',
+						);
+					}
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/document/${clDocId}/removeDocumentLink`,
+						method: 'POST',
+						body: linkIdsArray,
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'linkToDocuments') {
+					// Dokumente verknüpfen
+					const clDocId = this.getNodeParameter('clDocId', 0) as number;
+					const linkIdsParam = this.getNodeParameter('linkIds', 0) as string;
+					
+					// Prüfen, ob mindestens eine ID angegeben wurde
+					if (!linkIdsParam || linkIdsParam.trim() === '') {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Es muss mindestens eine Klassifikations-ID zum Verknüpfen angegeben werden',
+						);
+					}
+					
+					// String in Array von Zahlen umwandeln
+					const linkIdsArray = linkIdsParam.split(',').map(id => parseInt(id.trim(), 10));
+					
+					// Fehler werfen, wenn ungültige IDs vorhanden sind
+					if (linkIdsArray.some(id => isNaN(id))) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Ungültige Klassifikations-IDs. Bitte geben Sie gültige Zahlen an, durch Kommas getrennt',
+						);
+					}
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/document/${clDocId}/linkToDocuments`,
+						method: 'POST',
+						body: linkIdsArray,
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				}
 			}
 		}
 		
