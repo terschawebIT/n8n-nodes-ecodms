@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2019",
+    "lib": ["es2019", "es2020", "es2022"],
+    "removeComments": true,
+    "useUnknownInCatchVariables": false,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist/",
+    "rootDir": "./"
+  },
+  "include": ["credentials/**/*", "nodes/**/*", "nodes/**/*.json"]
+} 
