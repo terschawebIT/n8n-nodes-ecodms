@@ -3,6 +3,7 @@ import {
 	IExecuteFunctions,
 	INodeExecutionData,
 	NodeOperationError,
+	NodeApiError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 
@@ -19,7 +20,7 @@ export async function handleSearchOperations(
 
 	switch (operation) {
 		case Operation.Search:
-			responseData = await handleSimpleSearch.call(this, credentials);
+			responseData = await handleSearch.call(this);
 			break;
 		case Operation.AdvancedSearch:
 			responseData = await handleAdvancedSearch.call(this, credentials);
@@ -35,101 +36,29 @@ export async function handleSearchOperations(
 }
 
 /**
- * Implementiert die einfache Suche mit dem Endpunkt `/api/searchDocuments`
- * 
- * Die einfache Suche ermöglicht es, Dokumente anhand mehrerer Suchkriterien zu finden.
- * Jedes Suchkriterium (Filter) besteht aus:
- * - classifyAttribut: Name des Klassifikationsattributs (z.B. bemerkung, docart, folder)
- * - searchOperator: Vergleichsoperator (=, !=, like, ilike, >, <, etc.)
- * - searchValue: Suchwert
- * 
- * Die Suchfilter werden mit einem logischen UND verknüpft.
- * Die API gibt maximal 100 Dokumente zurück, sortiert nach Dokument-ID in absteigender Reihenfolge.
- * 
- * @see https://docs.ecodms.de/api/searchDocuments
+ * Implements the search operation.
+ * Performs a search for documents in ecoDMS.
  */
-async function handleSimpleSearch(
-	this: IExecuteFunctions,
-	credentials: IDataObject,
-): Promise<IDataObject[]> {
-	const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
-	
-	if (filters.length === 0) {
-		throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
-	}
-	
-	// Suchfilter vorbereiten
-	const searchFilters: IDataObject[] = [];
-	
-	for (const filter of filters) {
-		const attribut = filter.classifyAttribut as string;
-		let operator = filter.searchOperator as string;
-		const value = filter.searchValue as string;
-		
-		// Prüfen, ob alle erforderlichen Felder vorhanden sind
-		if (!attribut) {
-			throw new NodeOperationError(this.getNode(), 'Klassifikationsattribut muss angegeben werden');
-		}
-		
-		if (!operator) {
-			operator = getDefaultOperator(attribut);
-		}
-		
-		// Leere Werte oder "auto" überspringen
-		if (!value || value === '' || value === 'auto') {
-			continue;
-		}
-		
-		// Spezielle Validierung für Datumsfelder
-		if (['cdate', 'defdate'].includes(attribut)) {
-			// Prüfen, ob das Datum im ISO-Format (YYYY-MM-DD) ist
-			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-			if (!dateRegex.test(value)) {
-				throw new NodeOperationError(
-					this.getNode(),
-					`Datum für "${attribut}" muss im Format YYYY-MM-DD sein (z.B. 2023-01-31)`,
-				);
-			}
-		}
-		
-		// Spezielle Validierung für Zeitstempel
-		if (attribut === 'ctimestamp') {
-			// Prüfen, ob der Zeitstempel im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS ist
-			const timestampRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/;
-			if (!timestampRegex.test(value)) {
-				throw new NodeOperationError(
-					this.getNode(),
-					'Zeitstempel muss im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS sein',
-				);
-			}
-		}
-		
-		// Für 'like' und 'ilike' Operatoren: Wildcard-Zeichen hinzufügen, falls nicht vorhanden
-		let searchValue = value;
-		if ((operator === 'like' || operator === 'ilike' || operator === '!like' || operator === '!ilike') && 
-			!value.includes('%')) {
-			searchValue = `%${value}%`;
-		}
-		
-		// Filter hinzufügen
-		searchFilters.push({
-			classifyAttribut: attribut,
-			searchOperator: operator,
-			searchValue: searchValue,
-		});
-	}
-	
-	// Prüfen, ob nach der Validierung noch Filter übrig sind
-	if (searchFilters.length === 0) {
-		throw new NodeOperationError(
-			this.getNode(),
-			'Keine gültigen Suchfilter nach Validierung. Bitte mindestens einen gültigen Filter angeben.',
-		);
-	}
-	
-	// API-Anfrage ausführen
+export async function handleSearch(this: IExecuteFunctions): Promise<any> {
 	try {
-		return await this.helpers.httpRequest({
+		// Simple search now uses just fulltext-ext with boolean search capabilities
+		const searchText = this.getNodeParameter('searchText', 0, '') as string;
+		const maxDocuments = this.getNodeParameter('maxDocuments', 0, 100) as number;
+		
+		// Get credentials to access the API
+		const credentials = await this.getCredentials('ecoDmsApi');
+		
+		// Create search filter for fulltext extended search
+		const searchFilters = [
+			{
+				classifyAttribut: 'fulltext-ext',
+				searchOperator: '=',
+				searchValue: searchText,
+			},
+		];
+		
+		// Execute API request
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/searchDocuments`,
 			method: 'POST',
 			headers: {
@@ -143,31 +72,25 @@ async function handleSimpleSearch(
 				password: credentials.password as string,
 			},
 		});
+		
+		// Maximum documents filter on client side if needed
+		if (Array.isArray(response) && response.length > maxDocuments) {
+			return response.slice(0, maxDocuments);
+		}
+		
+		return response;
 	} catch (error) {
-		// Fehlerbehandlung für verschiedene HTTP-Statuscodes
 		if (error.statusCode === 401) {
 			throw new NodeOperationError(
 				this.getNode(),
 				'Nicht autorisiert. Bitte überprüfen Sie Ihre Zugangsdaten.',
 			);
 		} else if (error.statusCode === 404) {
-			// Spezifische 404-Fehlermeldungen auswerten und benutzerfreundlich anzeigen
-			if (error.message.includes('List of search filters must not be null')) {
-				throw new NodeOperationError(this.getNode(), 'Die Liste der Suchfilter darf nicht leer sein');
-			} else if (error.message.includes('search attribute was not found')) {
-				throw new NodeOperationError(this.getNode(), 'Ein Suchattribut wurde nicht gefunden');
-			} else if (error.message.includes('invalid search operator')) {
-				throw new NodeOperationError(this.getNode(), 'Ungültiger Suchoperator für ein Attribut verwendet');
-			} else if (error.message.includes('invalid date or timestamp pattern')) {
-				throw new NodeOperationError(this.getNode(), 'Ungültiges Datums- oder Zeitstempelformat');
-			} else {
-				throw new NodeOperationError(
-					this.getNode(),
-					`Fehler bei der Suche: ${error.message}`,
-				);
-			}
+			throw new NodeOperationError(
+				this.getNode(),
+				`Fehler bei der Suche: ${error.message}`,
+			);
 		} else {
-			// Allgemeinen Fehler weiterleiten
 			throw new NodeOperationError(
 				this.getNode(),
 				`Fehler bei der Suche: ${error.message}`,
