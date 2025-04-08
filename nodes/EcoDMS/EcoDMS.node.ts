@@ -1019,6 +1019,331 @@ export class EcoDMS implements INodeType {
 					});
 				}
 				// Weitere Operationen für classification würden hier folgen
+			} else if (resource === 'search') {
+				if (operation === 'search') {
+					// Einfache Suche mit n8n-freundlichem Interface
+					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
+					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					
+					if (searchFilters.length === 0) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Mindestens ein Suchfilter muss definiert werden',
+						);
+					}
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/searchDocuments`,
+						method: 'POST',
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: searchFilters,
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'advancedSearch') {
+					// Erweiterte Suche
+					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
+					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
+					
+					if (searchFilters.length === 0) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Mindestens ein Suchfilter muss definiert werden',
+						);
+					}
+					
+					// Parameter für die erweiterte Suche
+					const queryParams = new URLSearchParams();
+					
+					if (additionalOptions.personalDocumentsOnly !== undefined) {
+						queryParams.append('personalDocumentsOnly', additionalOptions.personalDocumentsOnly ? 'true' : 'false');
+					} 
+					
+					if (additionalOptions.trashedDocuments !== undefined) {
+						queryParams.append('trashedDocuments', additionalOptions.trashedDocuments ? 'true' : 'false');
+					}
+					
+					if (additionalOptions.maxDocumentCount !== undefined) {
+						const maxDocCount = parseInt(additionalOptions.maxDocumentCount as string, 10);
+						if (maxDocCount > 1000) {
+							throw new NodeOperationError(
+								this.getNode(),
+								'Die maximale Anzahl der Dokumente darf 1000 nicht überschreiten',
+							);
+						}
+						queryParams.append('maxDocumentCount', maxDocCount.toString());
+					}
+					
+					if (additionalOptions.readRoles !== undefined) {
+						queryParams.append('readRoles', additionalOptions.readRoles ? 'true' : 'false');
+					}
+					
+					const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/searchDocumentsExt${queryString}`,
+						method: 'POST',
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: searchFilters,
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'advancedSearchExtv2') {
+					// Erweiterte Suche V2 mit Sortierung
+					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
+					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					const sortOrderData = this.getNodeParameter('sortOrder', 0, {}) as IDataObject;
+					const sortOrders = sortOrderData.orders as IDataObject[] || [];
+					const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
+					
+					if (searchFilters.length === 0) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Mindestens ein Suchfilter muss definiert werden',
+						);
+					}
+					
+					// Anfragekörper für die erweiterte Suche V2 erstellen
+					const requestBody: IDataObject = {
+						filter: searchFilters,
+					};
+					
+					// Sortierung hinzufügen, wenn definiert
+					if (sortOrders.length > 0) {
+						requestBody.sortOrder = sortOrders;
+					}
+					
+					// Zusätzliche Optionen hinzufügen
+					if (additionalOptions.personalDocumentsOnly !== undefined) {
+						requestBody.personalDocumentsOnly = additionalOptions.personalDocumentsOnly;
+					}
+					
+					if (additionalOptions.trashedDocuments !== undefined) {
+						requestBody.trashedDocuments = additionalOptions.trashedDocuments;
+					}
+					
+					if (additionalOptions.maxDocumentCount !== undefined) {
+						const maxDocCount = parseInt(additionalOptions.maxDocumentCount as string, 10);
+						if (maxDocCount > 1000) {
+							throw new NodeOperationError(
+								this.getNode(),
+								'Die maximale Anzahl der Dokumente darf 1000 nicht überschreiten',
+							);
+						}
+						requestBody.maxDocumentCount = maxDocCount;
+					}
+					
+					if (additionalOptions.readRoles !== undefined) {
+						requestBody.readRoles = additionalOptions.readRoles;
+					}
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/searchDocumentsExtv2`,
+						method: 'POST',
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: requestBody,
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} else if (operation === 'searchAndDownload') {
+					// Suchen und Dokumente herunterladen
+					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
+					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
+					const maxDocuments = this.getNodeParameter('maxDocuments', 0, 10) as number;
+					
+					if (searchFilters.length === 0) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Mindestens ein Suchfilter muss definiert werden',
+						);
+					}
+					
+					// Zuerst Dokumente suchen
+					const documentsResponse = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/searchDocuments`,
+						method: 'POST',
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: searchFilters,
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+					
+					// Prüfen, ob Dokumente gefunden wurden
+					if (!Array.isArray(documentsResponse) || documentsResponse.length === 0) {
+						// Keine Dokumente gefunden
+						return [[]];
+					}
+					
+					// Begrenze die Anzahl der Dokumente, die heruntergeladen werden
+					const documents = documentsResponse.slice(0, maxDocuments);
+					
+					// Dokumente herunterladen
+					const downloadItems: INodeExecutionData[] = [];
+					
+					for (let i = 0; i < documents.length; i++) {
+						const document = documents[i];
+						
+						try {
+							// Für Dokument-Download müssen wir */* als Accept-Header verwenden
+							const response = await this.helpers.httpRequest({
+								url: `${credentials.serverUrl as string}/api/document/${document.docId}`,
+								method: 'GET',
+								headers: {
+									'Accept': '*/*',
+								},
+								encoding: 'arraybuffer',
+								returnFullResponse: true,
+								auth: {
+									username: credentials.username as string,
+									password: credentials.password as string,
+								},
+							});
+							
+							// Neue Node mit Download-Ergebnis und Metadaten erstellen
+							const newItem: INodeExecutionData = {
+								json: document,
+								binary: {},
+							};
+							
+							// Dateiname aus Content-Disposition-Header extrahieren oder fallback verwenden
+							const contentDisposition = response.headers['content-disposition'] as string;
+							let fileName = `document_${document.docId}.pdf`;
+							if (contentDisposition) {
+								const match = contentDisposition.match(/filename="(.+)"/);
+								if (match) {
+									fileName = match[1];
+								}
+							}
+							
+							// Mime-Typ aus Content-Type-Header extrahieren oder fallback verwenden
+							const contentType = response.headers['content-type'] as string || 'application/octet-stream';
+							
+							// Binäre Daten hinzufügen
+							newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+								Buffer.from(response.body as Buffer),
+								fileName,
+								contentType,
+							);
+							
+							downloadItems.push(newItem);
+						} catch (error) {
+							// Fehler beim Herunterladen des Dokuments
+							console.error(`Fehler beim Herunterladen des Dokuments mit ID ${document.docId}:`, error);
+							
+							// Nur die Metadaten zurückgeben, wenn der Download fehlschlägt
+							downloadItems.push({
+								json: {
+									...document,
+									downloadError: true,
+									errorMessage: error.message,
+								},
+							});
+						}
+					}
+					
+					responseData = downloadItems;
+				}
+			} else if (resource === 'classification') {
+				if (operation === 'classifyDocument') {
+					// Dokument-Klassifikation aktualisieren
+					const clDocId = this.getNodeParameter('clDocId', 0) as number;
+					const docId = this.getNodeParameter('docId', 0) as number;
+					let classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as IDataObject;
+					const editRolesString = this.getNodeParameter('editRoles', 0) as string;
+					const readRolesString = this.getNodeParameter('readRoles', 0) as string;
+					
+					// Optionale Dropdown-Werte in classifyAttributes einfügen
+					try {
+						// Wenn als JSON-String, in Objekt umwandeln
+						if (typeof classifyAttributes === 'string') {
+							classifyAttributes = JSON.parse(classifyAttributes as string);
+						}
+						
+						// Dokumenttyp aus Dropdown einfügen, wenn ausgewählt
+						const docartSelect = this.getNodeParameter('docartSelect', 0, '') as string;
+						if (docartSelect) {
+							classifyAttributes.docart = docartSelect;
+						}
+						
+						// Ordner aus Dropdown einfügen, wenn ausgewählt
+						const folderSelect = this.getNodeParameter('folderSelect', 0, '') as string;
+						if (folderSelect) {
+							classifyAttributes.folder = folderSelect;
+						}
+						
+						// Status aus Dropdown einfügen, wenn ausgewählt
+						const statusSelect = this.getNodeParameter('statusSelect', 0, '') as string;
+						if (statusSelect) {
+							classifyAttributes.status = statusSelect;
+						}
+					} catch (error) {
+						console.warn('Fehler beim Verarbeiten der Klassifikationsattribute:', error);
+					}
+					
+					// Bearbeitungsrollen verarbeiten
+					let editRoles: string[] = [];
+					if (editRolesString) {
+						editRoles = editRolesString.split(',').map(role => role.trim());
+					}
+					
+					// Leserollen verarbeiten
+					let readRoles: string[] = [];
+					if (readRolesString) {
+						readRoles = readRolesString.split(',').map(role => role.trim());
+					}
+					
+					// API-Aufruf durchführen
+					responseData = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/classifyDocument`,
+						method: 'POST',
+						body: {
+							docId,
+							clDocId,
+							classifyAttributes,
+							editRoles,
+							readRoles,
+						},
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				}
+				// Weitere Operationen für classification würden hier folgen
 			}
 			// Weitere Resource-Typen würden hier folgen
 		}
