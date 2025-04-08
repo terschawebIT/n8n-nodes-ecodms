@@ -65,6 +65,7 @@ export const searchFields: INodeProperties[] = [
 				name: 'filters',
 				displayName: 'Filter',
 				values: [
+					// Operator für einfache Suche - Textattribute
 					{
 						displayName: 'Attribut',
 						name: 'classifyAttribut',
@@ -94,11 +95,56 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Enthält nicht (!like)', value: '!like' },
 							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
 							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
+								classifyAttribut: ['bemerkung', 'changeid'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
 							{ name: 'Größer als (>)', value: '>' },
 							{ name: 'Größer oder gleich (>=)', value: '>=' },
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
+								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
+							},
+						},
 						default: '=',
 						required: true,
 						description: 'Der Vergleichsoperator für die Suche',
@@ -109,6 +155,10 @@ export const searchFields: INodeProperties[] = [
 						type: 'string',
 						default: ' ',
 						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
+							},
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
@@ -124,6 +174,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -139,6 +191,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -154,6 +208,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.Search],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -188,6 +244,7 @@ export const searchFields: INodeProperties[] = [
 				name: 'filters',
 				displayName: 'Filter',
 				values: [
+					// Operator für erweiterte Suche - Textattribute
 					{
 						displayName: 'Attribut',
 						name: 'classifyAttribut',
@@ -222,6 +279,76 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
+								classifyAttribut: ['bemerkung', 'changeid', 'docid', 'revision', 'ctimestamp'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					// Operator für erweiterte Suche - Dropdown/Festwerte
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
+								classifyAttribut: ['docart', 'folder', 'folderonly', 'status', 'mainfolder', 'mainfolderonly'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					// Operator für erweiterte Suche - Datumsfelder
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+							{ name: 'Größer als (>)', value: '>' },
+							{ name: 'Größer oder gleich (>=)', value: '>=' },
+							{ name: 'Kleiner als (<)', value: '<' },
+							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
+								classifyAttribut: ['defdate', 'cdate'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					// Operator für erweiterte Suche - Volltext
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
+								classifyAttribut: ['fulltext', 'fulltext-ext'],
+							},
+						},
 						default: '=',
 						required: true,
 						description: 'Der Vergleichsoperator für die Suche',
@@ -232,6 +359,10 @@ export const searchFields: INodeProperties[] = [
 						type: 'string',
 						default: ' ',
 						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
+							},
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
@@ -247,6 +378,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -262,6 +395,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -277,6 +412,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -389,11 +526,56 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Enthält nicht (!like)', value: '!like' },
 							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
 							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
+								classifyAttribut: ['bemerkung', 'changeid'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
 							{ name: 'Größer als (>)', value: '>' },
 							{ name: 'Größer oder gleich (>=)', value: '>=' },
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
+								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
+							},
+						},
 						default: '=',
 						required: true,
 						description: 'Der Vergleichsoperator für die Suche',
@@ -419,6 +601,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -434,6 +618,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -449,6 +635,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -615,11 +803,56 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Enthält nicht (!like)', value: '!like' },
 							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
 							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
+								classifyAttribut: ['bemerkung', 'changeid'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
 							{ name: 'Größer als (>)', value: '>' },
 							{ name: 'Größer oder gleich (>=)', value: '>=' },
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
+						displayOptions: {
+							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
+								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
+							},
+						},
 						default: '=',
 						required: true,
 						description: 'Der Vergleichsoperator für die Suche',
@@ -645,6 +878,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -660,6 +895,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -675,6 +912,8 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
+								resource: [Resource.Search],
+								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['status'],
 							},
 						},
