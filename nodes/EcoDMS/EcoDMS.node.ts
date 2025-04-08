@@ -1053,13 +1053,21 @@ export class EcoDMS implements INodeType {
 					// Suchfilter verarbeiten
 					for (const filter of filters) {
 						const attribut = filter.classifyAttribut as string;
-						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
-						const value = filter.searchValue as string;
-						
-						// Sicherstellen, dass der Operator nicht leer ist
-						if (!operator) {
-							continue;
+						// Sicherstellen, dass wir immer einen gültigen Operator haben
+						let operator = filter.searchOperator as string;
+						if (!operator || operator === '') {
+							// Abhängig vom Attribut einen sinnvollen Standardoperator setzen
+							if (['bemerkung', 'changeid', 'docid', 'revision', 'ctimestamp'].includes(attribut)) {
+								operator = 'like'; // Text-Felder nutzen 'like' als sinnvollen Standard
+							} else if (['docart', 'folder', 'folderonly', 'status', 'mainfolder', 'mainfolderonly'].includes(attribut)) {
+								operator = '='; // Für Dropdown-Felder ist Gleichheit sinnvoll
+							} else if (['defdate', 'cdate'].includes(attribut)) {
+								operator = '>='; // Für Datums- und Zeitfelder ist größer/gleich oft sinnvoll
+							} else {
+								operator = '='; // Fallback
+							}
 						}
+						const value = filter.searchValue as string;
 						
 						// Wenn der Wert 'auto' ist, diesen Filter überspringen
 						if (value === 'auto') {
@@ -1116,13 +1124,21 @@ export class EcoDMS implements INodeType {
 					const searchFilter: IDataObject = {};
 					for (const filter of filters) {
 						const attribut = filter.classifyAttribut as string;
-						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
-						const value = filter.searchValue as string;
-						
-						// Sicherstellen, dass der Operator nicht leer ist
-						if (!operator) {
-							continue;
+						// Sicherstellen, dass wir immer einen gültigen Operator haben
+						let operator = filter.searchOperator as string;
+						if (!operator || operator === '') {
+							// Abhängig vom Attribut einen sinnvollen Standardoperator setzen
+							if (['bemerkung', 'changeid'].includes(attribut)) {
+								operator = 'like'; // Text-Felder nutzen 'like' als sinnvollen Standard
+							} else if (['docart', 'folder', 'status'].includes(attribut)) {
+								operator = '='; // Für Dropdown-Felder ist Gleichheit sinnvoll
+							} else if (['cdate', 'defdate', 'ctimestamp'].includes(attribut)) {
+								operator = '>='; // Für Datums- und Zeitfelder ist größer/gleich oft sinnvoll
+							} else {
+								operator = '='; // Fallback
+							}
 						}
+						const value = filter.searchValue as string;
 						
 						// Wenn der Wert 'auto' ist, diesen Filter überspringen
 						if (value === 'auto') {
@@ -1183,13 +1199,21 @@ export class EcoDMS implements INodeType {
 					const searchFilter: IDataObject = {};
 					for (const filter of filters) {
 						const attribut = filter.classifyAttribut as string;
-						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
-						const value = filter.searchValue as string;
-						
-						// Sicherstellen, dass der Operator nicht leer ist
-						if (!operator) {
-							continue;
+						// Sicherstellen, dass wir immer einen gültigen Operator haben
+						let operator = filter.searchOperator as string;
+						if (!operator || operator === '') {
+							// Abhängig vom Attribut einen sinnvollen Standardoperator setzen
+							if (['bemerkung', 'changeid'].includes(attribut)) {
+								operator = 'like'; // Text-Felder nutzen 'like' als sinnvollen Standard
+							} else if (['docart', 'folder', 'status'].includes(attribut)) {
+								operator = '='; // Für Dropdown-Felder ist Gleichheit sinnvoll
+							} else if (['cdate', 'defdate', 'ctimestamp'].includes(attribut)) {
+								operator = '>='; // Für Datums- und Zeitfelder ist größer/gleich oft sinnvoll
+							} else {
+								operator = '='; // Fallback
+							}
 						}
+						const value = filter.searchValue as string;
 						
 						// Wenn der Wert 'auto' ist, diesen Filter überspringen
 						if (value === 'auto') {
@@ -1260,13 +1284,21 @@ export class EcoDMS implements INodeType {
 					// Suchfilter verarbeiten
 					for (const filter of filters) {
 						const attribut = filter.classifyAttribut as string;
-						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
-						const value = filter.searchValue as string;
-						
-						// Sicherstellen, dass der Operator nicht leer ist
-						if (!operator) {
-							continue;
+						// Sicherstellen, dass wir immer einen gültigen Operator haben
+						let operator = filter.searchOperator as string;
+						if (!operator || operator === '') {
+							// Abhängig vom Attribut einen sinnvollen Standardoperator setzen
+							if (['bemerkung', 'changeid'].includes(attribut)) {
+								operator = 'like'; // Text-Felder nutzen 'like' als sinnvollen Standard
+							} else if (['docart', 'folder', 'status'].includes(attribut)) {
+								operator = '='; // Für Dropdown-Felder ist Gleichheit sinnvoll
+							} else if (['cdate', 'defdate', 'ctimestamp'].includes(attribut)) {
+								operator = '>='; // Für Datums- und Zeitfelder ist größer/gleich oft sinnvoll
+							} else {
+								operator = '='; // Fallback
+							}
 						}
+						const value = filter.searchValue as string;
 						
 						// Wenn der Wert 'auto' ist, diesen Filter überspringen
 						if (value === 'auto') {

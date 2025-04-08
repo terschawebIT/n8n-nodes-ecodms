@@ -147,7 +147,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: ' ',
+						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -333,7 +333,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: ' ',
+						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -544,7 +544,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: ' ',
+						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -809,7 +809,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: ' ',
+						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
