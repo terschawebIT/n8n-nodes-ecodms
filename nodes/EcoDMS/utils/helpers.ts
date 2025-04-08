@@ -130,7 +130,15 @@ export async function getFolders(
 		console.log('Folders-API-Antwort:', JSON.stringify(response).substring(0, 200));
 		
 		if (!Array.isArray(response)) {
-			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Ordner: ${JSON.stringify(response).substring(0, 200)}`);
+			console.error(`Unerwartetes Antwortformat beim Abrufen der Ordner: ${JSON.stringify(response).substring(0, 200)}`);
+			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+			return [
+				{
+					name: '-- Fehler beim Laden der Ordner --',
+					value: '',
+					description: 'Ordner konnten nicht geladen werden, bitte prüfen Sie die Logs',
+				}
+			];
 		}
 		
 		// Ordner in das erforderliche Format konvertieren
@@ -162,7 +170,15 @@ export async function getFolders(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
-		throw new Error(`Fehler beim Abrufen der Ordner: ${error.message}`);
+		
+		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+		return [
+			{
+				name: '-- Fehler beim Laden der Ordner --',
+				value: '',
+				description: `Fehler: ${error.message}`,
+			}
+		];
 	}
 }
 
@@ -197,7 +213,15 @@ export async function getDocumentTypes(
 		console.log('DocumentTypes-API-Antwort:', JSON.stringify(response).substring(0, 200));
 		
 		if (!Array.isArray(response)) {
-			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Dokumentarten: ${JSON.stringify(response).substring(0, 200)}`);
+			console.error(`Unerwartetes Antwortformat beim Abrufen der Dokumentarten: ${JSON.stringify(response).substring(0, 200)}`);
+			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+			return [
+				{
+					name: '-- Fehler beim Laden der Dokumentarten --',
+					value: '',
+					description: 'Dokumentarten konnten nicht geladen werden, bitte prüfen Sie die Logs',
+				}
+			];
 		}
 		
 		// Dokumentarten in das erforderliche Format konvertieren
@@ -229,7 +253,15 @@ export async function getDocumentTypes(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
-		throw new Error(`Fehler beim Abrufen der Dokumentarten: ${error.message}`);
+		
+		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+		return [
+			{
+				name: '-- Fehler beim Laden der Dokumentarten --',
+				value: '',
+				description: `Fehler: ${error.message}`,
+			}
+		];
 	}
 }
 
@@ -264,7 +296,15 @@ export async function getStatusValues(
 		console.log('Status-API-Antwort:', JSON.stringify(response).substring(0, 200));
 		
 		if (!Array.isArray(response)) {
-			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Status-Werte: ${JSON.stringify(response).substring(0, 200)}`);
+			console.error(`Unerwartetes Antwortformat beim Abrufen der Status-Werte: ${JSON.stringify(response).substring(0, 200)}`);
+			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+			return [
+				{
+					name: '-- Fehler beim Laden der Status-Werte --',
+					value: '',
+					description: 'Status-Werte konnten nicht geladen werden, bitte prüfen Sie die Logs',
+				}
+			];
 		}
 		
 		// Status-Werte in das erforderliche Format konvertieren
@@ -296,6 +336,14 @@ export async function getStatusValues(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		throw new Error(`Fehler beim Abrufen der Status-Werte: ${error.message}`);
+		
+		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
+		return [
+			{
+				name: '-- Fehler beim Laden der Status-Werte --',
+				value: '',
+				description: `Fehler: ${error.message}`,
+			}
+		];
 	}
 } 
