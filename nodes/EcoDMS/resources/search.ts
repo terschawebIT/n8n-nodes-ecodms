@@ -1,5 +1,6 @@
-import { INodeProperties } from 'n8n-workflow';
+import { ILoadOptionsFunctions, INodeProperties, INodePropertyOptions } from 'n8n-workflow';
 import { Resource, Operation } from '../utils/constants';
+import { getFolders, getDocumentTypes, getStatusValues } from '../utils/helpers';
 
 export const searchOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -106,7 +107,57 @@ export const searchFields: INodeProperties[] = [
 						name: 'searchValue',
 						type: 'string',
 						default: '',
+						displayOptions: {
+							hide: {
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
 						description: 'Der Wert, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getDocumentTypes',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['docart'],
+							},
+						},
+						default: '',
+						description: 'Die Dokumentart, nach der gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getFolders',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['folder'],
+							},
+						},
+						default: '',
+						description: 'Der Ordner, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getStatusValues',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['status'],
+							},
+						},
+						default: '',
+						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
 			},
@@ -178,7 +229,57 @@ export const searchFields: INodeProperties[] = [
 						name: 'searchValue',
 						type: 'string',
 						default: '',
+						displayOptions: {
+							hide: {
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
 						description: 'Der Wert, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getDocumentTypes',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['docart'],
+							},
+						},
+						default: '',
+						description: 'Die Dokumentart, nach der gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getFolders',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['folder'],
+							},
+						},
+						default: '',
+						description: 'Der Ordner, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getStatusValues',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['status'],
+							},
+						},
+						default: '',
+						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
 			},
@@ -299,7 +400,57 @@ export const searchFields: INodeProperties[] = [
 						name: 'searchValue',
 						type: 'string',
 						default: '',
+						displayOptions: {
+							hide: {
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
 						description: 'Der Wert, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getDocumentTypes',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['docart'],
+							},
+						},
+						default: '',
+						description: 'Die Dokumentart, nach der gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getFolders',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['folder'],
+							},
+						},
+						default: '',
+						description: 'Der Ordner, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getStatusValues',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['status'],
+							},
+						},
+						default: '',
+						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
 			},
@@ -474,7 +625,57 @@ export const searchFields: INodeProperties[] = [
 						name: 'searchValue',
 						type: 'string',
 						default: '',
+						displayOptions: {
+							hide: {
+								classifyAttribut: ['docart', 'folder', 'status'],
+							},
+						},
 						description: 'Der Wert, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getDocumentTypes',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['docart'],
+							},
+						},
+						default: '',
+						description: 'Die Dokumentart, nach der gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getFolders',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['folder'],
+							},
+						},
+						default: '',
+						description: 'Der Ordner, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getStatusValues',
+						},
+						displayOptions: {
+							show: {
+								classifyAttribut: ['status'],
+							},
+						},
+						default: '',
+						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
 			},

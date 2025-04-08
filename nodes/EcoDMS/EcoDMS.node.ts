@@ -20,6 +20,7 @@ import { searchOperations, searchFields } from './resources/search';
 import { folderOperations, folderFields } from './resources/folder';
 import { licenseOperations, licenseFields } from './resources/license';
 import { workflowOperations, workflowFields } from './resources/workflow';
+import { getFolders, getDocumentTypes, getStatusValues } from './utils/helpers';
 
 export { Resource, Operation };
 
@@ -110,6 +111,31 @@ export class EcoDMS implements INodeType {
 			...workflowFields,
 		],
 	};
+
+	// Methode zum Laden der dynamischen Optionen für Dropdown-Menüs
+	async loadOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		const methodName = this.getNodeParameter('loadOptionsMethod', 0) as string;
+		
+		const options: INodePropertyOptions[] = [];
+		
+		try {
+			// Implementierungen in der Helfer-Datei aufrufen
+			if (methodName === 'getFolders') {
+				// Ordner laden
+				return await getFolders.call(this);
+			} else if (methodName === 'getDocumentTypes') {
+				// Dokumentarten laden
+				return await getDocumentTypes.call(this);
+			} else if (methodName === 'getStatusValues') {
+				// Status-Werte laden
+				return await getStatusValues.call(this);
+			}
+		} catch (error) {
+			console.error(`Fehler beim Laden der Optionen für '${methodName}':`, error);
+		}
+		
+		return options;
+	}
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
