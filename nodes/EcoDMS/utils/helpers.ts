@@ -18,12 +18,20 @@ export async function getBaseUrl(
 		throw new Error('Server-URL ist nicht konfiguriert. Bitte in den Anmeldedaten angeben.');
 	}
 	
-	// Sicherstellen, dass die URL mit einem Slash endet
-	const serverUrl = credentials.serverUrl;
-	const baseUrl = serverUrl.endsWith('/') ? serverUrl : `${serverUrl}/`;
+	// Sicherstellen, dass die Server-URL keine nachfolgenden Slashes hat
+	let serverUrl = credentials.serverUrl.trim();
+	while (serverUrl.endsWith('/')) {
+		serverUrl = serverUrl.slice(0, -1);
+	}
+	
+	// Sicherstellen, dass der Endpunkt keinen führenden Slash hat
+	let cleanEndpoint = endpoint.trim();
+	while (cleanEndpoint.startsWith('/')) {
+		cleanEndpoint = cleanEndpoint.substring(1);
+	}
 	
 	// API-Endpunkt hinzufügen
-	return `${baseUrl}api/${endpoint}`;
+	return `${serverUrl}/api/${cleanEndpoint}`;
 }
 
 /**
