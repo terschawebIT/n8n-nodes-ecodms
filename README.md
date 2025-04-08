@@ -90,6 +90,38 @@ npm run build
 npm run dev
 ```
 
+### Modulare Struktur
+
+Dieses Projekt verwendet eine modulare Struktur, um die Wartbarkeit und Übersichtlichkeit zu verbessern:
+
+```
+nodes/EcoDMS/
+├── EcoDMS.node.ts         # Hauptdatei, die alle Module zusammenführt
+├── ecoDms.svg             # Icon für die Node
+├── resources/
+│   ├── document.ts        # Modul für Dokument-Ressource
+│   ├── classification.ts  # Modul für Klassifikations-Ressource
+│   ├── archive.ts         # Modul für Archiv-Ressource
+│   ├── search.ts          # Modul für Such-Ressource
+│   ├── folder.ts          # Modul für Ordner-Ressource
+│   ├── license.ts         # Modul für Lizenz-Ressource
+│   └── workflow.ts        # Modul für kombinierte Workflows
+└── utils/
+    ├── constants.ts       # Gemeinsame Konstanten (Resource, Operation)
+    └── helpers.ts         # Hilfsfunktionen
+```
+
+Diese Struktur bietet folgende Vorteile:
+- **Bessere Übersichtlichkeit**: Jede Ressource hat eine eigene Datei
+- **Einfachere Wartung**: Änderungen an einer bestimmten Ressource betreffen nur eine Datei
+- **Vermeidung von Duplikaten**: Parameter, die mehrfach verwendet werden, können in einer Datei definiert werden
+- **Leichteres Hinzufügen neuer Funktionalitäten**: Neue Ressourcen können einfach als neue Module hinzugefügt werden
+
+Um neue Ressourcen hinzuzufügen:
+1. Erstelle eine neue Datei unter `resources/`
+2. Definiere die Operations und Fields für diese Ressource
+3. Importiere die neue Datei in `EcoDMS.node.ts` und füge die Operations und Fields hinzu
+
 ## Beitragen
 
 Contributions sind willkommen! Bitte erstellen Sie einen Issue oder Pull Request auf GitHub. 
