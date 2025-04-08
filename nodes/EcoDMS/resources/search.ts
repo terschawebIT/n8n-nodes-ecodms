@@ -106,7 +106,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: '',
+						default: ' ',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -127,7 +127,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -143,7 +143,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -158,7 +158,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: {},
+						default: '1',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
@@ -230,7 +230,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: '',
+						default: ' ',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -251,7 +251,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -267,7 +267,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -282,7 +282,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: {},
+						default: '1',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
@@ -403,7 +403,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: '',
+						default: ' ',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -424,7 +424,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -440,7 +440,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -455,7 +455,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: {},
+						default: '1',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
@@ -630,7 +630,7 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: '',
+						default: ' ',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
@@ -651,7 +651,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -667,7 +667,7 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						noDataExpression: true,
-						default: {},
+						default: '1',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -682,7 +682,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: {},
+						default: '1',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],

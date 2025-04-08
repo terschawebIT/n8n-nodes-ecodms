@@ -132,10 +132,23 @@ export async function getFolders(
 		// Nach Namen sortieren
 		options.sort((a, b) => a.name.localeCompare(b.name));
 		
+		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
+		if (options.length === 0) {
+			options.push({
+				name: 'Standard',
+				value: '1',
+				description: 'Standardwert',
+			});
+		}
+		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
-		return [];
+		return [{
+			name: 'Standard',
+			value: '1',
+			description: 'Standardwert',
+		}];
 	}
 }
 
@@ -180,10 +193,23 @@ export async function getDocumentTypes(
 		// Nach Namen sortieren
 		options.sort((a, b) => a.name.localeCompare(b.name));
 		
+		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
+		if (options.length === 0) {
+			options.push({
+				name: 'Standard',
+				value: '1',
+				description: 'Standardwert',
+			});
+		}
+		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
-		return [];
+		return [{
+			name: 'Standard',
+			value: '1',
+			description: 'Standardwert',
+		}];
 	}
 }
 
@@ -228,9 +254,22 @@ export async function getStatusValues(
 		// Nach Namen sortieren
 		options.sort((a, b) => a.name.localeCompare(b.name));
 		
+		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
+		if (options.length === 0) {
+			options.push({
+				name: 'Standard',
+				value: '1',
+				description: 'Standardwert',
+			});
+		}
+		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		return [];
+		return [{
+			name: 'Standard',
+			value: '1',
+			description: 'Standardwert',
+		}];
 	}
 } 
