@@ -115,18 +115,15 @@ export class EcoDMS implements INodeType {
 	// Methoden für dynamische Optionen in Dropdown-Menüs
 	methods = {
 		loadOptions: {
-			// Methode für Ordner
-			async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			getFolders: async function(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getFolders.call(this);
 			},
 			
-			// Methode für Dokumententypen
-			async getDocumentTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			getDocumentTypes: async function(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getDocumentTypes.call(this);
 			},
 			
-			// Methode für Status-Werte
-			async getStatusValues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			getStatusValues: async function(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getStatusValues.call(this);
 			}
 		}
