@@ -13,14 +13,17 @@ import {
 } from 'n8n-workflow';
 
 export const Resource = {
-	Document: 'document',
 	Archive: 'archive',
+	Document: 'document',
+	Classification: 'classification',
+	DocumentType: 'documentType',
 	Search: 'search',
 	Thumbnail: 'thumbnail',
 	License: 'license',
 	Folder: 'folder',
-	Classification: 'classification',
-	DocumentType: 'documentType',
+	Version: 'version',
+	Link: 'link',
+	Workflow: 'workflow',
 } as const;
 
 export const Operation = {
@@ -56,6 +59,8 @@ export const Operation = {
 	CreateSubfolder: 'createSubfolder',
 	GetFolders: 'getFolders',
 	Connect: 'connect',
+	UploadAndClassify: 'uploadAndClassify',
+	SearchAndDownload: 'searchAndDownload',
 } as const;
 
 export class EcoDMS implements INodeType {
@@ -84,50 +89,45 @@ export class EcoDMS implements INodeType {
 				displayName: 'Resource',
 				name: 'resource',
 				type: 'options',
+				noDataExpression: true,
 				options: [
-					{
-						name: 'Dokument',
-						value: Resource.Document,
-						description: 'Dokumente im ecoDMS-System hochladen, herunterladen oder verwalten',
-					},
 					{
 						name: 'Archiv',
 						value: Resource.Archive,
-						description: 'Mit ecoDMS-Archiven arbeiten und Verbindungen verwalten',
+						description: 'Archiv verwalten',
 					},
 					{
-						name: 'Suche',
-						value: Resource.Search,
-						description: 'Einfache oder erweiterte Suche nach Dokumenten im ecoDMS-System',
-					},
-					{
-						name: 'Thumbnail',
-						value: Resource.Thumbnail,
-						description: 'Vorschaubilder von Dokumenten abrufen',
-					},
-					{
-						name: 'Lizenz',
-						value: Resource.License,
-						description: 'Lizenzinformationen des ecoDMS-Systems abrufen',
-					},
-					{
-						name: 'Ordner',
-						value: Resource.Folder,
-						description: 'Ordner im ecoDMS-System erstellen und verwalten',
+						name: 'Dokument',
+						value: Resource.Document,
+						description: 'Dokumente verwalten',
 					},
 					{
 						name: 'Klassifikation',
 						value: Resource.Classification,
-						description: 'Dokumente klassifizieren und Klassifikationsattribute verwalten',
+						description: 'Dokumente klassifizieren',
 					},
 					{
-						name: 'Dokumenttyp',
-						value: Resource.DocumentType,
-						description: 'Dokumenttypen und deren Klassifikationsregeln abrufen',
+						name: 'Suche',
+						value: Resource.Search,
+						description: 'Nach Dokumenten suchen',
+					},
+					{
+						name: 'Version',
+						value: Resource.Version,
+						description: 'Versionen verwalten',
+					},
+					{
+						name: 'Verlinkung',
+						value: Resource.Link,
+						description: 'Dokumente verlinken',
+					},
+					{
+						name: 'Workflow',
+						value: Resource.Workflow,
+						description: 'Kombinierte Operationen für vereinfachte Workflows',
 					},
 				],
 				default: Resource.Document,
-				noDataExpression: true,
 				required: true,
 			},
 			// Dokument-Operationen
@@ -1548,93 +1548,85 @@ export class EcoDMS implements INodeType {
 				displayName: 'Klassifikations-ID',
 				name: 'clDocId',
 				type: 'number',
+				default: 0,
 				required: true,
 				displayOptions: {
 					show: {
-						resource: [Resource.Document],
+						resource: [Resource.Classification],
 						operation: [Operation.ClassifyDocument],
 					},
 				},
-				default: 0,
-				description: 'ID der zu aktualisierenden Klassifikation',
+				description: 'Die ID der Dokumentklassifikation, die aktualisiert werden soll',
 			},
 			{
-				displayName: 'Revision',
-				name: 'revision',
-				type: 'string',
+				displayName: 'Dokument-ID',
+				name: 'docId',
+				type: 'number',
+				default: 0,
 				required: true,
 				displayOptions: {
 					show: {
-						resource: [Resource.Document],
+						resource: [Resource.Classification],
 						operation: [Operation.ClassifyDocument],
 					},
 				},
-				default: '',
-				description: 'Revisionsnummer des Dokuments (muss mit dem Wert aus /api/documentInfo/{docId} übereinstimmen)',
+				description: 'Die ID des Dokuments, dessen Klassifikation aktualisiert werden soll',
 			},
 			{
 				displayName: 'Klassifikationsattribute',
 				name: 'classifyAttributes',
-				type: 'fixedCollection',
-				typeOptions: {
-					multipleValues: true,
-				},
+				type: 'json',
+				default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation"\n}',
+				required: true,
 				displayOptions: {
 					show: {
-						resource: [Resource.Document],
+						resource: [Resource.Classification],
 						operation: [Operation.ClassifyDocument],
 					},
 				},
-				default: {},
-				options: [
-					{
-						name: 'attributes',
-						displayName: 'Attribut',
-						values: [
-							{
-								displayName: 'Name',
-								name: 'name',
-								type: 'string',
-								default: '',
-								description: 'Name des Klassifikationsattributs (z.B. docart, folder, bemerkung, etc.)',
-							},
-							{
-								displayName: 'Wert',
-								name: 'value',
-								type: 'string',
-								default: '',
-								description: 'Wert des Klassifikationsattributs',
-							},
-						],
-					},
-				],
-				description: 'Die Klassifikationsattribute für das Dokument',
+				description: 'Die Klassifikationsattribute im JSON-Format (z.B. docart, revision, folder, etc.)',
 			},
 			{
 				displayName: 'Bearbeitungsrollen',
 				name: 'editRoles',
 				type: 'string',
+				default: 'Elite',
+				required: false,
 				displayOptions: {
 					show: {
-						resource: [Resource.Document],
+						resource: [Resource.Classification],
 						operation: [Operation.ClassifyDocument],
 					},
 				},
-				default: '',
-				description: 'Durch Komma getrennte Liste von Rollen, die das Dokument bearbeiten dürfen',
+				description: 'Kommagetrennte Liste von Rollen, die das Dokument bearbeiten dürfen (z.B. "r_ecodms,Elite")',
 			},
 			{
 				displayName: 'Leserollen',
 				name: 'readRoles',
 				type: 'string',
+				default: '',
+				required: false,
 				displayOptions: {
 					show: {
-						resource: [Resource.Document],
+						resource: [Resource.Classification],
 						operation: [Operation.ClassifyDocument],
 					},
 				},
-				default: '',
-				description: 'Durch Komma getrennte Liste von Rollen, die das Dokument lesen dürfen',
+				description: 'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen (z.B. "ecoSIMSUSER,Gast")',
+			},
+			{
+				displayName: 'Felder',
+				name: 'fields',
+				type: 'json',
+				default: '{}',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.CreateNewClassify, Operation.ClassifyInboxDocument, Operation.ClassifyDocument],
+					},
+				},
+				description: 'Die Klassifikationsfelder im JSON-Format',
 			},
 			// Parameter für Duplikate prüfen
 			{
@@ -1894,7 +1886,7 @@ export class EcoDMS implements INodeType {
 					{
 						name: 'Dokument-Klassifikation aktualisieren',
 						value: Operation.ClassifyDocument,
-						description: 'Eine bestehende Dokumentklassifikation aktualisieren',
+						description: 'Eine bestehende Dokumentklassifikation aktualisieren. Vorgehensweise:\n1. Ermittle docId und clDocId mit "Dokumentinformationen abrufen"\n2. Ermittle verfügbare Klassifikationsattribute mit "Klassifikationsattribute abrufen"\n3. Aktualisiere die gewünschten Attribute\n\nBeispielantwort: Klassifikations-ID, die aktualisiert wurde.',
 						action: 'Dokument-Klassifikation aktualisieren',
 					},
 					{
@@ -2056,6 +2048,548 @@ export class EcoDMS implements INodeType {
 				},
 				description: 'Die Klassifikationsfelder im JSON-Format',
 			},
+			{
+				displayName: 'Dokumenttyp auswählen',
+				name: 'docartSelect',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'loadOptions',
+				},
+				default: '',
+				required: false,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyDocument],
+					},
+				},
+				description: 'Wähle einen Dokumenttyp aus der Liste (Wird automatisch in die Klassifikationsattribute eingefügt)',
+			},
+			{
+				displayName: 'Status',
+				name: 'statusSelect',
+				type: 'options',
+				options: [
+					{
+						name: 'Klassifiziert',
+						value: '1',
+						description: 'Dokument ist klassifiziert',
+					},
+					{
+						name: 'Wiedervorlage',
+						value: '2',
+						description: 'Dokument zur Wiedervorlage',
+					},
+					{
+						name: 'In Bearbeitung',
+						value: '3',
+						description: 'Dokument wird bearbeitet',
+					},
+					{
+						name: 'Storniert',
+						value: '4',
+						description: 'Dokument wurde storniert',
+					},
+					{
+						name: 'Inbox',
+						value: '5',
+						description: 'Dokument befindet sich im Inbox-Bereich',
+					},
+				],
+				default: '1',
+				required: false,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyDocument],
+					},
+				},
+				description: 'Status des Dokuments',
+			},
+			{
+				displayName: 'Klassifikationsattribute',
+				name: 'classifyAttributes',
+				type: 'json',
+				default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "status": "1"\n}',
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyDocument],
+					},
+				},
+				description: 'Die Klassifikationsattribute im JSON-Format. Beispiel:\n```json\n{\n  "docart": "1",          // Dokumententyp-ID\n  "revision": "1.0",      // Revisionsnummer\n  "bemerkung": "Rechnung März 2023",  // Beschreibung\n  "folder": "1.4",        // Ordner-ID (Format: [Hauptordner].[Unterordner])\n  "cdate": "2023-03-15",  // Dokumentdatum (YYYY-MM-DD)\n  "status": "1",          // 1=Klassifiziert, 2=Wiedervorlage\n  "defdate": ""           // Wiedervorlagedatum (wenn status=2)\n}\n```',
+				typeOptions: {
+					alwaysOpenEditWindow: true,
+				},
+			},
+			// Operation für die vorhandenen Ressourcen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Archive],
+					},
+				},
+				options: [
+					{
+						name: 'Archive abrufen',
+						value: Operation.List,
+						description: 'Alle verfügbaren Archive abrufen',
+						action: 'Archive abrufen',
+					},
+					{
+						name: 'Mit Archiv verbinden',
+						value: Operation.Connect,
+						description: 'Verbindung zu einem Archiv herstellen',
+						action: 'Mit Archiv verbinden',
+					},
+				],
+				default: Operation.List,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Document],
+					},
+				},
+				options: [
+					{
+						name: 'Dokument herunterladen',
+						value: Operation.Get,
+						description: 'Ein Dokument herunterladen',
+						action: 'Ein Dokument herunterladen',
+					},
+					{
+						name: 'Dokument mit Klassifikation herunterladen',
+						value: Operation.GetDocumentWithClassification,
+						description: 'Ein Dokument mit einer bestimmten Klassifikations-ID herunterladen',
+						action: 'Ein Dokument mit Klassifikation herunterladen',
+					},
+					{
+						name: 'Dokumentinformationen abrufen',
+						value: Operation.GetDocumentInfo,
+						description: 'Informationen zu einem Dokument abrufen',
+						action: 'Dokumentinformationen abrufen',
+					},
+					{
+						name: 'Dokument hochladen',
+						value: Operation.Upload,
+						description: 'Ein Dokument hochladen',
+						action: 'Ein Dokument hochladen',
+					},
+					{
+						name: 'Dokument mit PDF hochladen',
+						value: Operation.UploadWithPDF,
+						description: 'Ein Dokument mit zugehörigem PDF hochladen',
+						action: 'Ein Dokument mit PDF hochladen',
+					},
+					{
+						name: 'PDF in Inbox hochladen',
+						value: Operation.UploadToInbox,
+						description: 'Eine PDF-Datei in den Inbox-Bereich hochladen',
+						action: 'Eine PDF-Datei in den Inbox-Bereich hochladen',
+					},
+					{
+						name: 'Datei hochladen',
+						value: Operation.UploadFile,
+						description: 'Eine Datei direkt in ecoDMS hochladen',
+						action: 'Eine Datei direkt hochladen',
+					},
+					{
+						name: 'Templates für Datei abrufen',
+						value: Operation.GetTemplatesForFile,
+						description: 'Templates und Klassifikationen für eine Datei abrufen',
+						action: 'Templates für eine Datei abrufen',
+					},
+					{
+						name: 'Duplizierungscheck durchführen',
+						value: Operation.CheckDuplicates,
+						description: 'Prüfen, ob ein Dokument bereits im System vorhanden ist',
+						action: 'Duplizierungscheck durchführen',
+					},
+					{
+						name: 'Version mit PDF hinzufügen',
+						value: Operation.AddVersionWithPdf,
+						description: 'Eine neue Version mit PDF zu einem Dokument hinzufügen',
+						action: 'Version mit PDF hinzufügen',
+					},
+					{
+						name: 'Version hinzufügen',
+						value: Operation.AddVersion,
+						description: 'Eine neue Version zu einem Dokument hinzufügen',
+						action: 'Version hinzufügen',
+					},
+				],
+				default: Operation.Get,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Search],
+					},
+				},
+				options: [
+					{
+						name: 'Dokumente suchen',
+						value: Operation.Search,
+						description: 'Nach Dokumenten suchen',
+						action: 'Nach Dokumenten suchen',
+					},
+					{
+						name: 'Erweiterte Suche',
+						value: Operation.AdvancedSearch,
+						description: 'Erweiterte Suche mit mehreren Filterkriterien',
+						action: 'Erweiterte Suche durchführen',
+					},
+					{
+						name: 'Erweiterte Suche v2',
+						value: Operation.AdvancedSearchExtv2,
+						description: 'Erweiterte Suche mit Filterkriterien, Sortierung und weiteren Optionen',
+						action: 'Erweiterte Suche v2 durchführen',
+					},
+				],
+				default: Operation.Search,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Thumbnail],
+					},
+				},
+				options: [
+					{
+						name: 'Thumbnail herunterladen',
+						value: Operation.Get,
+						description: 'Ein Thumbnail herunterladen',
+						action: 'Ein Thumbnail herunterladen',
+					},
+				],
+				default: Operation.Get,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.License],
+					},
+				},
+				options: [
+					{
+						name: 'Lizenzinformationen abrufen',
+						value: Operation.GetInfo,
+						description: 'Lizenzinformationen abrufen',
+						action: 'Lizenzinformationen abrufen',
+					},
+				],
+				default: Operation.GetInfo,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Folder],
+					},
+				},
+				options: [
+					{
+						name: 'Berechtigungen festlegen',
+						value: Operation.SetRoles,
+						description: 'Berechtigungen für einen Ordner festlegen',
+						action: 'Berechtigungen für einen Ordner festlegen',
+					},
+					{
+						name: 'Ordner bearbeiten',
+						value: Operation.EditFolder,
+						description: 'Ordnerattribute aktualisieren',
+						action: 'Ordnerattribute aktualisieren',
+					},
+					{
+						name: 'Ordner erstellen',
+						value: Operation.CreateFolder,
+						description: 'Einen neuen Ordner auf oberster Ebene erstellen',
+						action: 'Einen neuen Ordner erstellen',
+					},
+					{
+						name: 'Unterordner erstellen',
+						value: Operation.CreateSubfolder,
+						description: 'Einen neuen Unterordner in einem bestehenden Ordner erstellen',
+						action: 'Einen neuen Unterordner erstellen',
+					},
+					{
+						name: 'Ordnerstruktur abrufen',
+						value: Operation.GetFolders,
+						description: 'Alle Ordner und Unterordner im ecoDMS-Archiv abrufen',
+						action: 'Ordnerstruktur abrufen',
+					},
+				],
+				default: Operation.SetRoles,
+				required: true,
+			},
+			// Operation für die vorhandenen Ressourcen
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Version],
+					},
+				},
+				options: [
+					{
+						name: 'Version mit PDF hinzufügen',
+						value: Operation.AddVersionWithPdf,
+						description: 'Eine neue Version mit PDF zu einem Dokument hinzufügen',
+						action: 'Version mit PDF hinzufügen',
+					},
+					{
+						name: 'Version hinzufügen',
+						value: Operation.AddVersion,
+						description: 'Eine neue Version zu einem Dokument hinzufügen',
+						action: 'Version hinzufügen',
+					},
+				],
+				default: Operation.AddVersion,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Link],
+					},
+				},
+				options: [
+					{
+						name: 'Dokumente verknüpfen',
+						value: Operation.LinkToDocuments,
+						description: 'Verknüpfungen zwischen Dokumentklassifikationen hinzufügen',
+						action: 'Dokumente verknüpfen',
+					},
+					{
+						name: 'Klassifikations-ID',
+						value: Operation.RemoveDocumentLink,
+						description: 'Verknüpfungen zwischen Dokumentklassifikationen entfernen',
+						action: 'Dokumentverknüpfungen entfernen',
+					},
+				],
+				default: Operation.LinkToDocuments,
+				required: true,
+			},
+			{
+				displayName: 'Operation',
+				name: 'operation',
+				type: 'options',
+				noDataExpression: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+					},
+				},
+				options: [
+					{
+						name: 'Dokument hochladen und klassifizieren',
+						value: Operation.UploadAndClassify,
+						description: 'Lädt ein Dokument hoch und klassifiziert es in einem Schritt',
+						action: 'Dokument hochladen und klassifizieren',
+					},
+					{
+						name: 'Suchen und herunterladen',
+						value: Operation.SearchAndDownload,
+						description: 'Sucht nach Dokumenten anhand von Kriterien und lädt sie herunter',
+						action: 'Suchen und herunterladen',
+					},
+				],
+				default: Operation.UploadAndClassify,
+				required: true,
+			},
+			// Upload und Klassifizierung in einem Schritt
+			{
+				displayName: 'Binäre Daten',
+				name: 'binaryData',
+				type: 'boolean',
+				default: true,
+				required: true,
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.UploadAndClassify],
+					},
+				},
+				description: 'Binäre Daten verwenden',
+			},
+			{
+					displayName: 'Binäres Eingabefeld',
+					name: 'binaryPropertyName',
+					type: 'string',
+					default: 'data',
+					required: true,
+					displayOptions: {
+						show: {
+							resource: [Resource.Workflow],
+							operation: [Operation.UploadAndClassify],
+							binaryData: [true],
+						},
+					},
+					description: 'Name des binären Eingabefelds, das die Datei enthält',
+				},
+				{
+					displayName: 'Dateiname',
+					name: 'fileName',
+					type: 'string',
+					default: '',
+					required: true,
+					displayOptions: {
+						show: {
+							resource: [Resource.Workflow],
+							operation: [Operation.UploadAndClassify],
+						},
+					},
+					description: 'Name der hochzuladenden Datei',
+				},
+				{
+					displayName: 'Dokumenttyp-ID',
+					name: 'docTypeId',
+					type: 'string',
+					default: '',
+					required: true,
+					displayOptions: {
+						show: {
+							resource: [Resource.Workflow],
+							operation: [Operation.UploadAndClassify],
+						},
+					},
+					description: 'ID des Dokumenttyps',
+				},
+				{
+					displayName: 'Klassifikationsattribute',
+					name: 'classifyAttributes',
+					type: 'json',
+					default: '{\n  "revision": "1.0",\n  "bemerkung": "Automatisch klassifiziert",\n  "folder": "1",\n  "status": "1"\n}',
+					required: true,
+					displayOptions: {
+						show: {
+							resource: [Resource.Workflow],
+							operation: [Operation.UploadAndClassify],
+						},
+					},
+					description: 'Die Klassifikationsattribute im JSON-Format. Die docTypeId muss nicht angegeben werden, da sie bereits oben definiert wurde.',
+					typeOptions: {
+						alwaysOpenEditWindow: true,
+					},
+				},
+			// Suchen und Herunterladen
+			{
+				displayName: 'Suchtyp',
+				name: 'searchType',
+				type: 'options',
+				options: [
+					{
+						name: 'Einfache Suche',
+						value: 'simple',
+					},
+					{
+						name: 'Erweiterte Suche',
+						value: 'advanced',
+					},
+				],
+				default: 'simple',
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.SearchAndDownload],
+					},
+				},
+				description: 'Art der Suche',
+			},
+			{
+				displayName: 'Suchbegriff',
+				name: 'searchTerm',
+				type: 'string',
+				default: '',
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.SearchAndDownload],
+						searchType: ['simple'],
+					},
+				},
+				description: 'Nach diesem Begriff wird gesucht',
+			},
+			{
+				displayName: 'Filter',
+				name: 'filter',
+				type: 'json',
+				default: '{\n  "filter": {\n    "operator": "and",\n    "filters": [\n      {\n        "field": "title",\n        "operator": "contains",\n        "value": "Rechnung"\n      },\n      {\n        "field": "cdate",\n        "operator": "gte",\n        "value": "2023-01-01"\n      }\n    ]\n  }\n}',
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.SearchAndDownload],
+						searchType: ['advanced'],
+					},
+				},
+				description: 'Der Filter für die erweiterte Suche im JSON-Format',
+				typeOptions: {
+					alwaysOpenEditWindow: true,
+				},
+			},
+			{
+				displayName: 'Maximale Anzahl',
+				name: 'maxResults',
+				type: 'number',
+				default: 10,
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.SearchAndDownload],
+					},
+				},
+				description: 'Maximale Anzahl der herunterzuladenden Dokumente',
+			},
+			{
+				displayName: 'Binäres Ausgabefeld',
+				name: 'binaryPropertyName',
+				type: 'string',
+				default: 'data',
+				displayOptions: {
+					show: {
+						resource: [Resource.Workflow],
+						operation: [Operation.SearchAndDownload],
+					},
+				},
+				description: 'Name des binären Ausgabefeldes',
+			},
 		],
 	};
 
@@ -2068,6 +2602,11 @@ export class EcoDMS implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('ecoDmsApi');
+		
+		// Prüfe, ob die Server-URL gültig ist
+		if (!credentials.serverUrl) {
+			throw new NodeOperationError(this.getNode(), 'Server-URL ist nicht konfiguriert. Bitte in den Anmeldedaten angeben.');
+		}
 
 		if (resource === 'archive' && operation === 'connect') {
 			// Verbindung zum Archiv herstellen
@@ -2779,22 +3318,43 @@ export class EcoDMS implements INodeType {
 				} else if (operation === 'classifyDocument') {
 					// Dokument-Klassifikation aktualisieren
 					const clDocId = this.getNodeParameter('clDocId', 0) as number;
-					const fields = this.getNodeParameter('fields', 0) as IDataObject;
+					const docId = this.getNodeParameter('docId', 0) as number;
+					let classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as IDataObject;
+					const editRolesString = this.getNodeParameter('editRoles', 0) as string;
+					const readRolesString = this.getNodeParameter('readRoles', 0) as string;
 					
-					// Prüfe, ob docId und clDocId in den Feldern vorhanden sind
-					if (!fields.docId) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Die Document-ID (docId) muss in den Feldern angegeben werden',
-						);
+					// Optionale Dropdown-Werte in classifyAttributes einfügen
+					try {
+						// Wenn als JSON-String, in Objekt umwandeln
+						if (typeof classifyAttributes === 'string') {
+							classifyAttributes = JSON.parse(classifyAttributes as string);
+						}
+						
+						// Dokumenttyp aus Dropdown einfügen, wenn ausgewählt
+						const docartSelect = this.getNodeParameter('docartSelect', 0, '') as string;
+						if (docartSelect) {
+							classifyAttributes.docart = docartSelect;
+						}
+						
+						// Status aus Dropdown einfügen, wenn ausgewählt
+						const statusSelect = this.getNodeParameter('statusSelect', 0, '') as string;
+						if (statusSelect) {
+							classifyAttributes.status = statusSelect;
+						}
+					} catch (error) {
+						console.warn('Fehler beim Verarbeiten der Klassifikationsattribute:', error);
 					}
 					
-					// Stelle sicher, dass classifyAttributes vorhanden ist
-					if (!fields.classifyAttributes) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Die classifyAttributes müssen in den Feldern angegeben werden',
-						);
+					// Bearbeitungsrollen verarbeiten
+					let editRoles: string[] = [];
+					if (editRolesString) {
+						editRoles = editRolesString.split(',').map(role => role.trim());
+					}
+					
+					// Leserollen verarbeiten
+					let readRoles: string[] = [];
+					if (readRolesString) {
+						readRoles = readRolesString.split(',').map(role => role.trim());
 					}
 					
 					// API-Aufruf durchführen
@@ -2802,11 +3362,11 @@ export class EcoDMS implements INodeType {
 						url: `${credentials.serverUrl as string}/api/classifyDocument`,
 						method: 'POST',
 						body: {
-							docId: fields.docId,
-							clDocId: clDocId,
-							classifyAttributes: fields.classifyAttributes,
-							editRoles: fields.editRoles || [],
-							readRoles: fields.readRoles || [],
+							docId,
+							clDocId,
+							classifyAttributes,
+							editRoles,
+							readRoles,
 						},
 						headers: {
 							'Accept': 'application/json',
@@ -3559,22 +4119,43 @@ export class EcoDMS implements INodeType {
 				} else if (operation === 'classifyDocument') {
 					// Dokument-Klassifikation aktualisieren
 					const clDocId = this.getNodeParameter('clDocId', 0) as number;
-					const fields = this.getNodeParameter('fields', 0) as IDataObject;
+					const docId = this.getNodeParameter('docId', 0) as number;
+					let classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as IDataObject;
+					const editRolesString = this.getNodeParameter('editRoles', 0) as string;
+					const readRolesString = this.getNodeParameter('readRoles', 0) as string;
 					
-					// Prüfe, ob docId und clDocId in den Feldern vorhanden sind
-					if (!fields.docId) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Die Document-ID (docId) muss in den Feldern angegeben werden',
-						);
+					// Optionale Dropdown-Werte in classifyAttributes einfügen
+					try {
+						// Wenn als JSON-String, in Objekt umwandeln
+						if (typeof classifyAttributes === 'string') {
+							classifyAttributes = JSON.parse(classifyAttributes as string);
+						}
+						
+						// Dokumenttyp aus Dropdown einfügen, wenn ausgewählt
+						const docartSelect = this.getNodeParameter('docartSelect', 0, '') as string;
+						if (docartSelect) {
+							classifyAttributes.docart = docartSelect;
+						}
+						
+						// Status aus Dropdown einfügen, wenn ausgewählt
+						const statusSelect = this.getNodeParameter('statusSelect', 0, '') as string;
+						if (statusSelect) {
+							classifyAttributes.status = statusSelect;
+						}
+					} catch (error) {
+						console.warn('Fehler beim Verarbeiten der Klassifikationsattribute:', error);
 					}
 					
-					// Stelle sicher, dass classifyAttributes vorhanden ist
-					if (!fields.classifyAttributes) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Die classifyAttributes müssen in den Feldern angegeben werden',
-						);
+					// Bearbeitungsrollen verarbeiten
+					let editRoles: string[] = [];
+					if (editRolesString) {
+						editRoles = editRolesString.split(',').map(role => role.trim());
+					}
+					
+					// Leserollen verarbeiten
+					let readRoles: string[] = [];
+					if (readRolesString) {
+						readRoles = readRolesString.split(',').map(role => role.trim());
 					}
 					
 					// API-Aufruf durchführen
@@ -3582,11 +4163,11 @@ export class EcoDMS implements INodeType {
 						url: `${credentials.serverUrl as string}/api/classifyDocument`,
 						method: 'POST',
 						body: {
-							docId: fields.docId,
-							clDocId: clDocId,
-							classifyAttributes: fields.classifyAttributes,
-							editRoles: fields.editRoles || [],
-							readRoles: fields.readRoles || [],
+							docId,
+							clDocId,
+							classifyAttributes,
+							editRoles,
+							readRoles,
 						},
 						headers: {
 							'Accept': 'application/json',
@@ -3705,5 +4286,55 @@ export class EcoDMS implements INodeType {
 		}
 		
 		return [returnData];
+	}
+
+	// Methode zur Ladung von dynamischen Options
+	async loadOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		const returnData: INodePropertyOptions[] = [];
+		const resource = this.getNodeParameter('resource', 0) as string;
+		const operation = this.getNodeParameter('operation', 0) as string;
+		const credentials = await this.getCredentials('ecoDmsApi');
+
+		if (resource === Resource.Classification && operation === Operation.ClassifyDocument) {
+			if (this.getNodeParameter('name', 0) === 'docartSelect') {
+				// Dokumenttypen für Auswahlliste laden
+				try {
+					const response = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/documentTypes`,
+						method: 'GET',
+						headers: {
+							'Accept': 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+
+					// Dokumenttypen als Options bereitstellen
+					if (response && Array.isArray(response)) {
+						for (const docType of response) {
+							if (docType.id !== undefined && docType.name !== undefined) {
+								returnData.push({
+									name: docType.name,
+									value: docType.id.toString(),
+									description: `Dokumenttyp: ${docType.name} (ID: ${docType.id})`,
+								});
+							}
+						}
+					}
+				} catch (error) {
+					console.error('Fehler beim Laden der Dokumenttypen:', error);
+					returnData.push({
+						name: 'Fehler beim Laden der Dokumenttypen',
+						value: '',
+						description: 'Bitte Serververbindung prüfen',
+					});
+				}
+			}
+		}
+
+		return returnData;
 	}
 } 
