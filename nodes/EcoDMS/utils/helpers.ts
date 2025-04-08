@@ -102,7 +102,7 @@ export async function getFolders(
 		
 		// API-Aufruf, um Ordner abzurufen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl}/api/getFolders`,
+			url: `${credentials.serverUrl}/api/folders`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -121,13 +121,6 @@ export async function getFolders(
 		// Ordner in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
-		// Platzhalter-Option hinzufügen
-		options.push({
-			name: '-- Bitte Ordner auswählen --',
-			value: '__n8n_placeholder_option',
-			description: 'Platzhalter für Dropdown-Menü',
-		});
-		
 		for (const folder of response) {
 			options.push({
 				name: folder.name || `Ordner ${folder.id}`,
@@ -142,7 +135,7 @@ export async function getFolders(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
-		return [{ name: 'Fehler beim Laden der Ordner', value: '' }];
+		return [];
 	}
 }
 
@@ -157,7 +150,7 @@ export async function getDocumentTypes(
 		
 		// API-Aufruf, um Dokumentarten abzurufen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl}/api/getTypes`,
+			url: `${credentials.serverUrl}/api/types`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -176,13 +169,6 @@ export async function getDocumentTypes(
 		// Dokumentarten in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
-		// Platzhalter-Option hinzufügen
-		options.push({
-			name: '-- Bitte Dokumentart auswählen --',
-			value: '__n8n_placeholder_option',
-			description: 'Platzhalter für Dropdown-Menü',
-		});
-		
 		for (const docType of response) {
 			options.push({
 				name: docType.name || `Typ ${docType.id}`,
@@ -197,7 +183,7 @@ export async function getDocumentTypes(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
-		return [{ name: 'Fehler beim Laden der Dokumentarten', value: '' }];
+		return [];
 	}
 }
 
@@ -231,13 +217,6 @@ export async function getStatusValues(
 		// Status-Werte in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
-		// Platzhalter-Option hinzufügen
-		options.push({
-			name: '-- Bitte Status auswählen --',
-			value: '__n8n_placeholder_option',
-			description: 'Platzhalter für Dropdown-Menü',
-		});
-		
 		for (const status of response) {
 			options.push({
 				name: status.name || `Status ${status.id}`,
@@ -252,13 +231,6 @@ export async function getStatusValues(
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		return [
-			{ 
-				name: '-- Bitte Status auswählen --',
-				value: '__n8n_placeholder_option',
-				description: 'Platzhalter für Dropdown-Menü',
-			},
-			{ name: 'Fehler beim Laden der Status-Werte', value: 'neu' }
-		];
+		return [];
 	}
 } 
