@@ -121,6 +121,13 @@ export async function getFolders(
 		// Ordner in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
+		});
+		
 		for (const folder of response) {
 			options.push({
 				name: folder.name || `Ordner ${folder.id}`,
@@ -129,25 +136,20 @@ export async function getFolders(
 			});
 		}
 		
-		// Nach Namen sortieren
-		options.sort((a, b) => a.name.localeCompare(b.name));
-		
-		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
-		if (options.length === 0) {
-			options.push({
-				name: 'Standard',
-				value: '1',
-				description: 'Standardwert',
-			});
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
 		}
 		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
 		return [{
-			name: 'Standard',
-			value: '1',
-			description: 'Standardwert',
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
 		}];
 	}
 }
@@ -182,6 +184,13 @@ export async function getDocumentTypes(
 		// Dokumentarten in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
+		});
+		
 		for (const docType of response) {
 			options.push({
 				name: docType.name || `Typ ${docType.id}`,
@@ -190,25 +199,20 @@ export async function getDocumentTypes(
 			});
 		}
 		
-		// Nach Namen sortieren
-		options.sort((a, b) => a.name.localeCompare(b.name));
-		
-		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
-		if (options.length === 0) {
-			options.push({
-				name: 'Standard',
-				value: '1',
-				description: 'Standardwert',
-			});
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
 		}
 		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
 		return [{
-			name: 'Standard',
-			value: '1',
-			description: 'Standardwert',
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
 		}];
 	}
 }
@@ -243,6 +247,13 @@ export async function getStatusValues(
 		// Status-Werte in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
+		});
+		
 		for (const status of response) {
 			options.push({
 				name: status.name || `Status ${status.id}`,
@@ -251,25 +262,20 @@ export async function getStatusValues(
 			});
 		}
 		
-		// Nach Namen sortieren
-		options.sort((a, b) => a.name.localeCompare(b.name));
-		
-		// Sicherstellen, dass mindestens eine Option zurückgegeben wird
-		if (options.length === 0) {
-			options.push({
-				name: 'Standard',
-				value: '1',
-				description: 'Standardwert',
-			});
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
 		}
 		
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
 		return [{
-			name: 'Standard',
-			value: '1',
-			description: 'Standardwert',
+			name: '-- Automatisch --',
+			value: 'auto',
+			description: 'Automatische Auswahl',
 		}];
 	}
 } 

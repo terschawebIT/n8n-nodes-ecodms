@@ -1040,26 +1040,40 @@ export class EcoDMS implements INodeType {
 				// Weitere Operationen für classification würden hier folgen
 			} else if (resource === 'search') {
 				if (operation === 'search') {
-					// Einfache Suche mit n8n-freundlichem Interface
-					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
-					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					// Einfache Suche über /api/search
+					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 					
-					if (searchFilters.length === 0) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Mindestens ein Suchfilter muss definiert werden',
-						);
+					if (filters.length === 0) {
+						throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
 					}
 					
-					// API-Aufruf durchführen
+					// Suchparameter aufbauen
+					const searchParams: IDataObject = {};
+					
+					// Suchfilter verarbeiten
+					for (const filter of filters) {
+						const attribut = filter.classifyAttribut as string;
+						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
+						const value = filter.searchValue as string;
+						
+						// Sicherstellen, dass der Operator nicht leer ist
+						if (!operator) {
+							continue;
+						}
+						
+						// Attribut.Operator als Schlüssel verwenden
+						searchParams[`${attribut}.${operator}`] = value;
+					}
+					
+					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/searchDocuments`,
+						url: `${credentials.serverUrl as string}/api/search`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: searchFilters,
+						body: searchParams,
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -1067,55 +1081,65 @@ export class EcoDMS implements INodeType {
 						},
 					});
 				} else if (operation === 'advancedSearch') {
-					// Erweiterte Suche
-					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
-					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					// Erweiterte Suche über /api/advancedSearch
+					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 					const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
 					
-					if (searchFilters.length === 0) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Mindestens ein Suchfilter muss definiert werden',
-						);
+					if (filters.length === 0) {
+						throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
 					}
 					
-					// Parameter für die erweiterte Suche
-					const queryParams = new URLSearchParams();
+					// Suchparameter aufbauen
+					const searchParams: IDataObject = {
+						personalDocumentsOnly: additionalOptions.personalDocumentsOnly === true,
+						trashedDocuments: additionalOptions.trashedDocuments === true,
+						readRoles: additionalOptions.readRoles !== false, // Default auf true
+					};
 					
-					if (additionalOptions.personalDocumentsOnly !== undefined) {
-						queryParams.append('personalDocumentsOnly', additionalOptions.personalDocumentsOnly ? 'true' : 'false');
-					} 
-					
-					if (additionalOptions.trashedDocuments !== undefined) {
-						queryParams.append('trashedDocuments', additionalOptions.trashedDocuments ? 'true' : 'false');
-					}
-					
-					if (additionalOptions.maxDocumentCount !== undefined) {
+					// Maximale Dokumentanzahl prüfen
+					if (additionalOptions.maxDocumentCount) {
 						const maxDocCount = parseInt(additionalOptions.maxDocumentCount as string, 10);
-						if (maxDocCount > 1000) {
-							throw new NodeOperationError(
-								this.getNode(),
-								'Die maximale Anzahl der Dokumente darf 1000 nicht überschreiten',
-							);
+						if (!isNaN(maxDocCount) && maxDocCount > 0) {
+							if (maxDocCount > 1000) {
+								throw new NodeOperationError(this.getNode(), 'Maximale Anzahl der Dokumente ist 1000');
+							}
+							searchParams.maxDocumentCount = maxDocCount;
 						}
-						queryParams.append('maxDocumentCount', maxDocCount.toString());
 					}
 					
-					if (additionalOptions.readRoles !== undefined) {
-						queryParams.append('readRoles', additionalOptions.readRoles ? 'true' : 'false');
+					// Suchfilter verarbeiten
+					const searchFilter: IDataObject = {};
+					for (const filter of filters) {
+						const attribut = filter.classifyAttribut as string;
+						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
+						const value = filter.searchValue as string;
+						
+						// Sicherstellen, dass der Operator nicht leer ist
+						if (!operator) {
+							continue;
+						}
+						
+						// Wenn der Wert 'auto' ist, diesen Filter überspringen
+						if (value === 'auto') {
+							continue;
+						}
+						
+						// Attribut.Operator als Schlüssel verwenden
+						searchFilter[`${attribut}.${operator}`] = value;
 					}
 					
-					const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+					// Suchfilter zu den Parametern hinzufügen
+					searchParams.searchFilter = searchFilter;
 					
-					// API-Aufruf durchführen
+					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/searchDocumentsExt${queryString}`,
+						url: `${credentials.serverUrl as string}/api/advancedSearch`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: searchFilters,
+						body: searchParams,
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -1123,63 +1147,80 @@ export class EcoDMS implements INodeType {
 						},
 					});
 				} else if (operation === 'advancedSearchExtv2') {
-					// Erweiterte Suche V2 mit Sortierung
-					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
-					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
-					const sortOrderData = this.getNodeParameter('sortOrder', 0, {}) as IDataObject;
-					const sortOrders = sortOrderData.orders as IDataObject[] || [];
+					// Erweiterte Suche V2
+					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
+					const sortOrders = this.getNodeParameter('sortOrder.orders', 0, []) as IDataObject[];
 					const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
 					
-					if (searchFilters.length === 0) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Mindestens ein Suchfilter muss definiert werden',
-						);
+					if (filters.length === 0) {
+						throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
 					}
 					
-					// Anfragekörper für die erweiterte Suche V2 erstellen
-					const requestBody: IDataObject = {
-						filter: searchFilters,
+					// Suchparameter aufbauen
+					const searchParams: IDataObject = {
+						personalDocumentsOnly: additionalOptions.personalDocumentsOnly === true,
+						trashedDocuments: additionalOptions.trashedDocuments === true,
+						readRoles: additionalOptions.readRoles !== false, // Default auf true
 					};
 					
-					// Sortierung hinzufügen, wenn definiert
-					if (sortOrders.length > 0) {
-						requestBody.sortOrder = sortOrders;
-					}
-					
-					// Zusätzliche Optionen hinzufügen
-					if (additionalOptions.personalDocumentsOnly !== undefined) {
-						requestBody.personalDocumentsOnly = additionalOptions.personalDocumentsOnly;
-					}
-					
-					if (additionalOptions.trashedDocuments !== undefined) {
-						requestBody.trashedDocuments = additionalOptions.trashedDocuments;
-					}
-					
-					if (additionalOptions.maxDocumentCount !== undefined) {
+					// Maximale Dokumentanzahl prüfen
+					if (additionalOptions.maxDocumentCount) {
 						const maxDocCount = parseInt(additionalOptions.maxDocumentCount as string, 10);
-						if (maxDocCount > 1000) {
-							throw new NodeOperationError(
-								this.getNode(),
-								'Die maximale Anzahl der Dokumente darf 1000 nicht überschreiten',
-							);
+						if (!isNaN(maxDocCount) && maxDocCount > 0) {
+							if (maxDocCount > 1000) {
+								throw new NodeOperationError(this.getNode(), 'Maximale Anzahl der Dokumente ist 1000');
+							}
+							searchParams.maxDocumentCount = maxDocCount;
 						}
-						requestBody.maxDocumentCount = maxDocCount;
 					}
 					
-					if (additionalOptions.readRoles !== undefined) {
-						requestBody.readRoles = additionalOptions.readRoles;
+					// Suchfilter verarbeiten
+					const searchFilter: IDataObject = {};
+					for (const filter of filters) {
+						const attribut = filter.classifyAttribut as string;
+						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
+						const value = filter.searchValue as string;
+						
+						// Sicherstellen, dass der Operator nicht leer ist
+						if (!operator) {
+							continue;
+						}
+						
+						// Wenn der Wert 'auto' ist, diesen Filter überspringen
+						if (value === 'auto') {
+							continue;
+						}
+						
+						// Attribut.Operator als Schlüssel verwenden
+						searchFilter[`${attribut}.${operator}`] = value;
 					}
 					
-					// API-Aufruf durchführen
+					// Sortierung verarbeiten, wenn vorhanden
+					if (sortOrders && sortOrders.length > 0) {
+						const sortParams: IDataObject[] = [];
+						
+						for (const order of sortOrders) {
+							sortParams.push({
+								attribut: order.classifyAttribut,
+								direction: order.sortDirection || 'desc',
+							});
+						}
+						
+						searchParams.sort = sortParams;
+					}
+					
+					// Suchfilter zu den Parametern hinzufügen
+					searchParams.searchFilter = searchFilter;
+					
+					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/searchDocumentsExtv2`,
+						url: `${credentials.serverUrl as string}/api/advancedSearchV2`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: requestBody,
+						body: searchParams,
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -1188,27 +1229,50 @@ export class EcoDMS implements INodeType {
 					});
 				} else if (operation === 'searchAndDownload') {
 					// Suchen und Dokumente herunterladen
-					const searchFiltersData = this.getNodeParameter('searchFilters', 0) as IDataObject;
-					const searchFilters = searchFiltersData.filters as IDataObject[] || [];
+					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 					const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 					const maxDocuments = this.getNodeParameter('maxDocuments', 0, 10) as number;
 					
-					if (searchFilters.length === 0) {
-						throw new NodeOperationError(
-							this.getNode(),
-							'Mindestens ein Suchfilter muss definiert werden',
-						);
+					if (filters.length === 0) {
+						throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
 					}
 					
-					// Zuerst Dokumente suchen
-					const documentsResponse = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/searchDocuments`,
+					if (maxDocuments > 100) {
+						throw new NodeOperationError(this.getNode(), 'Aus Leistungsgründen können maximal 100 Dokumente heruntergeladen werden');
+					}
+					
+					// Suchparameter aufbauen
+					const searchParams: IDataObject = {};
+					
+					// Suchfilter verarbeiten
+					for (const filter of filters) {
+						const attribut = filter.classifyAttribut as string;
+						const operator = filter.searchOperator as string || '='; // Standardwert für Operator
+						const value = filter.searchValue as string;
+						
+						// Sicherstellen, dass der Operator nicht leer ist
+						if (!operator) {
+							continue;
+						}
+						
+						// Wenn der Wert 'auto' ist, diesen Filter überspringen
+						if (value === 'auto') {
+							continue;
+						}
+						
+						// Attribut.Operator als Schlüssel verwenden
+						searchParams[`${attribut}.${operator}`] = value;
+					}
+					
+					// API-Anfrage ausführen
+					const searchResult = await this.helpers.httpRequest({
+						url: `${credentials.serverUrl as string}/api/search`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: searchFilters,
+						body: searchParams,
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -1217,13 +1281,13 @@ export class EcoDMS implements INodeType {
 					});
 					
 					// Prüfen, ob Dokumente gefunden wurden
-					if (!Array.isArray(documentsResponse) || documentsResponse.length === 0) {
+					if (!Array.isArray(searchResult) || searchResult.length === 0) {
 						// Keine Dokumente gefunden
 						return [[]];
 					}
 					
 					// Begrenze die Anzahl der Dokumente, die heruntergeladen werden
-					const documents = documentsResponse.slice(0, maxDocuments);
+					const documents = searchResult.slice(0, maxDocuments);
 					
 					// Dokumente herunterladen
 					const downloadItems: INodeExecutionData[] = [];
