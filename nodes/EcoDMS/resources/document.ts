@@ -119,6 +119,20 @@ export const documentFields: INodeProperties[] = [
 		},
 		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
 	},
+	{
+		displayName: 'Dokumentversion',
+		name: 'version',
+		type: 'number',
+		default: 1,
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.Get],
+			},
+		},
+		description: 'Version des Dokuments, die heruntergeladen werden soll (optional)',
+	},
 	
 	// Parameter für Dokument hochladen
 	{

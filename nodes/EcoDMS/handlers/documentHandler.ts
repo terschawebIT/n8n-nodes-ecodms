@@ -71,30 +71,81 @@ async function handleDownloadDocument(
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 	
+	// Prüfen, ob clDocId im aktuellen Element verfügbar ist
+	let clDocId: string | undefined;
+	if (items[0]?.json?.clDocId) {
+		clDocId = items[0].json.clDocId as string;
+	}
+	
+	// Prüfen, ob eine Version angegeben wurde
+	let version: string | undefined;
 	try {
-		// URLs vorbereiten
+		version = this.getNodeParameter('version', 0, '') as string;
+	} catch (e) {
+		// Parameter existiert nicht, ignorieren
+	}
+	
+	console.log(`Dokumenten-Download: docId=${docId}, clDocId=${clDocId || 'nicht verfügbar'}, version=${version || 'nicht angegeben'}`);
+	
+	// Schrittweise versuchen, das Dokument mit verschiedenen Methoden herunterzuladen
+	const errorMessages: string[] = [];
+	
+	// 1. Methode: Mit docId und clDocId und optional Version
+	if (clDocId) {
+		try {
+			let downloadUrl;
+			if (version) {
+				downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}/version/${version}`);
+				console.log('Methode 1a: Download mit docId, clDocId und Version:', downloadUrl);
+			} else {
+				downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
+				console.log('Methode 1b: Download mit docId und clDocId:', downloadUrl);
+			}
+			
+			const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+			console.log('Methode 1 erfolgreich');
+			return result;
+		} catch (error) {
+			const errorMsg = `Methode 1 fehlgeschlagen: ${error.message}`;
+			console.error(errorMsg);
+			errorMessages.push(errorMsg);
+			// Weiter mit der nächsten Methode
+		}
+	}
+	
+	// 2. Methode: Nur mit docId
+	try {
 		const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
+		console.log('Methode 2: Download nur mit docId:', downloadUrl);
+		
+		const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+		console.log('Methode 2 erfolgreich');
+		return result;
+	} catch (error) {
+		const errorMsg = `Methode 2 fehlgeschlagen: ${error.message}`;
+		console.error(errorMsg);
+		errorMessages.push(errorMsg);
+		// Weiter mit der nächsten Methode
+	}
+	
+	// 3. Methode: getDocumentAsStream
+	try {
+		const downloadUrl = await getBaseUrl.call(this, `getDocumentAsStream/${docId}`);
+		console.log('Methode 3: Download mit getDocumentAsStream:', downloadUrl);
+		
+		const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+		console.log('Methode 3 erfolgreich');
+		return result;
+	} catch (error) {
+		const errorMsg = `Methode 3 fehlgeschlagen: ${error.message}`;
+		console.error(errorMsg);
+		errorMessages.push(errorMsg);
+	}
+	
+	// 4. Methode: Versuche documentInfo zu verwenden, um clDocId zu erhalten
+	try {
+		console.log('Methode 4: Ermittle clDocId über documentInfo');
 		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
-		
-		console.log('Dokument-Download URL:', downloadUrl);
-		console.log('Dokument-Info URL:', infoUrl);
-		
-		// Dokument herunterladen
-		const response = await this.helpers.httpRequest({
-			url: downloadUrl,
-			method: 'GET',
-			headers: {
-				'Accept': '*/*',
-			},
-			encoding: 'arraybuffer',
-			returnFullResponse: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
-		
-		// Metadaten des Dokuments abrufen
 		const documentInfo = await this.helpers.httpRequest({
 			url: infoUrl,
 			method: 'GET',
@@ -108,35 +159,96 @@ async function handleDownloadDocument(
 			},
 		});
 		
-		// Dateiname aus Content-Disposition-Header extrahieren
-		const contentDisposition = response.headers['content-disposition'] as string;
-		let fileName = `document_${docId}.pdf`;
-		if (contentDisposition) {
-			const match = contentDisposition.match(/filename="(.+)"/);
-			if (match) {
-				fileName = match[1];
-			}
+		if (documentInfo && documentInfo.clDocId) {
+			const retrievedClDocId = documentInfo.clDocId;
+			console.log(`Methode 4: clDocId ${retrievedClDocId} aus documentInfo ermittelt, versuche erneut mit beiden IDs`);
+			
+			const downloadUrl = await getBaseUrl.call(this, `document/${docId}/${retrievedClDocId}`);
+			const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+			console.log('Methode 4 erfolgreich');
+			return result;
+		} else {
+			throw new Error('Keine clDocId in documentInfo gefunden');
 		}
-		
-		// Mime-Typ bestimmen
-		const contentType = response.headers['content-type'] as string || 'application/octet-stream';
-		
-		// Binäre Daten zum Dokument hinzufügen
-		const newItem: INodeExecutionData = {
-			json: documentInfo,
-			binary: {},
-		};
-		
-		newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
-			Buffer.from(response.body as Buffer),
-			fileName,
-			contentType,
-		);
-		
-		return [newItem];
 	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Herunterladen des Dokuments: ${error.message}`);
+		const errorMsg = `Methode 4 fehlgeschlagen: ${error.message}`;
+		console.error(errorMsg);
+		errorMessages.push(errorMsg);
 	}
+	
+	// Alle Methoden fehlgeschlagen
+	throw new NodeOperationError(
+		this.getNode(),
+		`Fehler beim Herunterladen des Dokuments mit ID ${docId}: Alle Methoden fehlgeschlagen.\n\nFehler:\n${errorMessages.join('\n')}`
+	);
+}
+
+/**
+ * Hilfsfunktion zum Herunterladen eines Dokuments von einer URL
+ */
+async function downloadDocumentFromUrl(
+	this: IExecuteFunctions,
+	url: string,
+	docId: string,
+	binaryPropertyName: string,
+	credentials: IDataObject,
+): Promise<INodeExecutionData[]> {
+	// Dokument herunterladen
+	const response = await this.helpers.httpRequest({
+		url,
+		method: 'GET',
+		headers: {
+			'Accept': '*/*',
+		},
+		encoding: 'arraybuffer',
+		returnFullResponse: true,
+		auth: {
+			username: credentials.username as string,
+			password: credentials.password as string,
+		},
+	});
+	
+	// Metadaten des Dokuments abrufen
+	const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
+	const documentInfo = await this.helpers.httpRequest({
+		url: infoUrl,
+		method: 'GET',
+		headers: {
+			'Accept': 'application/json',
+		},
+		json: true,
+		auth: {
+			username: credentials.username as string,
+			password: credentials.password as string,
+		},
+	});
+	
+	// Dateiname aus Content-Disposition-Header extrahieren
+	const contentDisposition = response.headers['content-disposition'] as string;
+	let fileName = `document_${docId}.pdf`;
+	if (contentDisposition) {
+		const match = contentDisposition.match(/filename="(.+)"/);
+		if (match) {
+			fileName = match[1];
+		}
+	}
+	
+	// Mime-Typ bestimmen
+	const contentType = response.headers['content-type'] as string || 'application/octet-stream';
+	
+	// Binäre Daten zum Dokument hinzufügen
+	const newItem: INodeExecutionData = {
+		json: documentInfo,
+		binary: {},
+	};
+	
+	newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+		Buffer.from(response.body as Buffer),
+		fileName,
+		contentType,
+	);
+	
+	return [newItem];
 }
 
 /**
