@@ -121,6 +121,13 @@ export async function getFolders(
 		// Ordner in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
+		// Platzhalter-Option hinzufügen
+		options.push({
+			name: '-- Bitte Ordner auswählen --',
+			value: '__n8n_placeholder_option',
+			description: 'Platzhalter für Dropdown-Menü',
+		});
+		
 		for (const folder of response) {
 			options.push({
 				name: folder.name || `Ordner ${folder.id}`,
@@ -169,6 +176,13 @@ export async function getDocumentTypes(
 		// Dokumentarten in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 		
+		// Platzhalter-Option hinzufügen
+		options.push({
+			name: '-- Bitte Dokumentart auswählen --',
+			value: '__n8n_placeholder_option',
+			description: 'Platzhalter für Dropdown-Menü',
+		});
+		
 		for (const docType of response) {
 			options.push({
 				name: docType.name || `Typ ${docType.id}`,
@@ -194,20 +208,57 @@ export async function getStatusValues(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
 	try {
-		// Da es keine spezifische API für Status-Werte gibt, verwenden wir fixe Werte
-		// Diese sollten an die in ecoDMS verfügbaren Status angepasst werden
-		const statusOptions: INodePropertyOptions[] = [
-			{ name: 'Neu', value: 'neu' },
-			{ name: 'In Bearbeitung', value: 'in_bearbeitung' },
-			{ name: 'Abgeschlossen', value: 'abgeschlossen' },
-			{ name: 'Archiviert', value: 'archiviert' },
-			{ name: 'Freigegeben', value: 'freigegeben' },
-			{ name: 'Geprüft', value: 'geprueft' },
-		];
+		const credentials = await this.getCredentials('ecoDmsApi') as unknown as EcoDmsApiCredentials;
 		
-		return statusOptions;
+		// API-Aufruf, um Status-Werte abzurufen
+		const response = await this.helpers.httpRequest({
+			url: `${credentials.serverUrl}/api/status`,
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+		
+		if (!Array.isArray(response)) {
+			throw new Error('Unerwartetes Antwortformat beim Abrufen der Status-Werte');
+		}
+		
+		// Status-Werte in das erforderliche Format konvertieren
+		const options: INodePropertyOptions[] = [];
+		
+		// Platzhalter-Option hinzufügen
+		options.push({
+			name: '-- Bitte Status auswählen --',
+			value: '__n8n_placeholder_option',
+			description: 'Platzhalter für Dropdown-Menü',
+		});
+		
+		for (const status of response) {
+			options.push({
+				name: status.name || `Status ${status.id}`,
+				value: status.id.toString(),
+				description: status.description || '',
+			});
+		}
+		
+		// Nach Namen sortieren
+		options.sort((a, b) => a.name.localeCompare(b.name));
+		
+		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		return [{ name: 'Fehler beim Laden der Status-Werte', value: '' }];
+		return [
+			{ 
+				name: '-- Bitte Status auswählen --',
+				value: '__n8n_placeholder_option',
+				description: 'Platzhalter für Dropdown-Menü',
+			},
+			{ name: 'Fehler beim Laden der Status-Werte', value: 'neu' }
+		];
 	}
 } 
