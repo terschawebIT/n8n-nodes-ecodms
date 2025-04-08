@@ -303,7 +303,19 @@ function processFilters(this: IExecuteFunctions, filters: IDataObject[]): IDataO
 			console.log(`Operator für ${attribut} auf Standardwert "${operator}" gesetzt`);
 		}
 		
-		let value = filter.searchValue as string;
+		// Wert basierend auf Attributtyp bestimmen
+		let value: string = '';
+		
+		// Je nach Attributtyp das entsprechende Wertfeld auswählen
+		if (['bemerkung', 'changeid', 'docid', 'revision', 'ctimestamp', 'cdate', 'defdate'].includes(attribut)) {
+			value = filter.searchValueText as string || '';
+		} else if (attribut === 'docart') {
+			value = filter.searchValueDocumentType as string || '';
+		} else if (['folder', 'folderonly', 'mainfolder', 'mainfolderonly'].includes(attribut)) {
+			value = filter.searchValueFolder as string || '';
+		} else if (attribut === 'status') {
+			value = filter.searchValueStatus as string || '';
+		}
 		
 		// Konvertierung von null/undefined zu leerem String für konsistentes Verhalten
 		if (value === undefined || value === null) {

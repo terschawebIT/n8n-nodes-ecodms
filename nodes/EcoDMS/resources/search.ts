@@ -132,8 +132,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Der Vergleichsoperator für die Suche',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Suchtext',
+						name: 'searchValueText',
 						type: 'string',
 						default: 'Suchbegriff eingeben',
 						displayOptions: {
@@ -141,11 +141,11 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['docart', 'folder', 'folderonly', 'mainfolder', 'mainfolderonly', 'status'],
 							},
 						},
-						description: 'Der Wert, nach dem gesucht werden soll',
+						description: 'Der Text, nach dem gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Dokumententyp',
+						name: 'searchValueDocumentType',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getDocumentTypes',
@@ -159,8 +159,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Ordner',
+						name: 'searchValueFolder',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getFolders',
@@ -174,8 +174,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Status',
+						name: 'searchValueStatus',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getStatusValues',
@@ -357,8 +357,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Der Wert, nach dem gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Dokumententyp',
+						name: 'searchValueDocumentType',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getDocumentTypes',
@@ -372,8 +372,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Ordner',
+						name: 'searchValueFolder',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getFolders',
@@ -387,8 +387,8 @@ export const searchFields: INodeProperties[] = [
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
-						displayName: 'Wert',
-						name: 'searchValue',
+						displayName: 'Status',
+						name: 'searchValueStatus',
 						type: 'options',
 						typeOptions: {
 							loadOptionsMethod: 'getStatusValues',
