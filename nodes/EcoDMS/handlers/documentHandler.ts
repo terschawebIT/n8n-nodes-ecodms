@@ -7,6 +7,7 @@ import {
 import { Operation } from '../utils/constants';
 import FormData from 'form-data';
 import { basename } from 'path';
+import { getBaseUrl } from '../utils/helpers';
 
 /**
  * Behandelt alle Document-Operationen für ecoDMS
@@ -42,8 +43,11 @@ async function handleGetDocument(
 ): Promise<IDataObject> {
 	const docId = this.getNodeParameter('docId', 0) as string;
 	
+	const url = await getBaseUrl.call(this, `getDocument/${docId}`);
+	console.log('Dokument-Info URL:', url);
+	
 	return await this.helpers.httpRequest({
-		url: `${credentials.serverUrl as string}/api/getDocument/${docId}`,
+		url,
 		method: 'GET',
 		headers: {
 			'Accept': 'application/json',
@@ -68,9 +72,16 @@ async function handleDownloadDocument(
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 	
 	try {
+		// URLs vorbereiten
+		const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
+		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
+		
+		console.log('Dokument-Download URL:', downloadUrl);
+		console.log('Dokument-Info URL:', infoUrl);
+		
 		// Dokument herunterladen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/document/${docId}`,
+			url: downloadUrl,
 			method: 'GET',
 			headers: {
 				'Accept': '*/*',
@@ -85,7 +96,7 @@ async function handleDownloadDocument(
 		
 		// Metadaten des Dokuments abrufen
 		const documentInfo = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getDocument/${docId}`,
+			url: infoUrl,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -180,9 +191,13 @@ async function handleUploadDocument(
 			}
 		}
 		
+		// URL vorbereiten
+		const uploadUrl = await getBaseUrl.call(this, 'upload');
+		console.log('Dokument-Upload URL:', uploadUrl);
+		
 		// API-Anfrage für Upload
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/upload`,
+			url: uploadUrl,
 			method: 'POST',
 			headers: {
 				...formData.getHeaders(),
@@ -216,9 +231,11 @@ async function handleDeleteDocument(
 	const forceDelete = this.getNodeParameter('forceDelete', 0, false) as boolean;
 	
 	const endpoint = forceDelete ? 'deleteDocument' : 'trashDocument';
+	const url = await getBaseUrl.call(this, `${endpoint}/${docId}`);
+	console.log('Dokument-Löschen URL:', url);
 	
 	return await this.helpers.httpRequest({
-		url: `${credentials.serverUrl as string}/api/${endpoint}/${docId}`,
+		url,
 		method: 'DELETE',
 		headers: {
 			'Accept': 'application/json',
@@ -241,8 +258,11 @@ async function handleMoveDocument(
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const targetFolder = this.getNodeParameter('targetFolder', 0) as string;
 	
+	const url = await getBaseUrl.call(this, 'moveDocument');
+	console.log('Dokument-Verschieben URL:', url);
+	
 	return await this.helpers.httpRequest({
-		url: `${credentials.serverUrl as string}/api/moveDocument`,
+		url,
 		method: 'PUT',
 		headers: {
 			'Accept': 'application/json',
