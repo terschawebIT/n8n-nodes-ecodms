@@ -35,7 +35,6 @@ export const Operation = {
 	GetClassifyAttributesDetail: 'getClassifyAttributesDetail',
 	Search: 'search',
 	AdvancedSearch: 'advancedSearch',
-	AdvancedSearchExtv2: 'advancedSearchExtv2',
 	GetInfo: 'getInfo',
 	SetRoles: 'setRoles',
 	EditFolder: 'editFolder',

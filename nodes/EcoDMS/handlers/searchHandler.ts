@@ -24,9 +24,6 @@ export async function handleSearchOperations(
 		case Operation.AdvancedSearch:
 			responseData = await handleAdvancedSearch.call(this, credentials);
 			break;
-		case Operation.AdvancedSearchExtv2:
-			responseData = await handleAdvancedSearchV2.call(this, credentials);
-			break;
 		case Operation.SearchAndDownload:
 			responseData = await handleSearchAndDownload.call(this, items, credentials);
 			break;
@@ -233,80 +230,6 @@ async function handleAdvancedSearch(
 			'Content-Type': 'application/json',
 		},
 		body: searchFilters,
-		json: true,
-		auth: {
-			username: credentials.username as string,
-			password: credentials.password as string,
-		},
-	});
-}
-
-/**
- * Implementiert die erweiterte Suche V2
- */
-async function handleAdvancedSearchV2(
-	this: IExecuteFunctions,
-	credentials: IDataObject,
-): Promise<IDataObject[]> {
-	const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
-	const sortOrders = this.getNodeParameter('sortOrder.orders', 0, []) as IDataObject[];
-	const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
-	
-	if (filters.length === 0) {
-		throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
-	}
-	
-	// Suchfilter verarbeiten
-	const searchFilters = processFilters.call(this, filters);
-	
-	// Suchparameter aufbauen
-	const searchParams: IDataObject = {
-		filter: searchFilters,
-		personalDocumentsOnly: additionalOptions.personalDocumentsOnly === true,
-		trashedDocuments: additionalOptions.trashedDocuments === true,
-		readRoles: additionalOptions.readRoles !== false,
-	};
-	
-	// Maximale Dokumentanzahl
-	if (additionalOptions.maxDocumentCount) {
-		const maxDocCount = parseInt(additionalOptions.maxDocumentCount as string, 10);
-		if (!isNaN(maxDocCount) && maxDocCount > 0) {
-			if (maxDocCount > 1000) {
-				throw new NodeOperationError(this.getNode(), 'Maximale Anzahl der Dokumente ist 1000');
-			}
-			searchParams.maxDocumentCount = maxDocCount;
-		}
-	}
-	
-	// Sortierung verarbeiten
-	if (sortOrders && sortOrders.length > 0) {
-		const sortParams: IDataObject[] = [];
-		
-		for (const order of sortOrders) {
-			if (!order.classifyAttribut) {
-				continue;
-			}
-			
-			sortParams.push({
-				classifyAttribut: order.classifyAttribut,
-				sortDirection: order.sortDirection || 'desc',
-			});
-		}
-		
-		if (sortParams.length > 0) {
-			searchParams.sortOrder = sortParams;
-		}
-	}
-	
-	// API-Anfrage ausführen
-	return await this.helpers.httpRequest({
-		url: `${credentials.serverUrl as string}/api/searchDocumentsExtv2`,
-		method: 'POST',
-		headers: {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json',
-		},
-		body: searchParams,
 		json: true,
 		auth: {
 			username: credentials.username as string,
