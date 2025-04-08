@@ -109,6 +109,7 @@ export async function getFolders(
 		const credentials = await this.getCredentials('ecoDmsApi') as unknown as EcoDmsApiCredentials;
 		
 		// Konstruiere die korrekte URL über die Hilfsfunktion
+		// Der korrekte API-Endpunkt ist 'folders' (Plural) laut Dokumentation
 		const url = await getBaseUrl.call(this, 'folders');
 		
 		console.log('Folders-API-URL:', url);

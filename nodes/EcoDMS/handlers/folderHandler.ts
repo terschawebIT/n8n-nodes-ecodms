@@ -172,7 +172,7 @@ async function handleGetFolders(
 ): Promise<IDataObject> {
 	try {
 		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getFolders`,
+			url: `${credentials.serverUrl as string}/api/folders`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
