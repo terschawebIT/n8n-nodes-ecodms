@@ -1576,7 +1576,7 @@ export class EcoDMS implements INodeType {
 				displayName: 'Klassifikationsattribute',
 				name: 'classifyAttributes',
 				type: 'json',
-				default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation"\n}',
+				default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "status": "1"\n}',
 				required: true,
 				displayOptions: {
 					show: {
@@ -2053,7 +2053,7 @@ export class EcoDMS implements INodeType {
 				name: 'docartSelect',
 				type: 'options',
 				typeOptions: {
-					loadOptionsMethod: 'loadOptions',
+					loadOptionsMethod: 'loadDocumentTypes',
 				},
 				default: '',
 				required: false,
@@ -2589,6 +2589,23 @@ export class EcoDMS implements INodeType {
 					},
 				},
 				description: 'Name des binären Ausgabefeldes',
+			},
+			{
+				displayName: 'Ordner auswählen',
+				name: 'folderSelect',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'loadFolders',
+				},
+				default: '',
+				required: false,
+				displayOptions: {
+					show: {
+						resource: [Resource.Classification],
+						operation: [Operation.ClassifyDocument],
+					},
+				},
+				description: 'Wähle einen Ordner aus der Liste (Wird automatisch in die Klassifikationsattribute eingefügt)',
 			},
 		],
 	};
@@ -3305,69 +3322,6 @@ export class EcoDMS implements INodeType {
 						url: `${credentials.serverUrl as string}/api/classifyInboxDocument`,
 						method: 'POST',
 						body: requestBody,
-						headers: {
-							'Accept': 'application/json',
-							'Content-Type': 'application/json',
-						},
-						json: true,
-						auth: {
-							username: credentials.username as string,
-							password: credentials.password as string,
-						},
-					});
-				} else if (operation === 'classifyDocument') {
-					// Dokument-Klassifikation aktualisieren
-					const clDocId = this.getNodeParameter('clDocId', 0) as number;
-					const docId = this.getNodeParameter('docId', 0) as number;
-					let classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as IDataObject;
-					const editRolesString = this.getNodeParameter('editRoles', 0) as string;
-					const readRolesString = this.getNodeParameter('readRoles', 0) as string;
-					
-					// Optionale Dropdown-Werte in classifyAttributes einfügen
-					try {
-						// Wenn als JSON-String, in Objekt umwandeln
-						if (typeof classifyAttributes === 'string') {
-							classifyAttributes = JSON.parse(classifyAttributes as string);
-						}
-						
-						// Dokumenttyp aus Dropdown einfügen, wenn ausgewählt
-						const docartSelect = this.getNodeParameter('docartSelect', 0, '') as string;
-						if (docartSelect) {
-							classifyAttributes.docart = docartSelect;
-						}
-						
-						// Status aus Dropdown einfügen, wenn ausgewählt
-						const statusSelect = this.getNodeParameter('statusSelect', 0, '') as string;
-						if (statusSelect) {
-							classifyAttributes.status = statusSelect;
-						}
-					} catch (error) {
-						console.warn('Fehler beim Verarbeiten der Klassifikationsattribute:', error);
-					}
-					
-					// Bearbeitungsrollen verarbeiten
-					let editRoles: string[] = [];
-					if (editRolesString) {
-						editRoles = editRolesString.split(',').map(role => role.trim());
-					}
-					
-					// Leserollen verarbeiten
-					let readRoles: string[] = [];
-					if (readRolesString) {
-						readRoles = readRolesString.split(',').map(role => role.trim());
-					}
-					
-					// API-Aufruf durchführen
-					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/classifyDocument`,
-						method: 'POST',
-						body: {
-							docId,
-							clDocId,
-							classifyAttributes,
-							editRoles,
-							readRoles,
-						},
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
@@ -4137,6 +4091,12 @@ export class EcoDMS implements INodeType {
 							classifyAttributes.docart = docartSelect;
 						}
 						
+						// Ordner aus Dropdown einfügen, wenn ausgewählt
+						const folderSelect = this.getNodeParameter('folderSelect', 0, '') as string;
+						if (folderSelect) {
+							classifyAttributes.folder = folderSelect;
+						}
+						
 						// Status aus Dropdown einfügen, wenn ausgewählt
 						const statusSelect = this.getNodeParameter('statusSelect', 0, '') as string;
 						if (statusSelect) {
@@ -4288,7 +4248,100 @@ export class EcoDMS implements INodeType {
 		return [returnData];
 	}
 
-	// Methode zur Ladung von dynamischen Options
+	// Diese Methode lädt Dokumenttypen für das Auswahlmenü
+	async loadDocumentTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		const returnData: INodePropertyOptions[] = [];
+		const credentials = await this.getCredentials('ecoDmsApi');
+		
+		try {
+			// API-Aufruf, um Dokumenttypen abzurufen
+			const response = await this.helpers.httpRequest({
+				url: `${credentials.serverUrl as string}/api/getDocTypes`,
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+			});
+			
+			// Daten für die Auswahlliste aufbereiten
+			if (response && Array.isArray(response)) {
+				for (const docType of response) {
+					if (docType.id !== undefined && docType.name !== undefined) {
+						returnData.push({
+							name: docType.name,
+							value: docType.id.toString(),
+							description: docType.description || '',
+						});
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Fehler beim Laden der Dokumenttypen:', error);
+		}
+		
+		return returnData;
+	}
+	
+	// Diese Methode lädt Ordner für das Auswahlmenü
+	async loadFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+		const returnData: INodePropertyOptions[] = [];
+		const credentials = await this.getCredentials('ecoDmsApi');
+		
+		try {
+			// API-Aufruf, um Ordner abzurufen
+			const response = await this.helpers.httpRequest({
+				url: `${credentials.serverUrl as string}/api/getFolders`,
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+			});
+			
+			// Rekursive Funktion zum Erstellen einer Baumstruktur
+			const processFolders = (folders: any[], parentPath = '') => {
+				if (!Array.isArray(folders)) return;
+				
+				for (const folder of folders) {
+					if (folder.id !== undefined && folder.name !== undefined) {
+						const folderPath = parentPath ? `${parentPath}.${folder.id}` : folder.id;
+						const displayName = parentPath ? `${parentPath} > ${folder.name}` : folder.name;
+						
+						returnData.push({
+							name: displayName,
+							value: folderPath,
+							description: folder.description || '',
+						});
+						
+						// Unterordner verarbeiten, falls vorhanden
+						if (folder.subfolders && Array.isArray(folder.subfolders)) {
+							processFolders(folder.subfolders, displayName);
+						}
+					}
+				}
+			};
+			
+			// Ordner verarbeiten
+			if (response && Array.isArray(response)) {
+				processFolders(response);
+			}
+		} catch (error) {
+			console.error('Fehler beim Laden der Ordner:', error);
+		}
+		
+		return returnData;
+	}
+
+	// Die bestehende loadOptions-Methode beibehalten oder aktualisieren
 	async loadOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		const returnData: INodePropertyOptions[] = [];
 		const resource = this.getNodeParameter('resource', 0) as string;
