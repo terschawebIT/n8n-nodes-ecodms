@@ -71,128 +71,73 @@ async function handleDownloadDocument(
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 	
-	// Prüfen, ob eine Version angegeben wurde
-	let version: string | undefined;
-	try {
-		version = this.getNodeParameter('version', 0, '') as string;
-	} catch (e) {
-		// Parameter existiert nicht, ignorieren
-	}
+	// Standard ecoDMS API-Endpunkt für Dokumentdownload verwenden
+	const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
+	console.log('Dokument-Download URL:', downloadUrl);
 	
 	try {
-		// Standard ecoDMS API-Endpunkt für Dokumentdownload verwenden
-		const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
-		console.log('Dokument-Download URL:', downloadUrl);
+		// Dokument herunterladen
+		const response = await this.helpers.httpRequest({
+			url: downloadUrl,
+			method: 'GET',
+			headers: {
+				'Accept': '*/*',
+			},
+			encoding: 'arraybuffer',
+			returnFullResponse: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
 		
-		return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-	} catch (error) {
-		console.error(`Fehler beim Download mit Standard-Endpunkt: ${error.message}`);
+		// Metadaten des Dokuments abrufen
+		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
+		const documentInfo = await this.helpers.httpRequest({
+			url: infoUrl,
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
 		
-		// Fallback-Methoden bei Fehler
-		const errorMessages = [`1. Versuch fehlgeschlagen: ${error.message}`];
-		
-		// Falls clDocId in den Eingabedaten vorhanden, mit dieser versuchen
-		if (items[0]?.json?.clDocId) {
-			const clDocId = items[0].json.clDocId as string;
-			try {
-				let downloadUrl;
-				if (version) {
-					downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}/version/${version}`);
-				} else {
-					downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
-				}
-				console.log('Fallback 1: Download mit docId und clDocId:', downloadUrl);
-				
-				return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-			} catch (fallbackError) {
-				errorMessages.push(`2. Versuch mit clDocId fehlgeschlagen: ${fallbackError.message}`);
+		// Dateiname aus Content-Disposition-Header extrahieren
+		const contentDisposition = response.headers['content-disposition'] as string;
+		let fileName = `document_${docId}.pdf`;
+		if (contentDisposition) {
+			const match = contentDisposition.match(/filename="(.+)"/);
+			if (match) {
+				fileName = match[1];
 			}
 		}
 		
-		// Alternativ getDocumentAsStream verwenden
-		try {
-			const downloadUrl = await getBaseUrl.call(this, `getDocumentAsStream/${docId}`);
-			console.log('Fallback 2: Download mit getDocumentAsStream:', downloadUrl);
-			
-			return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-		} catch (fallbackError) {
-			errorMessages.push(`3. Versuch mit getDocumentAsStream fehlgeschlagen: ${fallbackError.message}`);
-		}
+		// Mime-Typ bestimmen
+		const contentType = response.headers['content-type'] as string || 'application/octet-stream';
 		
-		// Alle Versuche fehlgeschlagen
+		// Binäre Daten zum Dokument hinzufügen
+		const newItem: INodeExecutionData = {
+			json: documentInfo,
+			binary: {},
+		};
+		
+		newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+			Buffer.from(response.body as Buffer),
+			fileName,
+			contentType,
+		);
+		
+		return [newItem];
+	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
-			`Fehler beim Herunterladen des Dokuments mit ID ${docId}:\n${errorMessages.join('\n')}`
+			`Fehler beim Herunterladen des Dokuments mit ID ${docId}: ${error.message}`
 		);
 	}
-}
-
-/**
- * Hilfsfunktion zum Herunterladen eines Dokuments von einer URL
- */
-async function downloadDocumentFromUrl(
-	this: IExecuteFunctions,
-	url: string,
-	docId: string,
-	binaryPropertyName: string,
-	credentials: IDataObject,
-): Promise<INodeExecutionData[]> {
-	// Dokument herunterladen
-	const response = await this.helpers.httpRequest({
-		url,
-		method: 'GET',
-		headers: {
-			'Accept': '*/*',
-		},
-		encoding: 'arraybuffer',
-		returnFullResponse: true,
-		auth: {
-			username: credentials.username as string,
-			password: credentials.password as string,
-		},
-	});
-	
-	// Metadaten des Dokuments abrufen
-	const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
-	const documentInfo = await this.helpers.httpRequest({
-		url: infoUrl,
-		method: 'GET',
-		headers: {
-			'Accept': 'application/json',
-		},
-		json: true,
-		auth: {
-			username: credentials.username as string,
-			password: credentials.password as string,
-		},
-	});
-	
-	// Dateiname aus Content-Disposition-Header extrahieren
-	const contentDisposition = response.headers['content-disposition'] as string;
-	let fileName = `document_${docId}.pdf`;
-	if (contentDisposition) {
-		const match = contentDisposition.match(/filename="(.+)"/);
-		if (match) {
-			fileName = match[1];
-		}
-	}
-	
-	// Mime-Typ bestimmen
-	const contentType = response.headers['content-type'] as string || 'application/octet-stream';
-	
-	// Binäre Daten zum Dokument hinzufügen
-	const newItem: INodeExecutionData = {
-		json: documentInfo,
-		binary: {},
-	};
-	
-	newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
-		Buffer.from(response.body as Buffer),
-		fileName,
-		contentType,
-	);
-	
-	return [newItem];
 }
 
 /**
