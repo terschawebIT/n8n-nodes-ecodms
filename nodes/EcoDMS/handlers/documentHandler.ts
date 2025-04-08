@@ -71,9 +71,16 @@ async function handleDownloadDocument(
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 	
-	// Standard ecoDMS API-Endpunkt für Dokumentdownload verwenden
-	const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
-	console.log('Dokument-Download URL:', downloadUrl);
+	// Prüfe, ob clDocId in den Eingabedaten vorhanden ist
+	let downloadUrl;
+	if (items[0]?.json?.clDocId) {
+		const clDocId = items[0].json.clDocId;
+		downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
+		console.log(`Dokument-Download URL mit clDocId: ${downloadUrl}`);
+	} else {
+		downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
+		console.log(`Dokument-Download URL: ${downloadUrl}`);
+	}
 	
 	try {
 		// Dokument herunterladen
