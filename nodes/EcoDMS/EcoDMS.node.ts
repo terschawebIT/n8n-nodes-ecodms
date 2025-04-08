@@ -15,6 +15,7 @@ import {
 import { Resource, Operation } from './utils/constants';
 import { documentOperations, documentFields } from './resources/document';
 import { classificationOperations, classificationFields } from './resources/classification';
+import { documentTypeOperations, documentTypeFields } from './resources/documentType';
 import { archiveOperations, archiveFields } from './resources/archive';
 import { searchOperations, searchFields } from './resources/search';
 import { folderOperations, folderFields } from './resources/folder';
@@ -28,6 +29,7 @@ import { handleArchiveOperations } from './handlers/archiveHandler';
 import { handleFolderOperations } from './handlers/folderHandler';
 import { handleLicenseOperations } from './handlers/licenseHandler';
 import { handleWorkflowOperations } from './handlers/workflowHandler';
+import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
 
 export { Resource, Operation };
 
@@ -70,6 +72,11 @@ export class EcoDMS implements INodeType {
 						description: 'Dokumente verwalten',
 					},
 					{
+						name: 'Dokumenttyp',
+						value: Resource.DocumentType,
+						description: 'Dokumenttypen verwalten',
+					},
+					{
 						name: 'Klassifikation',
 						value: Resource.Classification,
 						description: 'Dokumente klassifizieren',
@@ -102,6 +109,7 @@ export class EcoDMS implements INodeType {
 			// Operations für die verschiedenen Ressourcentypen
 			documentOperations,
 			classificationOperations,
+			documentTypeOperations,
 			archiveOperations,
 			searchOperations,
 			folderOperations,
@@ -111,6 +119,7 @@ export class EcoDMS implements INodeType {
 			// Parameter für die Ressourcentypen
 			...documentFields,
 			...classificationFields,
+			...documentTypeFields,
 			...archiveFields,
 			...searchFields,
 			...folderFields,
@@ -172,6 +181,9 @@ export class EcoDMS implements INodeType {
 					break;
 				case Resource.Workflow:
 					responseData = await handleWorkflowOperations.call(this, items, operation, credentials);
+					break;
+				case Resource.DocumentType:
+					responseData = await handleDocumentTypeOperations.call(this, items, operation, credentials);
 					break;
 				default:
 					throw new NodeOperationError(this.getNode(), `Die Ressource "${resource}" wird nicht unterstützt!`);
