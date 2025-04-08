@@ -98,8 +98,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['bemerkung', 'changeid'],
 							},
 						},
@@ -117,8 +115,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
 						},
@@ -140,8 +136,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
 							},
 						},
@@ -155,10 +149,6 @@ export const searchFields: INodeProperties[] = [
 						type: 'string',
 						default: ' ',
 						displayOptions: {
-							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
-							},
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
@@ -174,8 +164,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -191,8 +179,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -208,8 +194,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.Search],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -281,8 +265,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['bemerkung', 'changeid', 'docid', 'revision', 'ctimestamp'],
 							},
 						},
@@ -301,8 +283,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['docart', 'folder', 'folderonly', 'status', 'mainfolder', 'mainfolderonly'],
 							},
 						},
@@ -325,8 +305,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['defdate', 'cdate'],
 							},
 						},
@@ -344,8 +322,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['fulltext', 'fulltext-ext'],
 							},
 						},
@@ -359,10 +335,6 @@ export const searchFields: INodeProperties[] = [
 						type: 'string',
 						default: ' ',
 						displayOptions: {
-							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
-							},
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
@@ -378,8 +350,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -395,8 +365,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -412,8 +380,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearch],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -529,8 +495,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['bemerkung', 'changeid'],
 							},
 						},
@@ -548,8 +512,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
 						},
@@ -571,8 +533,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
 							},
 						},
@@ -601,8 +561,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -618,8 +576,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -635,8 +591,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.AdvancedSearchExtv2],
 								classifyAttribut: ['status'],
 							},
 						},
@@ -806,8 +760,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['bemerkung', 'changeid'],
 							},
 						},
@@ -825,8 +777,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['docart', 'folder', 'status'],
 							},
 						},
@@ -848,8 +798,6 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
 							},
 						},
@@ -878,8 +826,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['docart'],
 							},
 						},
@@ -895,8 +841,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['folder'],
 							},
 						},
@@ -912,8 +856,6 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								resource: [Resource.Search],
-								operation: [Operation.SearchAndDownload],
 								classifyAttribut: ['status'],
 							},
 						},
