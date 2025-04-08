@@ -123,9 +123,9 @@ export async function getFolders(
 		
 		// Auto-Option als erstes Element
 		options.push({
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		});
 		
 		for (const folder of response) {
@@ -147,9 +147,9 @@ export async function getFolders(
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
 		return [{
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		}];
 	}
 }
@@ -186,9 +186,9 @@ export async function getDocumentTypes(
 		
 		// Auto-Option als erstes Element
 		options.push({
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		});
 		
 		for (const docType of response) {
@@ -210,9 +210,9 @@ export async function getDocumentTypes(
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
 		return [{
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		}];
 	}
 }
@@ -249,9 +249,9 @@ export async function getStatusValues(
 		
 		// Auto-Option als erstes Element
 		options.push({
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		});
 		
 		for (const status of response) {
@@ -273,9 +273,9 @@ export async function getStatusValues(
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
 		return [{
-			name: '-- Automatisch --',
-			value: 'auto',
-			description: 'Automatische Auswahl',
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
 		}];
 	}
 } 

@@ -288,8 +288,9 @@ function processFilters(this: IExecuteFunctions, filters: IDataObject[]): IDataO
 		
 		const value = filter.searchValue as string;
 		
-		// 'auto'-Wert überspringen
-		if (value === 'auto') {
+		// Leere Werte oder 'auto' überspringen
+		if (value === undefined || value === null || value === '' || value === 'auto') {
+			console.log(`Überspringe Filter für ${attribut} wegen leerem Wert "${value}"`);
 			continue;
 		}
 		

@@ -155,7 +155,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['docart'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -170,7 +170,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['folder', 'folderonly', 'mainfolder', 'mainfolderonly'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -185,7 +185,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
@@ -368,7 +368,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['docart'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
 					{
@@ -383,7 +383,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['folder', 'folderonly', 'mainfolder', 'mainfolderonly'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
 					{
@@ -398,7 +398,7 @@ export const searchFields: INodeProperties[] = [
 								classifyAttribut: ['status'],
 							},
 						},
-						default: 'auto',
+						default: '',
 						description: 'Der Status, nach dem gesucht werden soll',
 					},
 				],
