@@ -184,11 +184,6 @@ export class EcoDMS implements INodeType {
 		}
 
 		// Antwortdaten verarbeiten und zurückgeben
-		return this.processResponseData(responseData);
-	}
-
-	// Helper-Methode, um die Antwortdaten zu verarbeiten
-	private processResponseData(responseData: any): INodeExecutionData[][] {
 		const returnData: INodeExecutionData[] = [];
 		
 		if (Array.isArray(responseData)) {
