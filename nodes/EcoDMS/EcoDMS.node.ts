@@ -2778,54 +2778,36 @@ export class EcoDMS implements INodeType {
 					});
 				} else if (operation === 'classifyDocument') {
 					// Dokument-Klassifikation aktualisieren
-					const docId = this.getNodeParameter('docId', 0) as number;
 					const clDocId = this.getNodeParameter('clDocId', 0) as number;
-					const revision = this.getNodeParameter('revision', 0) as string;
-					const classifyAttributesData = this.getNodeParameter('classifyAttributes', 0) as IDataObject;
-					const editRolesString = this.getNodeParameter('editRoles', 0) as string;
-					const readRolesString = this.getNodeParameter('readRoles', 0) as string;
+					const fields = this.getNodeParameter('fields', 0) as IDataObject;
 					
-					// Klassifikationsattribute verarbeiten
-					const classifyAttributes: IDataObject = {
-						revision, // Revision ist erforderlich
-					};
-					
-					if (classifyAttributesData.attributes && Array.isArray(classifyAttributesData.attributes)) {
-						(classifyAttributesData.attributes as IDataObject[]).forEach((attribute) => {
-							const name = attribute.name as string;
-							const value = attribute.value as string;
-							if (name) {
-								classifyAttributes[name] = value || '';
-							}
-						});
+					// Prüfe, ob docId und clDocId in den Feldern vorhanden sind
+					if (!fields.docId) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Die Document-ID (docId) muss in den Feldern angegeben werden',
+						);
 					}
 					
-					// Bearbeitungsrollen verarbeiten
-					let editRoles: string[] = [];
-					if (editRolesString) {
-						editRoles = editRolesString.split(',').map(role => role.trim());
+					// Stelle sicher, dass classifyAttributes vorhanden ist
+					if (!fields.classifyAttributes) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Die classifyAttributes müssen in den Feldern angegeben werden',
+						);
 					}
 					
-					// Leserollen verarbeiten
-					let readRoles: string[] = [];
-					if (readRolesString) {
-						readRoles = readRolesString.split(',').map(role => role.trim());
-					}
-					
-					// Anfrageobjekt erstellen
-					const requestBody: IDataObject = {
-						docId,
-						clDocId,
-						classifyAttributes,
-						editRoles,
-						readRoles,
-					};
-					
-					// Dokument-Klassifikation aktualisieren
+					// API-Aufruf durchführen
 					responseData = await this.helpers.httpRequest({
 						url: `${credentials.serverUrl as string}/api/classifyDocument`,
 						method: 'POST',
-						body: requestBody,
+						body: {
+							docId: fields.docId,
+							clDocId: clDocId,
+							classifyAttributes: fields.classifyAttributes,
+							editRoles: fields.editRoles || [],
+							readRoles: fields.readRoles || [],
+						},
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
@@ -3362,7 +3344,7 @@ export class EcoDMS implements INodeType {
 					// Wenn kein dataString angegeben wurde, erstellen wir einen Standard-String
 					// Format: [oId][foldername]﻿M﻿﻿[mainFolder als 0/1]﻿[oId]﻿U﻿ 
 					const mainFolderValue = mainFolder ? '1' : '0';
-					requestBody.dataString = `${oId}${foldername}﻿M﻿﻿${mainFolderValue}﻿${oId}﻿U﻿ `;
+					requestBody.dataString = `${oId}${foldername}﻿M﻿﻿${mainFolderValue}${oId}﻿U﻿ `;
 				}
 				
 				// Ordner aktualisieren
@@ -3579,10 +3561,33 @@ export class EcoDMS implements INodeType {
 					const clDocId = this.getNodeParameter('clDocId', 0) as number;
 					const fields = this.getNodeParameter('fields', 0) as IDataObject;
 					
+					// Prüfe, ob docId und clDocId in den Feldern vorhanden sind
+					if (!fields.docId) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Die Document-ID (docId) muss in den Feldern angegeben werden',
+						);
+					}
+					
+					// Stelle sicher, dass classifyAttributes vorhanden ist
+					if (!fields.classifyAttributes) {
+						throw new NodeOperationError(
+							this.getNode(),
+							'Die classifyAttributes müssen in den Feldern angegeben werden',
+						);
+					}
+					
+					// API-Aufruf durchführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/documentClassification/${clDocId}`,
-						method: 'PUT',
-						body: fields,
+						url: `${credentials.serverUrl as string}/api/classifyDocument`,
+						method: 'POST',
+						body: {
+							docId: fields.docId,
+							clDocId: clDocId,
+							classifyAttributes: fields.classifyAttributes,
+							editRoles: fields.editRoles || [],
+							readRoles: fields.readRoles || [],
+						},
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
