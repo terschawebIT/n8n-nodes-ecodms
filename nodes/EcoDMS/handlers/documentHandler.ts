@@ -71,12 +71,6 @@ async function handleDownloadDocument(
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 	
-	// Prüfen, ob clDocId im aktuellen Element verfügbar ist
-	let clDocId: string | undefined;
-	if (items[0]?.json?.clDocId) {
-		clDocId = items[0].json.clDocId as string;
-	}
-	
 	// Prüfen, ob eine Version angegeben wurde
 	let version: string | undefined;
 	try {
@@ -85,102 +79,52 @@ async function handleDownloadDocument(
 		// Parameter existiert nicht, ignorieren
 	}
 	
-	console.log(`Dokumenten-Download: docId=${docId}, clDocId=${clDocId || 'nicht verfügbar'}, version=${version || 'nicht angegeben'}`);
-	
-	// Schrittweise versuchen, das Dokument mit verschiedenen Methoden herunterzuladen
-	const errorMessages: string[] = [];
-	
-	// 1. Methode: Mit docId und clDocId und optional Version
-	if (clDocId) {
-		try {
-			let downloadUrl;
-			if (version) {
-				downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}/version/${version}`);
-				console.log('Methode 1a: Download mit docId, clDocId und Version:', downloadUrl);
-			} else {
-				downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
-				console.log('Methode 1b: Download mit docId und clDocId:', downloadUrl);
-			}
-			
-			const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-			console.log('Methode 1 erfolgreich');
-			return result;
-		} catch (error) {
-			const errorMsg = `Methode 1 fehlgeschlagen: ${error.message}`;
-			console.error(errorMsg);
-			errorMessages.push(errorMsg);
-			// Weiter mit der nächsten Methode
-		}
-	}
-	
-	// 2. Methode: Nur mit docId
 	try {
+		// Standard ecoDMS API-Endpunkt für Dokumentdownload verwenden
 		const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
-		console.log('Methode 2: Download nur mit docId:', downloadUrl);
+		console.log('Dokument-Download URL:', downloadUrl);
 		
-		const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-		console.log('Methode 2 erfolgreich');
-		return result;
+		return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
 	} catch (error) {
-		const errorMsg = `Methode 2 fehlgeschlagen: ${error.message}`;
-		console.error(errorMsg);
-		errorMessages.push(errorMsg);
-		// Weiter mit der nächsten Methode
-	}
-	
-	// 3. Methode: getDocumentAsStream
-	try {
-		const downloadUrl = await getBaseUrl.call(this, `getDocumentAsStream/${docId}`);
-		console.log('Methode 3: Download mit getDocumentAsStream:', downloadUrl);
+		console.error(`Fehler beim Download mit Standard-Endpunkt: ${error.message}`);
 		
-		const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-		console.log('Methode 3 erfolgreich');
-		return result;
-	} catch (error) {
-		const errorMsg = `Methode 3 fehlgeschlagen: ${error.message}`;
-		console.error(errorMsg);
-		errorMessages.push(errorMsg);
-	}
-	
-	// 4. Methode: Versuche documentInfo zu verwenden, um clDocId zu erhalten
-	try {
-		console.log('Methode 4: Ermittle clDocId über documentInfo');
-		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
-		const documentInfo = await this.helpers.httpRequest({
-			url: infoUrl,
-			method: 'GET',
-			headers: {
-				'Accept': 'application/json',
-			},
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
+		// Fallback-Methoden bei Fehler
+		const errorMessages = [`1. Versuch fehlgeschlagen: ${error.message}`];
 		
-		if (documentInfo && documentInfo.clDocId) {
-			const retrievedClDocId = documentInfo.clDocId;
-			console.log(`Methode 4: clDocId ${retrievedClDocId} aus documentInfo ermittelt, versuche erneut mit beiden IDs`);
-			
-			const downloadUrl = await getBaseUrl.call(this, `document/${docId}/${retrievedClDocId}`);
-			const result = await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
-			console.log('Methode 4 erfolgreich');
-			return result;
-		} else {
-			throw new Error('Keine clDocId in documentInfo gefunden');
+		// Falls clDocId in den Eingabedaten vorhanden, mit dieser versuchen
+		if (items[0]?.json?.clDocId) {
+			const clDocId = items[0].json.clDocId as string;
+			try {
+				let downloadUrl;
+				if (version) {
+					downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}/version/${version}`);
+				} else {
+					downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
+				}
+				console.log('Fallback 1: Download mit docId und clDocId:', downloadUrl);
+				
+				return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+			} catch (fallbackError) {
+				errorMessages.push(`2. Versuch mit clDocId fehlgeschlagen: ${fallbackError.message}`);
+			}
 		}
-	} catch (error) {
-		const errorMsg = `Methode 4 fehlgeschlagen: ${error.message}`;
-		console.error(errorMsg);
-		errorMessages.push(errorMsg);
+		
+		// Alternativ getDocumentAsStream verwenden
+		try {
+			const downloadUrl = await getBaseUrl.call(this, `getDocumentAsStream/${docId}`);
+			console.log('Fallback 2: Download mit getDocumentAsStream:', downloadUrl);
+			
+			return await downloadDocumentFromUrl.call(this, downloadUrl, docId, binaryPropertyName, credentials);
+		} catch (fallbackError) {
+			errorMessages.push(`3. Versuch mit getDocumentAsStream fehlgeschlagen: ${fallbackError.message}`);
+		}
+		
+		// Alle Versuche fehlgeschlagen
+		throw new NodeOperationError(
+			this.getNode(),
+			`Fehler beim Herunterladen des Dokuments mit ID ${docId}:\n${errorMessages.join('\n')}`
+		);
 	}
-	
-	// Alle Methoden fehlgeschlagen
-	throw new NodeOperationError(
-		this.getNode(),
-		`Fehler beim Herunterladen des Dokuments mit ID ${docId}: Alle Methoden fehlgeschlagen.\n\nFehler:\n${errorMessages.join('\n')}`
-	);
 }
 
 /**
