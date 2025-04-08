@@ -15,20 +15,14 @@ export const searchOperations: INodeProperties = {
 		{
 			name: 'Einfache Suche',
 			value: Operation.Search,
-			description: 'Einfache Suche nach Dokumenten',
-			action: 'Einfache Suche durchführen',
+			description: 'Volltextsuche nach Dokumenten',
+			action: 'Volltextsuche durchführen',
 		},
 		{
 			name: 'Erweiterte Suche',
 			value: Operation.AdvancedSearch,
 			description: 'Erweiterte Suche mit mehreren Kriterien',
 			action: 'Erweiterte Suche durchführen',
-		},
-		{
-			name: 'Erweiterte Suche V2',
-			value: Operation.AdvancedSearchExtv2,
-			description: 'Erweiterte Suche mit komplexen Kriterien und Sortierung',
-			action: 'Erweiterte Suche V2 durchführen',
 		},
 		{
 			name: 'Suchen und Herunterladen',
@@ -45,214 +39,36 @@ export const searchOperations: INodeProperties = {
 export const searchFields: INodeProperties[] = [
 	// Einfache Suche
 	{
-		displayName: 'Suchfilter',
-		name: 'searchFilters',
-		type: 'fixedCollection',
-		typeOptions: {
-			multipleValues: true,
-			sortable: true,
-		},
-		placeholder: 'Filter hinzufügen',
-		default: {},
+		displayName: 'Suchtext',
+		name: 'searchText',
+		type: 'string',
+		default: '',
+		required: true,
 		displayOptions: {
 			show: {
 				resource: [Resource.Search],
 				operation: [Operation.Search],
 			},
 		},
-		options: [
-			{
-				name: 'filters',
-				displayName: 'Filter',
-				values: [
-					// Attribute für Suchfilter
-					{
-						displayName: 'Attribut',
-						name: 'classifyAttribut',
-						type: 'options',
-						options: [
-							{ name: 'Bemerkung', value: 'bemerkung' },
-							{ name: 'Bearbeiter', value: 'changeid' },
-							{ name: 'Dokumentart', value: 'docart' },
-							{ name: 'Dokumentdatum', value: 'cdate' },
-							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
-							{ name: 'Archivierungszeitpunkt', value: 'ctimestamp' },
-							{ name: 'Ordner (inkl. Unterordner)', value: 'folder' },
-							{ name: 'Nur in diesem Ordner', value: 'folderonly' },
-							{ name: 'Status', value: 'status' },
-							{ name: 'Revision', value: 'revision' },
-						],
-						default: 'bemerkung',
-						required: true,
-						description: 'Klassifikationsattribut, nach dem gesucht werden soll',
-					},
-					
-					// Textfelder (Bemerkung, Bearbeiter, Revision)
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Enthält (like)', value: 'like' },
-							{ name: 'Enthält nicht (!like)', value: '!like' },
-							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
-							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['bemerkung', 'changeid', 'revision'],
-							},
-						},
-						default: 'ilike',
-						required: true,
-						description: 'Vergleichsoperator für Textfelder',
-					},
-					
-					// Auswahlfelder (Dokumentart, Ordner, Status)
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart', 'folder', 'folderonly', 'status'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Vergleichsoperator für Auswahlfelder',
-					},
-					
-					// Datums- und Zeitfelder
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Größer als (>)', value: '>' },
-							{ name: 'Größer oder gleich (>=)', value: '>=' },
-							{ name: 'Kleiner als (<)', value: '<' },
-							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Vergleichsoperator für Datums- und Zeitfelder',
-					},
-					
-					// Suchwerte für verschiedene Attributtypen
-					// Textfelder
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'string',
-						default: '',
-						displayOptions: {
-							show: {
-								classifyAttribut: ['bemerkung', 'changeid', 'revision'],
-							},
-						},
-						placeholder: 'Textwert eingeben',
-						description: 'Suchbegriff (mit "ilike" wird nach Teilbegriffen gesucht)',
-					},
-					
-					// Datumsfelder
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'string',
-						default: '',
-						displayOptions: {
-							show: {
-								classifyAttribut: ['cdate', 'defdate'],
-							},
-						},
-						placeholder: 'YYYY-MM-DD',
-						description: 'Datum im Format YYYY-MM-DD, z.B. 2023-01-31',
-					},
-					
-					// Zeitstempel
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'string',
-						default: '',
-						displayOptions: {
-							show: {
-								classifyAttribut: ['ctimestamp'],
-							},
-						},
-						placeholder: 'YYYY-MM-DD HH:MM:SS',
-						description: 'Zeitstempel im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS',
-					},
-					
-					// Dropdown-Felder mit vordefinierten Werten
-					// Dokumentart
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getDocumentTypes',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart'],
-							},
-						},
-						default: 'auto',
-						description: 'Dokumenttyp auswählen',
-					},
-					
-					// Ordner
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getFolders',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['folder', 'folderonly'],
-							},
-						},
-						default: 'auto',
-						description: 'Ordner auswählen (folderonly: Nur in diesem Ordner, folder: inkl. Unterordner)',
-					},
-					
-					// Status
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getStatusValues',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['status'],
-							},
-						},
-						default: 'auto',
-						description: 'Dokumentstatus auswählen',
-					},
-				],
+		description: 'Text, nach dem in allen Dokumenten gesucht werden soll (Volltextsuche)',
+	},
+	{
+		displayName: 'Maximale Anzahl Dokumente',
+		name: 'maxDocuments',
+		type: 'number',
+		typeOptions: {
+			minValue: 1,
+			maxValue: 100,
+		},
+		default: 100,
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Search],
+				operation: [Operation.Search],
 			},
-		],
-		description: 'Suchfilter für ecoDMS Dokumente. Mehrere Filter werden mit UND verknüpft. Es werden maximal 100 Dokumente zurückgegeben.',
+		},
+		description: 'Maximale Anzahl der zurückgegebenen Dokumente (maximal 100)',
 	},
 	
 	// Erweiterte Suche
@@ -286,8 +102,10 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Bemerkung', value: 'bemerkung' },
 							{ name: 'Datum', value: 'cdate' },
 							{ name: 'Dokumentart', value: 'docart' },
-							{ name: 'Ordner', value: 'folder' },
+							{ name: 'Ordner (inkl. Unterordner)', value: 'folder' },
 							{ name: 'Nur in diesem Ordner', value: 'folderonly' },
+							{ name: 'Hauptordner (inkl. Unterordner)', value: 'mainfolder' },
+							{ name: 'Nur in diesem Hauptordner', value: 'mainfolderonly' },
 							{ name: 'Status', value: 'status' },
 							{ name: 'Bearbeiter', value: 'changeid' },
 							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
@@ -303,75 +121,10 @@ export const searchFields: INodeProperties[] = [
 						options: [
 							{ name: 'Gleich (=)', value: '=' },
 							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Enthält (like)', value: 'like' },
-							{ name: 'Enthält nicht (!like)', value: '!like' },
-							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
-							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
-							{ name: 'Größer als (>)', value: '>' },
-							{ name: 'Größer oder gleich (>=)', value: '>=' },
-							{ name: 'Kleiner als (<)', value: '<' },
-							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
 						displayOptions: {
 							show: {
-								classifyAttribut: ['bemerkung', 'changeid', 'docid', 'revision', 'ctimestamp'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					// Operator für erweiterte Suche - Dropdown/Festwerte
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart', 'folder', 'folderonly', 'status', 'mainfolder', 'mainfolderonly'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					// Operator für erweiterte Suche - Datumsfelder
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Größer als (>)', value: '>' },
-							{ name: 'Größer oder gleich (>=)', value: '>=' },
-							{ name: 'Kleiner als (<)', value: '<' },
-							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['defdate', 'cdate'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					// Operator für erweiterte Suche - Volltext
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['fulltext', 'fulltext-ext'],
+								classifyAttribut: ['docart', 'folder', 'folderonly', 'mainfolder', 'mainfolderonly', 'status'],
 							},
 						},
 						default: '=',
@@ -385,7 +138,7 @@ export const searchFields: INodeProperties[] = [
 						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
-								classifyAttribut: ['docart', 'folder', 'status'],
+								classifyAttribut: ['docart', 'folder', 'folderonly', 'mainfolder', 'mainfolderonly', 'status'],
 							},
 						},
 						description: 'Der Wert, nach dem gesucht werden soll',
@@ -414,7 +167,7 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								classifyAttribut: ['folder'],
+								classifyAttribut: ['folder', 'folderonly', 'mainfolder', 'mainfolderonly'],
 							},
 						},
 						default: 'auto',
@@ -460,14 +213,14 @@ export const searchFields: INodeProperties[] = [
 				name: 'personalDocumentsOnly',
 				type: 'boolean',
 				default: false,
-				description: 'Nur Dokumente anzeigen, die direkt dem Benutzer zugewiesen sind',
+				description: 'Wenn aktiviert, werden nur Dokumente zurückgegeben, die dem Benutzer direkt zugewiesen sind (über eine Benutzerrolle oder eine Rolle, der der Benutzer zugewiesen ist)',
 			},
 			{
 				displayName: 'Gelöschte Dokumente',
 				name: 'trashedDocuments',
 				type: 'boolean',
 				default: false,
-				description: 'Nur gelöschte Dokumente anzeigen',
+				description: 'Wenn aktiviert, werden nur gelöschte Dokumente in der Suche berücksichtigt, sonst nur nicht gelöschte Dokumente',
 			},
 			{
 				displayName: 'Maximale Anzahl Dokumente',
@@ -478,279 +231,14 @@ export const searchFields: INodeProperties[] = [
 					maxValue: 1000,
 				},
 				default: 100,
-				description: 'Maximale Anzahl der zurückgegebenen Dokumente (max. 1000)',
+				description: 'Maximale Anzahl der zurückgegebenen Dokumente (Maximalwert: 1000)',
 			},
 			{
 				displayName: 'Berechtigungen anzeigen',
 				name: 'readRoles',
 				type: 'boolean',
 				default: true,
-				description: 'Ob Lese- und Schreibberechtigungen für die Dokumente zurückgegeben werden sollen',
-			},
-		],
-	},
-	
-	// Erweiterte Suche V2
-	{
-		displayName: 'Suchfilter',
-		name: 'searchFilters',
-		type: 'fixedCollection',
-		typeOptions: {
-			multipleValues: true,
-			sortable: true,
-		},
-		placeholder: 'Filter hinzufügen',
-		default: {},
-		displayOptions: {
-			show: {
-				resource: [Resource.Search],
-				operation: [Operation.AdvancedSearchExtv2],
-			},
-		},
-		options: [
-			{
-				name: 'filters',
-				displayName: 'Filter',
-				values: [
-					{
-						displayName: 'Attribut',
-						name: 'classifyAttribut',
-						type: 'options',
-						options: [
-							{ name: 'Bemerkung', value: 'bemerkung' },
-							{ name: 'Datum', value: 'cdate' },
-							{ name: 'Dokumentart', value: 'docart' },
-							{ name: 'Ordner', value: 'folder' },
-							{ name: 'Nur in diesem Ordner', value: 'folderonly' },
-							{ name: 'Status', value: 'status' },
-							{ name: 'Bearbeiter', value: 'changeid' },
-							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
-							{ name: 'Zeitstempel', value: 'ctimestamp' },
-						],
-						default: 'bemerkung',
-						description: 'Das Attribut, nach dem gesucht werden soll',
-					},
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Enthält (like)', value: 'like' },
-							{ name: 'Enthält nicht (!like)', value: '!like' },
-							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
-							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['bemerkung', 'changeid'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart', 'folder', 'status'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Größer als (>)', value: '>' },
-							{ name: 'Größer oder gleich (>=)', value: '>=' },
-							{ name: 'Kleiner als (<)', value: '<' },
-							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'string',
-						default: 'Suchbegriff eingeben',
-						displayOptions: {
-							hide: {
-								classifyAttribut: ['docart', 'folder', 'status'],
-							},
-						},
-						description: 'Der Wert, nach dem gesucht werden soll',
-					},
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getDocumentTypes',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart'],
-							},
-						},
-						default: 'auto',
-						description: 'Die Dokumentart, nach der gesucht werden soll',
-					},
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getFolders',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['folder'],
-							},
-						},
-						default: 'auto',
-						description: 'Der Ordner, nach dem gesucht werden soll',
-					},
-					{
-						displayName: 'Wert',
-						name: 'searchValue',
-						type: 'options',
-						typeOptions: {
-							loadOptionsMethod: 'getStatusValues',
-						},
-						displayOptions: {
-							show: {
-								classifyAttribut: ['status'],
-							},
-						},
-						default: 'auto',
-						description: 'Der Status, nach dem gesucht werden soll',
-					},
-				],
-			},
-		],
-		description: 'Filter für die Suche. Mehrere Filter werden mit UND verknüpft.',
-	},
-	
-	// Sortierung für erweiterte Suche V2
-	{
-		displayName: 'Sortierung',
-		name: 'sortOrder',
-		type: 'fixedCollection',
-		typeOptions: {
-			multipleValues: true,
-			sortable: true,
-		},
-		placeholder: 'Sortierung hinzufügen',
-		default: {},
-		displayOptions: {
-			show: {
-				resource: [Resource.Search],
-				operation: [Operation.AdvancedSearchExtv2],
-			},
-		},
-		options: [
-			{
-				name: 'orders',
-				displayName: 'Sortierregel',
-				values: [
-					{
-						displayName: 'Attribut',
-						name: 'classifyAttribut',
-						type: 'options',
-						options: [
-							{ name: 'Bemerkung', value: 'bemerkung' },
-							{ name: 'Datum', value: 'cdate' },
-							{ name: 'Dokumentart', value: 'docart' },
-							{ name: 'Revision', value: 'revision' },
-							{ name: 'Status', value: 'status' },
-							{ name: 'Zeitstempel', value: 'ctimestamp' },
-						],
-						default: 'ctimestamp',
-						description: 'Das Attribut, nach dem sortiert werden soll',
-					},
-					{
-						displayName: 'Richtung',
-						name: 'sortDirection',
-						type: 'options',
-						options: [
-							{ name: 'Aufsteigend', value: 'asc' },
-							{ name: 'Absteigend', value: 'desc' },
-						],
-						default: 'desc',
-						description: 'Die Sortierrichtung',
-					},
-				],
-			},
-		],
-		description: 'Sortierung der Ergebnisse. Standard ist absteigend nach Dokument-ID, wenn nicht angegeben.',
-	},
-	
-	// Zusätzliche Parameter für erweiterte Suche V2
-	{
-		displayName: 'Zusätzliche Optionen',
-		name: 'additionalOptions',
-		type: 'collection',
-		placeholder: 'Optionen hinzufügen',
-		default: {},
-		displayOptions: {
-			show: {
-				resource: [Resource.Search],
-				operation: [Operation.AdvancedSearchExtv2],
-			},
-		},
-		options: [
-			{
-				displayName: 'Nur eigene Dokumente',
-				name: 'personalDocumentsOnly',
-				type: 'boolean',
-				default: false,
-				description: 'Nur Dokumente anzeigen, die direkt dem Benutzer zugewiesen sind',
-			},
-			{
-				displayName: 'Gelöschte Dokumente',
-				name: 'trashedDocuments',
-				type: 'boolean',
-				default: false,
-				description: 'Nur gelöschte Dokumente anzeigen',
-			},
-			{
-				displayName: 'Maximale Anzahl Dokumente',
-				name: 'maxDocumentCount',
-				type: 'number',
-				typeOptions: {
-					minValue: 1,
-					maxValue: 1000,
-				},
-				default: 100,
-				description: 'Maximale Anzahl der zurückgegebenen Dokumente (max. 1000)',
-			},
-			{
-				displayName: 'Berechtigungen anzeigen',
-				name: 'readRoles',
-				type: 'boolean',
-				default: true,
-				description: 'Ob Lese- und Schreibberechtigungen für die Dokumente zurückgegeben werden sollen',
+				description: 'Bestimmt, ob editRoles und readRoles im Ergebnis zurückgegeben werden. Wenn deaktiviert, werden leere Listen für die Rollen zurückgegeben',
 			},
 		],
 	},
@@ -787,6 +275,8 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Dokumentart', value: 'docart' },
 							{ name: 'Ordner', value: 'folder' },
 							{ name: 'Nur in diesem Ordner', value: 'folderonly' },
+							{ name: 'Hauptordner (inkl. Unterordner)', value: 'mainfolder' },
+							{ name: 'Nur in diesem Hauptordner', value: 'mainfolderonly' },
 							{ name: 'Status', value: 'status' },
 							{ name: 'Bearbeiter', value: 'changeid' },
 							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
@@ -890,7 +380,7 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								classifyAttribut: ['folder'],
+								classifyAttribut: ['folder', 'folderonly', 'mainfolder', 'mainfolderonly'],
 							},
 						},
 						default: 'auto',
@@ -941,12 +431,13 @@ export const searchFields: INodeProperties[] = [
 			maxValue: 100,
 		},
 		default: 10,
+		required: false,
 		displayOptions: {
 			show: {
 				resource: [Resource.Search],
 				operation: [Operation.SearchAndDownload],
 			},
 		},
-		description: 'Maximale Anzahl der herunterzuladenden Dokumente (aus Leistungsgründen limitiert)',
+		description: 'Maximale Anzahl der heruntergeladenen Dokumente (aus Leistungsgründen maximal 100)',
 	},
 ]; 
