@@ -1040,7 +1040,7 @@ export class EcoDMS implements INodeType {
 				// Weitere Operationen für classification würden hier folgen
 			} else if (resource === 'search') {
 				if (operation === 'search') {
-					// Einfache Suche über /api/search
+					// Einfache Suche über /api/searchDocuments
 					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 					
 					if (filters.length === 0) {
@@ -1061,13 +1061,18 @@ export class EcoDMS implements INodeType {
 							continue;
 						}
 						
+						// Wenn der Wert 'auto' ist, diesen Filter überspringen
+						if (value === 'auto') {
+							continue;
+						}
+						
 						// Attribut.Operator als Schlüssel verwenden
 						searchParams[`${attribut}.${operator}`] = value;
 					}
 					
 					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/search`,
+						url: `${credentials.serverUrl as string}/api/searchDocuments`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
@@ -1081,7 +1086,7 @@ export class EcoDMS implements INodeType {
 						},
 					});
 				} else if (operation === 'advancedSearch') {
-					// Erweiterte Suche über /api/advancedSearch
+					// Erweiterte Suche über /api/searchDocumentsExt
 					const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 					const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
 					
@@ -1133,7 +1138,7 @@ export class EcoDMS implements INodeType {
 					
 					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/advancedSearch`,
+						url: `${credentials.serverUrl as string}/api/searchDocumentsExt`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
@@ -1200,13 +1205,21 @@ export class EcoDMS implements INodeType {
 						const sortParams: IDataObject[] = [];
 						
 						for (const order of sortOrders) {
+							// Sicherstellen, dass die Attributwerte korrekt sind
+							if (!order.classifyAttribut) {
+								continue;
+							}
+							
 							sortParams.push({
 								attribut: order.classifyAttribut,
 								direction: order.sortDirection || 'desc',
 							});
 						}
 						
-						searchParams.sort = sortParams;
+						// Nur hinzufügen, wenn tatsächlich Sortierparameter definiert sind
+						if (sortParams.length > 0) {
+							searchParams.sort = sortParams;
+						}
 					}
 					
 					// Suchfilter zu den Parametern hinzufügen
@@ -1214,7 +1227,7 @@ export class EcoDMS implements INodeType {
 					
 					// API-Anfrage ausführen
 					responseData = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/advancedSearchV2`,
+						url: `${credentials.serverUrl as string}/api/searchDocumentsExtv2`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
@@ -1266,7 +1279,7 @@ export class EcoDMS implements INodeType {
 					
 					// API-Anfrage ausführen
 					const searchResult = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/search`,
+						url: `${credentials.serverUrl as string}/api/searchDocuments`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
