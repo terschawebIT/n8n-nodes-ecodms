@@ -24,6 +24,12 @@ export const documentOperations: INodeProperties = {
 			action: 'Ein Dokument mit Klassifikation herunterladen',
 		},
 		{
+			name: 'Dokumentversion herunterladen',
+			value: Operation.GetDocumentVersion,
+			description: 'Eine bestimmte Version eines Dokuments herunterladen',
+			action: 'Eine Dokumentversion herunterladen',
+		},
+		{
 			name: 'Dokumentinformationen abrufen',
 			value: Operation.GetDocumentInfo,
 			description: 'Informationen zu einem Dokument abrufen',
@@ -409,8 +415,9 @@ export const documentFields: INodeProperties[] = [
 	// Parameter für Dokument mit Klassifikation herunterladen
 	{
 		displayName: 'Dokument-ID',
-		name: 'documentId',
-		type: 'string',
+		name: 'docId',
+		type: 'number',
+		default: 0,
 		required: true,
 		displayOptions: {
 			show: {
@@ -418,13 +425,13 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.GetDocumentWithClassification],
 			},
 		},
-		default: '',
 		description: 'ID des Dokuments, das heruntergeladen werden soll',
 	},
 	{
 		displayName: 'Klassifikations-ID',
 		name: 'clDocId',
-		type: 'string',
+		type: 'number',
+		default: 0,
 		required: true,
 		displayOptions: {
 			show: {
@@ -432,7 +439,92 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.GetDocumentWithClassification],
 			},
 		},
-		default: '',
-		description: 'ID der Dokumentklassifikation, die heruntergeladen werden soll',
+		description: 'ID der Klassifikation des Dokuments',
+	},
+	{
+		displayName: 'Binäre Eigenschaft',
+		name: 'binaryProperty',
+		type: 'string',
+		default: 'data',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentWithClassification],
+			},
+		},
+		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
+	},
+	
+	// Parameter für Dokumentversion herunterladen
+	{
+		displayName: 'Dokument-ID',
+		name: 'docId',
+		type: 'number',
+		default: 0,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentVersion],
+			},
+		},
+		description: 'ID des Dokuments, dessen Version heruntergeladen werden soll',
+	},
+	{
+		displayName: 'Version',
+		name: 'version',
+		type: 'number',
+		default: 1,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentVersion],
+			},
+		},
+		description: 'Versionsnummer des Dokuments, die heruntergeladen werden soll',
+	},
+	{
+		displayName: 'Mit Klassifikation',
+		name: 'useClassification',
+		type: 'boolean',
+		default: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentVersion],
+			},
+		},
+		description: 'Ob zusätzlich eine Klassifikations-ID verwendet werden soll',
+	},
+	{
+		displayName: 'Klassifikations-ID',
+		name: 'clDocId',
+		type: 'number',
+		default: 0,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentVersion],
+				useClassification: [true],
+			},
+		},
+		description: 'ID der Klassifikation des Dokuments',
+	},
+	{
+		displayName: 'Binäre Eigenschaft',
+		name: 'binaryProperty',
+		type: 'string',
+		default: 'data',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.GetDocumentVersion],
+			},
+		},
+		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
 	},
 ]; 
