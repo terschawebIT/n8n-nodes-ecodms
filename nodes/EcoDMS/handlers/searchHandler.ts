@@ -38,7 +38,18 @@ export async function handleSearchOperations(
 }
 
 /**
- * Implementiert die einfache Suche
+ * Implementiert die einfache Suche mit dem Endpunkt `/api/searchDocuments`
+ * 
+ * Die einfache Suche ermöglicht es, Dokumente anhand mehrerer Suchkriterien zu finden.
+ * Jedes Suchkriterium (Filter) besteht aus:
+ * - classifyAttribut: Name des Klassifikationsattributs (z.B. bemerkung, docart, folder)
+ * - searchOperator: Vergleichsoperator (=, !=, like, ilike, >, <, etc.)
+ * - searchValue: Suchwert
+ * 
+ * Die Suchfilter werden mit einem logischen UND verknüpft.
+ * Die API gibt maximal 100 Dokumente zurück, sortiert nach Dokument-ID in absteigender Reihenfolge.
+ * 
+ * @see https://docs.ecodms.de/api/searchDocuments
  */
 async function handleSimpleSearch(
 	this: IExecuteFunctions,
@@ -50,48 +61,122 @@ async function handleSimpleSearch(
 		throw new NodeOperationError(this.getNode(), 'Mindestens ein Suchfilter muss angegeben werden');
 	}
 	
-	// Suchfilter verarbeiten
+	// Suchfilter vorbereiten
 	const searchFilters: IDataObject[] = [];
 	
 	for (const filter of filters) {
 		const attribut = filter.classifyAttribut as string;
 		let operator = filter.searchOperator as string;
+		const value = filter.searchValue as string;
 		
-		// Operator-Verarbeitung
-		if (!operator || operator === '') {
+		// Prüfen, ob alle erforderlichen Felder vorhanden sind
+		if (!attribut) {
+			throw new NodeOperationError(this.getNode(), 'Klassifikationsattribut muss angegeben werden');
+		}
+		
+		if (!operator) {
 			operator = getDefaultOperator(attribut);
 		}
 		
-		const value = filter.searchValue as string;
-		
-		// 'auto'-Wert überspringen
-		if (value === 'auto') {
+		// Leere Werte oder "auto" überspringen
+		if (!value || value === '' || value === 'auto') {
 			continue;
+		}
+		
+		// Spezielle Validierung für Datumsfelder
+		if (['cdate', 'defdate'].includes(attribut)) {
+			// Prüfen, ob das Datum im ISO-Format (YYYY-MM-DD) ist
+			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+			if (!dateRegex.test(value)) {
+				throw new NodeOperationError(
+					this.getNode(),
+					`Datum für "${attribut}" muss im Format YYYY-MM-DD sein (z.B. 2023-01-31)`,
+				);
+			}
+		}
+		
+		// Spezielle Validierung für Zeitstempel
+		if (attribut === 'ctimestamp') {
+			// Prüfen, ob der Zeitstempel im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS ist
+			const timestampRegex = /^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/;
+			if (!timestampRegex.test(value)) {
+				throw new NodeOperationError(
+					this.getNode(),
+					'Zeitstempel muss im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS sein',
+				);
+			}
+		}
+		
+		// Für 'like' und 'ilike' Operatoren: Wildcard-Zeichen hinzufügen, falls nicht vorhanden
+		let searchValue = value;
+		if ((operator === 'like' || operator === 'ilike' || operator === '!like' || operator === '!ilike') && 
+			!value.includes('%')) {
+			searchValue = `%${value}%`;
 		}
 		
 		// Filter hinzufügen
 		searchFilters.push({
 			classifyAttribut: attribut,
 			searchOperator: operator,
-			searchValue: value,
+			searchValue: searchValue,
 		});
 	}
 	
+	// Prüfen, ob nach der Validierung noch Filter übrig sind
+	if (searchFilters.length === 0) {
+		throw new NodeOperationError(
+			this.getNode(),
+			'Keine gültigen Suchfilter nach Validierung. Bitte mindestens einen gültigen Filter angeben.',
+		);
+	}
+	
 	// API-Anfrage ausführen
-	return await this.helpers.httpRequest({
-		url: `${credentials.serverUrl as string}/api/searchDocuments`,
-		method: 'POST',
-		headers: {
-			'Accept': 'application/json',
-			'Content-Type': 'application/json',
-		},
-		body: searchFilters,
-		json: true,
-		auth: {
-			username: credentials.username as string,
-			password: credentials.password as string,
-		},
-	});
+	try {
+		return await this.helpers.httpRequest({
+			url: `${credentials.serverUrl as string}/api/searchDocuments`,
+			method: 'POST',
+			headers: {
+				'Accept': 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: searchFilters,
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
+	} catch (error) {
+		// Fehlerbehandlung für verschiedene HTTP-Statuscodes
+		if (error.statusCode === 401) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Nicht autorisiert. Bitte überprüfen Sie Ihre Zugangsdaten.',
+			);
+		} else if (error.statusCode === 404) {
+			// Spezifische 404-Fehlermeldungen auswerten und benutzerfreundlich anzeigen
+			if (error.message.includes('List of search filters must not be null')) {
+				throw new NodeOperationError(this.getNode(), 'Die Liste der Suchfilter darf nicht leer sein');
+			} else if (error.message.includes('search attribute was not found')) {
+				throw new NodeOperationError(this.getNode(), 'Ein Suchattribut wurde nicht gefunden');
+			} else if (error.message.includes('invalid search operator')) {
+				throw new NodeOperationError(this.getNode(), 'Ungültiger Suchoperator für ein Attribut verwendet');
+			} else if (error.message.includes('invalid date or timestamp pattern')) {
+				throw new NodeOperationError(this.getNode(), 'Ungültiges Datums- oder Zeitstempelformat');
+			} else {
+				throw new NodeOperationError(
+					this.getNode(),
+					`Fehler bei der Suche: ${error.message}`,
+				);
+			}
+		} else {
+			// Allgemeinen Fehler weiterleiten
+			throw new NodeOperationError(
+				this.getNode(),
+				`Fehler bei der Suche: ${error.message}`,
+			);
+		}
+	}
 }
 
 /**

@@ -65,25 +65,29 @@ export const searchFields: INodeProperties[] = [
 				name: 'filters',
 				displayName: 'Filter',
 				values: [
-					// Operator für einfache Suche - Textattribute
+					// Attribute für Suchfilter
 					{
 						displayName: 'Attribut',
 						name: 'classifyAttribut',
 						type: 'options',
 						options: [
 							{ name: 'Bemerkung', value: 'bemerkung' },
-							{ name: 'Datum', value: 'cdate' },
+							{ name: 'Bearbeiter', value: 'changeid' },
 							{ name: 'Dokumentart', value: 'docart' },
-							{ name: 'Ordner', value: 'folder' },
+							{ name: 'Dokumentdatum', value: 'cdate' },
+							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
+							{ name: 'Archivierungszeitpunkt', value: 'ctimestamp' },
+							{ name: 'Ordner (inkl. Unterordner)', value: 'folder' },
 							{ name: 'Nur in diesem Ordner', value: 'folderonly' },
 							{ name: 'Status', value: 'status' },
-							{ name: 'Bearbeiter', value: 'changeid' },
-							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
-							{ name: 'Zeitstempel', value: 'ctimestamp' },
+							{ name: 'Revision', value: 'revision' },
 						],
 						default: 'bemerkung',
-						description: 'Das Attribut, nach dem gesucht werden soll',
+						required: true,
+						description: 'Klassifikationsattribut, nach dem gesucht werden soll',
 					},
+					
+					// Textfelder (Bemerkung, Bearbeiter, Revision)
 					{
 						displayName: 'Operator',
 						name: 'searchOperator',
@@ -98,13 +102,15 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								classifyAttribut: ['bemerkung', 'changeid'],
+								classifyAttribut: ['bemerkung', 'changeid', 'revision'],
 							},
 						},
-						default: '=',
+						default: 'ilike',
 						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
+						description: 'Vergleichsoperator für Textfelder',
 					},
+					
+					// Auswahlfelder (Dokumentart, Ordner, Status)
 					{
 						displayName: 'Operator',
 						name: 'searchOperator',
@@ -115,13 +121,15 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								classifyAttribut: ['docart', 'folder', 'status'],
+								classifyAttribut: ['docart', 'folder', 'folderonly', 'status'],
 							},
 						},
 						default: '=',
 						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
+						description: 'Vergleichsoperator für Auswahlfelder',
 					},
+					
+					// Datums- und Zeitfelder
 					{
 						displayName: 'Operator',
 						name: 'searchOperator',
@@ -141,20 +149,57 @@ export const searchFields: INodeProperties[] = [
 						},
 						default: '=',
 						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
+						description: 'Vergleichsoperator für Datums- und Zeitfelder',
 					},
+					
+					// Suchwerte für verschiedene Attributtypen
+					// Textfelder
 					{
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: 'Suchbegriff eingeben',
+						default: '',
 						displayOptions: {
-							hide: {
-								classifyAttribut: ['docart', 'folder', 'status'],
+							show: {
+								classifyAttribut: ['bemerkung', 'changeid', 'revision'],
 							},
 						},
-						description: 'Der Wert, nach dem gesucht werden soll',
+						placeholder: 'Textwert eingeben',
+						description: 'Suchbegriff (mit "ilike" wird nach Teilbegriffen gesucht)',
 					},
+					
+					// Datumsfelder
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'string',
+						default: '',
+						displayOptions: {
+							show: {
+								classifyAttribut: ['cdate', 'defdate'],
+							},
+						},
+						placeholder: 'YYYY-MM-DD',
+						description: 'Datum im Format YYYY-MM-DD, z.B. 2023-01-31',
+					},
+					
+					// Zeitstempel
+					{
+						displayName: 'Wert',
+						name: 'searchValue',
+						type: 'string',
+						default: '',
+						displayOptions: {
+							show: {
+								classifyAttribut: ['ctimestamp'],
+							},
+						},
+						placeholder: 'YYYY-MM-DD HH:MM:SS',
+						description: 'Zeitstempel im Format YYYY-MM-DD oder YYYY-MM-DD HH:MM:SS',
+					},
+					
+					// Dropdown-Felder mit vordefinierten Werten
+					// Dokumentart
 					{
 						displayName: 'Wert',
 						name: 'searchValue',
@@ -168,8 +213,10 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						default: 'auto',
-						description: 'Die Dokumentart, nach der gesucht werden soll',
+						description: 'Dokumenttyp auswählen',
 					},
+					
+					// Ordner
 					{
 						displayName: 'Wert',
 						name: 'searchValue',
@@ -179,12 +226,14 @@ export const searchFields: INodeProperties[] = [
 						},
 						displayOptions: {
 							show: {
-								classifyAttribut: ['folder'],
+								classifyAttribut: ['folder', 'folderonly'],
 							},
 						},
 						default: 'auto',
-						description: 'Der Ordner, nach dem gesucht werden soll',
+						description: 'Ordner auswählen (folderonly: Nur in diesem Ordner, folder: inkl. Unterordner)',
 					},
+					
+					// Status
 					{
 						displayName: 'Wert',
 						name: 'searchValue',
@@ -198,12 +247,12 @@ export const searchFields: INodeProperties[] = [
 							},
 						},
 						default: 'auto',
-						description: 'Der Status, nach dem gesucht werden soll',
+						description: 'Dokumentstatus auswählen',
 					},
 				],
 			},
 		],
-		description: 'Filter für die Suche. Mehrere Filter werden mit UND verknüpft.',
+		description: 'Suchfilter für ecoDMS Dokumente. Mehrere Filter werden mit UND verknüpft. Es werden maximal 100 Dokumente zurückgegeben.',
 	},
 	
 	// Erweiterte Suche
