@@ -95,18 +95,31 @@ async function handleGetDocument(
 		
 		// Metadaten des Dokuments abrufen
 		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
-		const documentInfo = await this.helpers.httpRequest({
-			url: infoUrl,
-			method: 'GET',
-			headers: {
-				'Accept': 'application/json',
-			},
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
+		console.log(`Dokument-Info URL: ${infoUrl}`);
+		
+		let documentInfo;
+		try {
+			documentInfo = await this.helpers.httpRequest({
+				url: infoUrl,
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+			});
+		} catch (infoError) {
+			console.error(`Fehler beim Abrufen der Dokumentinformationen: ${infoError.message}`);
+			// Wenn die Infos nicht abgerufen werden können, erstellen wir ein Basisdokument-Info-Objekt
+			documentInfo = {
+				docId,
+				success: true,
+				note: 'Dokumentinformationen konnten nicht abgerufen werden'
+			};
+		}
 		
 		// Dateiname aus Content-Disposition-Header extrahieren
 		const contentDisposition = response.headers['content-disposition'] as string;
@@ -135,10 +148,15 @@ async function handleGetDocument(
 		
 		return [newItem];
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Herunterladen des Dokuments mit ID ${docId}: ${error.message}`
-		);
+		// Mehr Diagnose-Informationen anzeigen
+		let errorMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId}: ${error.message}`;
+		
+		if (error.statusCode === 404) {
+			errorMessage = `Das Dokument mit ID ${docId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen dieses Dokuments. Bitte prüfen Sie die Dokument-ID und die API-Berechtigungen.`;
+		}
+		
+		console.error(errorMessage);
+		throw new NodeOperationError(this.getNode(), errorMessage);
 	}
 }
 
@@ -206,10 +224,15 @@ async function handleGetDocumentWithClassification(
 		
 		return [newItem];
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Herunterladen des Dokuments mit ID ${docId} und Klassifikations-ID ${clDocId}: ${error.message}`
-		);
+		// Mehr Diagnose-Informationen anzeigen
+		let errorMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId} und Klassifikations-ID ${clDocId}: ${error.message}`;
+		
+		if (error.statusCode === 404) {
+			errorMessage = `Das Dokument mit ID ${docId} und Klassifikations-ID ${clDocId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen. Bitte prüfen Sie die IDs und die API-Berechtigungen.`;
+		}
+		
+		console.error(errorMessage);
+		throw new NodeOperationError(this.getNode(), errorMessage);
 	}
 }
 
@@ -288,10 +311,29 @@ async function handleGetDocumentVersion(
 		
 		return [newItem];
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Herunterladen der Dokumentversion mit ID ${docId} und Version ${version}: ${error.message}`
-		);
+		// Mehr Diagnose-Informationen anzeigen
+		let errorMessage = `Fehler beim Herunterladen der Dokumentversion mit ID ${docId} und Version ${version}`;
+		
+		if (useClassification) {
+			const clDocId = this.getNodeParameter('clDocId', 0) as string;
+			errorMessage += ` und Klassifikations-ID ${clDocId}`;
+		}
+		
+		errorMessage += `: ${error.message}`;
+		
+		if (error.statusCode === 404) {
+			errorMessage = `Die angeforderte Dokumentversion (Dokument-ID: ${docId}, Version: ${version}`;
+			
+			if (useClassification) {
+				const clDocId = this.getNodeParameter('clDocId', 0) as string;
+				errorMessage += `, Klassifikations-ID: ${clDocId}`;
+			}
+			
+			errorMessage += `) wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen. Bitte prüfen Sie die IDs, die Versionsnummer und die API-Berechtigungen.`;
+		}
+		
+		console.error(errorMessage);
+		throw new NodeOperationError(this.getNode(), errorMessage);
 	}
 }
 
