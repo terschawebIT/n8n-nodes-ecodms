@@ -277,21 +277,57 @@ async function handleSearchAndDownload(
 function processFilters(this: IExecuteFunctions, filters: IDataObject[]): IDataObject[] {
 	const searchFilters: IDataObject[] = [];
 	
+	// Prüfen, ob überhaupt Filter vorhanden sind
+	if (!filters || !Array.isArray(filters) || filters.length === 0) {
+		console.log('Keine Suchfilter angegeben oder leeres Array erhalten');
+		return searchFilters;
+	}
+	
 	for (const filter of filters) {
-		const attribut = filter.classifyAttribut as string;
-		let operator = filter.searchOperator as string;
+		// Grundlegende Validierung
+		if (!filter || typeof filter !== 'object') {
+			console.log('Ungültiges Filter-Objekt übersprungen:', filter);
+			continue;
+		}
 		
+		const attribut = filter.classifyAttribut as string;
+		if (!attribut) {
+			console.log('Filter ohne Attribut übersprungen');
+			continue;
+		}
+		
+		let operator = filter.searchOperator as string;
 		// Operator-Verarbeitung
 		if (!operator || operator === '') {
 			operator = getDefaultOperator(attribut);
+			console.log(`Operator für ${attribut} auf Standardwert "${operator}" gesetzt`);
 		}
 		
-		const value = filter.searchValue as string;
+		let value = filter.searchValue as string;
+		
+		// Konvertierung von null/undefined zu leerem String für konsistentes Verhalten
+		if (value === undefined || value === null) {
+			value = '';
+		}
 		
 		// Leere Werte oder 'auto' überspringen
-		if (value === undefined || value === null || value === '' || value === 'auto') {
+		if (value === '' || value === 'auto') {
 			console.log(`Überspringe Filter für ${attribut} wegen leerem Wert "${value}"`);
 			continue;
+		}
+		
+		// Spezielle Behandlung für ID-basierte Werte (bei Dropdown-Menüs)
+		if (['docart', 'folder', 'folderonly', 'status', 'mainfolder', 'mainfolderonly'].includes(attribut)) {
+			// Stelle sicher, dass der Wert eine gültige ID ist
+			try {
+				// Versuche, ID als Zahl zu interpretieren (für API-Konsistenz)
+				const numericId = parseInt(value, 10);
+				if (!isNaN(numericId)) {
+					value = numericId.toString();
+				}
+			} catch (error) {
+				console.log(`Warnung: Probleme bei der Konvertierung der ID für ${attribut}: ${value}`);
+			}
 		}
 		
 		// Filter hinzufügen
@@ -300,6 +336,8 @@ function processFilters(this: IExecuteFunctions, filters: IDataObject[]): IDataO
 			searchOperator: operator,
 			searchValue: value,
 		});
+		
+		console.log(`Filter hinzugefügt: ${attribut} ${operator} "${value}"`);
 	}
 	
 	return searchFilters;

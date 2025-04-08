@@ -100,9 +100,14 @@ export async function getFolders(
 	try {
 		const credentials = await this.getCredentials('ecoDmsApi') as unknown as EcoDmsApiCredentials;
 		
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'folders');
+		
+		console.log('Folders-API-URL:', url);
+		
 		// API-Aufruf, um Ordner abzurufen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl}/api/folders`,
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -114,8 +119,10 @@ export async function getFolders(
 			},
 		});
 		
+		console.log('Folders-API-Antwort:', JSON.stringify(response).substring(0, 200));
+		
 		if (!Array.isArray(response)) {
-			throw new Error('Unerwartetes Antwortformat beim Abrufen der Ordner');
+			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Ordner: ${JSON.stringify(response).substring(0, 200)}`);
 		}
 		
 		// Ordner in das erforderliche Format konvertieren
@@ -143,14 +150,11 @@ export async function getFolders(
 			options.unshift(autoOption!);
 		}
 		
+		console.log(`${options.length} Ordner-Optionen geladen`);
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
-		return [{
-			name: '-- Bitte auswählen --',
-			value: '',
-			description: 'Bitte einen Wert auswählen',
-		}];
+		throw new Error(`Fehler beim Abrufen der Ordner: ${error.message}`);
 	}
 }
 
@@ -163,9 +167,14 @@ export async function getDocumentTypes(
 	try {
 		const credentials = await this.getCredentials('ecoDmsApi') as unknown as EcoDmsApiCredentials;
 		
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'types');
+		
+		console.log('DocumentTypes-API-URL:', url);
+		
 		// API-Aufruf, um Dokumentarten abzurufen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl}/api/types`,
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -177,8 +186,10 @@ export async function getDocumentTypes(
 			},
 		});
 		
+		console.log('DocumentTypes-API-Antwort:', JSON.stringify(response).substring(0, 200));
+		
 		if (!Array.isArray(response)) {
-			throw new Error('Unerwartetes Antwortformat beim Abrufen der Dokumentarten');
+			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Dokumentarten: ${JSON.stringify(response).substring(0, 200)}`);
 		}
 		
 		// Dokumentarten in das erforderliche Format konvertieren
@@ -206,14 +217,11 @@ export async function getDocumentTypes(
 			options.unshift(autoOption!);
 		}
 		
+		console.log(`${options.length} Dokumenttyp-Optionen geladen`);
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
-		return [{
-			name: '-- Bitte auswählen --',
-			value: '',
-			description: 'Bitte einen Wert auswählen',
-		}];
+		throw new Error(`Fehler beim Abrufen der Dokumentarten: ${error.message}`);
 	}
 }
 
@@ -226,9 +234,14 @@ export async function getStatusValues(
 	try {
 		const credentials = await this.getCredentials('ecoDmsApi') as unknown as EcoDmsApiCredentials;
 		
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'status');
+		
+		console.log('Status-API-URL:', url);
+		
 		// API-Aufruf, um Status-Werte abzurufen
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl}/api/status`,
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -240,8 +253,10 @@ export async function getStatusValues(
 			},
 		});
 		
+		console.log('Status-API-Antwort:', JSON.stringify(response).substring(0, 200));
+		
 		if (!Array.isArray(response)) {
-			throw new Error('Unerwartetes Antwortformat beim Abrufen der Status-Werte');
+			throw new Error(`Unerwartetes Antwortformat beim Abrufen der Status-Werte: ${JSON.stringify(response).substring(0, 200)}`);
 		}
 		
 		// Status-Werte in das erforderliche Format konvertieren
@@ -269,13 +284,10 @@ export async function getStatusValues(
 			options.unshift(autoOption!);
 		}
 		
+		console.log(`${options.length} Status-Optionen geladen`);
 		return options;
 	} catch (error) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		return [{
-			name: '-- Bitte auswählen --',
-			value: '',
-			description: 'Bitte einen Wert auswählen',
-		}];
+		throw new Error(`Fehler beim Abrufen der Status-Werte: ${error.message}`);
 	}
 } 
