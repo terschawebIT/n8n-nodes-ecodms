@@ -223,13 +223,17 @@ async function handleClassifyDocument(
 			classifyAttributes: classifyData,
 		};
 		
-		if (editRoles) {
-			requestBody.editRoles = editRoles.split(',').map(role => role.trim());
+		if (editRolesFromInput || editRoles) {
+			requestBody.editRoles = editRolesFromInput || 
+				(editRoles ? editRoles.split(',').map(role => role.trim()) : []);
+		} else {
+			// Immer editRoles senden, auch wenn leer
+			requestBody.editRoles = [];
 		}
 		
-		if (readRoles) {
-			requestBody.readRoles = readRoles.split(',').map(role => role.trim());
-		}
+		// Immer readRoles senden, auch wenn leer
+		requestBody.readRoles = readRolesFromInput || 
+			(readRoles ? readRoles.split(',').map(role => role.trim()) : []);
 		
 		// Debug-Logging
 		console.log('Request URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
