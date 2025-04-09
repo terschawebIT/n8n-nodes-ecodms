@@ -185,8 +185,30 @@ async function handleClassifyDocument(
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const clDocId = this.getNodeParameter('clDocId', 0) as number;
 		const classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as string;
-		const editRoles = this.getNodeParameter('editRoles', 0, '') as string;
-		const readRoles = this.getNodeParameter('readRoles', 0, '') as string;
+		
+		// Überprüfe, ob editRoles und readRoles direkt im Input-Item vorhanden sind
+		let editRolesFromInput: string[] | undefined;
+		let readRolesFromInput: string[] | undefined;
+		
+		// Versuche, die Daten aus dem ersten Item zu extrahieren
+		if (items.length > 0 && items[0].json) {
+			const jsonData = items[0].json as IDataObject;
+			if (jsonData.editRoles && Array.isArray(jsonData.editRoles)) {
+				editRolesFromInput = jsonData.editRoles as string[];
+			}
+			if (jsonData.readRoles && Array.isArray(jsonData.readRoles)) {
+				readRolesFromInput = jsonData.readRoles as string[];
+			}
+		}
+		
+		// Fallback zu den Parametern, falls im Input nicht vorhanden
+		const editRoles = editRolesFromInput ? 
+			editRolesFromInput.join(',') : 
+			this.getNodeParameter('editRoles', 0, '') as string;
+		
+		const readRoles = readRolesFromInput ? 
+			readRolesFromInput.join(',') : 
+			this.getNodeParameter('readRoles', 0, '') as string;
 		
 		let classifyData: IDataObject;
 		try {
@@ -209,20 +231,80 @@ async function handleClassifyDocument(
 			requestBody.readRoles = readRoles.split(',').map(role => role.trim());
 		}
 		
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/classifyDocument`,
-			method: 'POST',
-			headers: {
-				'Accept': 'application/json',
-				'Content-Type': 'application/json',
-			},
-			body: requestBody,
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
+		// Debug-Logging
+		console.log('Request URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
+		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+		
+		// Baue die Server-URL ohne Trailing-Slash
+		let serverUrl = credentials.serverUrl as string;
+		if (serverUrl.endsWith('/')) {
+			serverUrl = serverUrl.slice(0, -1);
+		}
+		
+		try {
+			return await this.helpers.httpRequest({
+				url: `${serverUrl}/api/classifyDocument`,
+				method: 'POST',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: requestBody,
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+			});
+		} catch (error) {
+			if (error.response && error.response.status === 404) {
+				console.log('Erster Versuch mit /api/classifyDocument fehlgeschlagen, versuche alternativen Pfad...');
+				// Alternative 1: Mit Pfad-Parameter statt Body
+				try {
+					return await this.helpers.httpRequest({
+						url: `${serverUrl}/api/classifyDocument/${docId}/${clDocId}`,
+						method: 'POST',
+						headers: {
+							'Accept': 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: {
+							classifyAttributes: classifyData,
+							...(editRoles ? { editRoles: requestBody.editRoles } : {}),
+							...(readRoles ? { readRoles: requestBody.readRoles } : {}),
+						},
+						json: true,
+						auth: {
+							username: credentials.username as string,
+							password: credentials.password as string,
+						},
+					});
+				} catch (innerError) {
+					// Alternative 2: Mit /v2/ API-Version
+					try {
+						return await this.helpers.httpRequest({
+							url: `${serverUrl}/api/v2/classifyDocument`,
+							method: 'POST',
+							headers: {
+								'Accept': 'application/json',
+								'Content-Type': 'application/json',
+							},
+							body: requestBody,
+							json: true,
+							auth: {
+								username: credentials.username as string,
+								password: credentials.password as string,
+							},
+						});
+					} catch (finalError) {
+						// Wenn alles fehlschlägt, wirf den ursprünglichen Fehler
+						console.log('Alle API-Pfad-Versuche fehlgeschlagen:', finalError.message);
+						throw error;
+					}
+				}
+			}
+			throw error;
+		}
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
