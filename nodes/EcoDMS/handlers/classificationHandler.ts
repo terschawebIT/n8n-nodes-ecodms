@@ -44,7 +44,7 @@ async function handleGetClassifyAttributes(
 ): Promise<IDataObject> {
 	try {
 		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getClassifyAttributes`,
+			url: `${credentials.serverUrl as string}/api/classifyAttributes`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
