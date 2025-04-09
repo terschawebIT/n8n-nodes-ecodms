@@ -44,7 +44,7 @@ async function handleGetClassifyAttributes(
 ): Promise<IDataObject> {
 	try {
 		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getClassifyAttributes`,
+			url: `${credentials.serverUrl as string}/api/classifyAttributes`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -72,7 +72,7 @@ async function handleGetClassifyAttributesDetail(
 ): Promise<IDataObject> {
 	try {
 		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getClassifyAttributesDetail`,
+			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -187,7 +187,6 @@ async function handleClassifyDocument(
 		const classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as string;
 		const editRoles = this.getNodeParameter('editRoles', 0, '') as string;
 		const readRoles = this.getNodeParameter('readRoles', 0, '') as string;
-		const fields = this.getNodeParameter('fields', 0) as string;
 		
 		let classifyData: IDataObject;
 		try {
@@ -196,18 +195,10 @@ async function handleClassifyDocument(
 			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsattribute!');
 		}
 		
-		let fieldsData: IDataObject;
-		try {
-			fieldsData = JSON.parse(fields);
-		} catch (e) {
-			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Felder!');
-		}
-		
 		const requestBody: IDataObject = {
 			docId,
 			clDocId,
 			classifyAttributes: classifyData,
-			fields: fieldsData,
 		};
 		
 		if (editRoles) {
