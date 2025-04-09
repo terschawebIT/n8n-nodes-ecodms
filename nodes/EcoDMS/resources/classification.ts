@@ -182,7 +182,7 @@ export const classificationFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: [Resource.Classification],
-				operation: [Operation.CreateNewClassify, Operation.ClassifyInboxDocument, Operation.ClassifyDocument],
+				operation: [Operation.CreateNewClassify, Operation.ClassifyInboxDocument],
 			},
 		},
 		description: 'Die Klassifikationsfelder im JSON-Format',
