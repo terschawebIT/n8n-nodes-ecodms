@@ -196,8 +196,6 @@ async function handleClassifyDocument(
 		}
 		
 		const requestBody: IDataObject = {
-			docId,
-			clDocId,
 			classifyAttributes: classifyData,
 		};
 		
@@ -210,7 +208,7 @@ async function handleClassifyDocument(
 		}
 		
 		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/classifyDocument`,
+			url: `${credentials.serverUrl as string}/api/classifyDocument/${docId}/${clDocId}`,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
