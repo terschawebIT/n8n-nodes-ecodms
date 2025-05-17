@@ -47,7 +47,7 @@ async function handleDocumentInfo(
 ): Promise<IDataObject> {
 	const docId = this.getNodeParameter('docId', 0) as string;
 	
-	const url = await getBaseUrl.call(this, `getDocument/${docId}`);
+	const url = await getBaseUrl.call(this, `documentInfo/${docId}`);
 	console.log('Dokument-Info URL:', url);
 	
 	return await this.helpers.httpRequest({
@@ -94,7 +94,7 @@ async function handleGetDocument(
 		});
 		
 		// Metadaten des Dokuments abrufen
-		const infoUrl = await getBaseUrl.call(this, `getDocument/${docId}`);
+		const infoUrl = await getBaseUrl.call(this, `documentInfo/${docId}`);
 		console.log(`Dokument-Info URL: ${infoUrl}`);
 		
 		let documentInfo;
