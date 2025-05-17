@@ -345,8 +345,8 @@ async function handleUploadDocument(
 	items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
-	const uploadData = this.getNodeParameter('uploadData', 0) as IDataObject;
-	const binaryPropertyName = uploadData.binaryPropertyName as string;
+	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
+	const versionControlled = this.getNodeParameter('versionControlled', 0, false) as boolean;
 	
 	const item = items[0];
 	
@@ -370,27 +370,8 @@ async function handleUploadDocument(
 			contentType: binaryData.mimeType,
 		});
 		
-		// Klassifizierung hinzufügen
-		if (uploadData.classify) {
-			const classifyData = uploadData.classify as IDataObject;
-			
-			for (const key of Object.keys(classifyData)) {
-				if (key !== 'additionalFields') {
-					formData.append(`classify[${key}]`, classifyData[key] as string);
-				}
-			}
-			
-			// Zusätzliche Felder hinzufügen
-			if (classifyData.additionalFields) {
-				const additionalFields = classifyData.additionalFields as IDataObject;
-				for (const key of Object.keys(additionalFields)) {
-					formData.append(`classify[${key}]`, additionalFields[key] as string);
-				}
-			}
-		}
-		
 		// URL vorbereiten
-		const uploadUrl = await getBaseUrl.call(this, 'upload');
+		const uploadUrl = await getBaseUrl.call(this, `uploadFile/${versionControlled}`);
 		console.log('Dokument-Upload URL:', uploadUrl);
 		
 		// API-Anfrage für Upload

@@ -136,10 +136,24 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: [Resource.Document],
-				operation: [Operation.Upload, Operation.UploadWithPDF, Operation.UploadToInbox, Operation.UploadFile],
+				operation: [Operation.Upload],
 			},
 		},
 		description: 'Name der binären Eigenschaft, die hochgeladen werden soll',
+	},
+	{
+		displayName: 'Versionierung aktivieren',
+		name: 'versionControlled',
+		type: 'boolean',
+		default: false,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.Upload],
+			},
+		},
+		description: 'Ob das Dokument versioniert werden soll. Bei true können später weitere Versionen hinzugefügt werden.',
 	},
 	
 	// Parameter für PDF-Dateien hochladen
