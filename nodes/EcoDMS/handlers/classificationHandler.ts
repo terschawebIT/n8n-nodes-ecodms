@@ -261,53 +261,131 @@ async function handleClassifyDocument(
 				},
 			});
 		} catch (error) {
-			if (error.response && error.response.status === 404) {
-				console.log('Erster Versuch mit /api/classifyDocument fehlgeschlagen, versuche alternativen Pfad...');
-				// Alternative 1: Mit Pfad-Parameter statt Body
+			console.log('Erster Versuch mit /api/classifyDocument fehlgeschlagen, versuche alternativen Pfad...');
+			
+			// Strategie 1: API-Pfad mit IDs in URL
+			try {
+				return await this.helpers.httpRequest({
+					url: `${serverUrl}/api/classifyDocument/${docId}/${clDocId}`,
+					method: 'POST',
+					headers: {
+						'Accept': 'application/json',
+						'Content-Type': 'application/json',
+					},
+					body: {
+						classifyAttributes: classifyData,
+						editRoles: requestBody.editRoles,
+						readRoles: requestBody.readRoles
+					},
+					json: true,
+					auth: {
+						username: credentials.username as string,
+						password: credentials.password as string,
+					},
+				});
+			} catch (urlError) {
+				console.log('Pfad mit IDs in URL fehlgeschlagen, versuche Version 2 API...');
+				
+				// Strategie 2: Version 2 API
 				try {
 					return await this.helpers.httpRequest({
-						url: `${serverUrl}/api/classifyDocument/${docId}/${clDocId}`,
+						url: `${serverUrl}/api/v2/classifyDocument`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: {
-							classifyAttributes: classifyData,
-							...(editRoles ? { editRoles: requestBody.editRoles } : {}),
-							...(readRoles ? { readRoles: requestBody.readRoles } : {}),
-						},
+						body: requestBody,
 						json: true,
 						auth: {
 							username: credentials.username as string,
 							password: credentials.password as string,
 						},
 					});
-				} catch (innerError) {
-					// Alternative 2: Mit /v2/ API-Version
+				} catch (v2Error) {
+					console.log('Version 2 API fehlgeschlagen, versuche mit vollständigen Attributen...');
+					
+					// Strategie 3: Alle Attribute abrufen und senden
 					try {
-						return await this.helpers.httpRequest({
-							url: `${serverUrl}/api/v2/classifyDocument`,
-							method: 'POST',
+						// Hole alle Klassifikationsattribute
+						const classifyAttributesResult = await this.helpers.httpRequest({
+							url: `${serverUrl}/api/classifyAttributes`,
+							method: 'GET',
 							headers: {
 								'Accept': 'application/json',
-								'Content-Type': 'application/json',
 							},
-							body: requestBody,
 							json: true,
 							auth: {
 								username: credentials.username as string,
 								password: credentials.password as string,
 							},
 						});
-					} catch (finalError) {
-						// Wenn alles fehlschlägt, wirf den ursprünglichen Fehler
-						console.log('Alle API-Pfad-Versuche fehlgeschlagen:', finalError.message);
-						throw error;
+						
+						// Stelle sicher, dass alle erwarteten Attribute im Request vorhanden sind
+						const allAttributes = classifyAttributesResult as IDataObject;
+						const fullClassifyAttributes = { ...allAttributes };
+						
+						// Überschreibe mit den Werten aus classifyData
+						for (const key of Object.keys(classifyData)) {
+							fullClassifyAttributes[key] = classifyData[key];
+						}
+						
+						// Erstelle einen neuen Request mit allen erforderlichen Attributen
+						const completeRequestBody = {
+							docId,
+							clDocId,
+							classifyAttributes: fullClassifyAttributes,
+							editRoles: requestBody.editRoles as string[],
+							readRoles: requestBody.readRoles as string[]
+						};
+						
+						console.log('Kompletter Request Body mit allen Attributen:', JSON.stringify(completeRequestBody, null, 2));
+						
+						return await this.helpers.httpRequest({
+							url: `${serverUrl}/api/classifyDocument`,
+							method: 'POST',
+							headers: {
+								'Accept': 'application/json',
+								'Content-Type': 'application/json',
+							},
+							body: completeRequestBody,
+							json: true,
+							auth: {
+								username: credentials.username as string,
+								password: credentials.password as string,
+							},
+						});
+					} catch (attributeError) {
+						console.log('Versuch mit vollständigen Attributen fehlgeschlagen, versuche Minimalansatz...');
+						
+						// Strategie 4: Minimaler Ansatz
+						try {
+							return await this.helpers.httpRequest({
+								url: `${serverUrl}/api/classifyDocument`,
+								method: 'POST',
+								headers: {
+									'Accept': 'application/json',
+									'Content-Type': 'application/json',
+								},
+								body: {
+									docId,
+									clDocId,
+									editRoles: requestBody.editRoles,
+									readRoles: requestBody.readRoles
+								},
+								json: true,
+								auth: {
+									username: credentials.username as string,
+									password: credentials.password as string,
+								},
+							});
+						} catch (minimalError) {
+							console.log('Alle API-Pfad-Versuche fehlgeschlagen:', error.message);
+							throw error;
+						}
 					}
 				}
 			}
-			throw error;
 		}
 	} catch (error) {
 		throw new NodeOperationError(
