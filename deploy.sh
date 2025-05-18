@@ -13,11 +13,11 @@ git pull
 
 # Abhängigkeiten installieren
 echo "[2/6] Abhängigkeiten installieren..."
-pnpm install
+npm install
 
 # Projekt bauen
-echo "[3/6] Projekt bauen mit pnpm..."
-pnpm build
+echo "[3/6] Projekt bauen..."
+npm run build
 
 # Dateien kopieren
 echo "[4/6] Dateien in n8n Custom-Verzeichnis kopieren..."
