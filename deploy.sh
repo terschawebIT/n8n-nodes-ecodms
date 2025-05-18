@@ -28,11 +28,11 @@ fi
 echo "=== n8n ecoDMS-Node Update und Deployment ==="
 
 # Repository aktualisieren
-echo "[1/7] Git Repository aktualisieren..."
+echo "[1/8] Git Repository aktualisieren..."
 git pull
 
 # Node-Version prüfen
-echo "[2/7] Node.js Version prüfen..."
+echo "[2/8] Node.js Version prüfen..."
 required_node="v20"
 current_node=$(node -v)
 if [[ ! $current_node =~ ^v20 ]]; then
@@ -41,27 +41,34 @@ if [[ ! $current_node =~ ^v20 ]]; then
 fi
 
 # Abhängigkeiten installieren
-echo "[3/7] Abhängigkeiten installieren..."
+echo "[3/8] Abhängigkeiten installieren..."
 npm ci
 
+# Tests ausführen
+echo "[4/8] Tests ausführen..."
+if ! npm test; then
+  echo "Tests fehlgeschlagen! Deployment wird abgebrochen."
+  exit 1
+fi
+
 # Projekt bauen
-echo "[4/7] Projekt bauen..."
+echo "[5/8] Projekt bauen..."
 NODE_ENV=production npm run build
 
 # Backup erstellen
-echo "[5/7] Backup erstellen..."
+echo "[6/8] Backup erstellen..."
 backup_dir="/home/n8n/.n8n/custom_backup/$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$backup_dir"
 cp -r "$N8N_CUSTOM_DIR"/* "$backup_dir/"
 
 # Dateien kopieren
-echo "[6/7] Dateien in n8n Custom-Verzeichnis kopieren..."
+echo "[7/8] Dateien in n8n Custom-Verzeichnis kopieren..."
 cp -r dist/* "$N8N_CUSTOM_DIR/"
 chown -R n8n:n8n "$N8N_CUSTOM_DIR"
 chmod -R 755 "$N8N_CUSTOM_DIR"
 
 # n8n-Dienst neustarten
-echo "[7/7] n8n-Dienst neustarten..."
+echo "[8/8] n8n-Dienst neustarten..."
 systemctl restart n8n
 
 # Warte auf n8n-Start
