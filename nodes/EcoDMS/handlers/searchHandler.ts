@@ -5,6 +5,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { createNodeError } from '../utils/errorHandler';
 
 interface SearchResponse extends IDataObject {
 	success?: boolean;
@@ -73,8 +74,12 @@ async function handleSearch(
 			success: true,
 			data: response,
 		};
-	} catch (_error) {
-		throw new NodeOperationError(this.getNode(), `Fehler bei der Suche: ${_error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler bei der Suche',
+			error,
+		);
 	}
 }
 
@@ -111,8 +116,12 @@ async function handleAdvancedSearch(
 			success: true,
 			data: response,
 		};
-	} catch (_error) {
-		throw new NodeOperationError(this.getNode(), `Fehler bei der erweiterten Suche: ${_error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler bei der erweiterten Suche',
+			error,
+		);
 	}
 }
 
@@ -161,7 +170,11 @@ async function handleSearchAndDownload(
 		);
 
 		return [newItem];
-	} catch (_error) {
-		throw new NodeOperationError(this.getNode(), `Fehler bei der Suche und dem Download: ${_error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler bei der Suche und dem Download',
+			error,
+		);
 	}
 } 

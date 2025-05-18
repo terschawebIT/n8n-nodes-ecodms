@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError } from '../utils/errorHandler';
 
 interface ArchiveResponse extends IDataObject {
 	success?: boolean;
@@ -62,7 +63,11 @@ async function handleGetArchiveInfo(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Archiv-Informationen: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim Abrufen der Archiv-Informationen',
+			error,
+		);
 	}
 } 

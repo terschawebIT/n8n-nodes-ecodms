@@ -5,6 +5,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { createNodeError, getErrorMessage } from '../utils/errorHandler';
 
 interface ClassificationResponse extends IDataObject {
 	success?: boolean;
@@ -77,10 +78,11 @@ async function handleGetClassifyAttributes(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Abrufen der Klassifikationsattribute: ${error.message}`,
+			'Fehler beim Abrufen der Klassifikationsattribute',
+			error,
 		);
 	}
 }
@@ -110,10 +112,11 @@ async function handleGetClassifyAttributesDetail(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Abrufen der detaillierten Klassifikationsattribute: ${error.message}`,
+			'Fehler beim Abrufen der detaillierten Klassifikationsattribute',
+			error,
 		);
 	}
 }
@@ -133,21 +136,25 @@ async function handleCreateNewClassify(
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
-		} catch (error) {
-			throw new NodeOperationError(
+		} catch (error: unknown) {
+			throw createNodeError(
 				this.getNode(),
-				`Ungültiges JSON-Format für Klassifikationsfelder: ${error.message}`,
+				'Ungültiges JSON-Format für Klassifikationsfelder',
+				error,
 			);
 		}
 		
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/createNewClassify/${docId}`,
+			url: `${credentials.serverUrl as string}/api/createNewClassify`,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: fieldsData,
+			body: {
+				docId,
+				...fieldsData,
+			},
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -159,10 +166,11 @@ async function handleCreateNewClassify(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Erstellen der neuen Klassifikation: ${error.message}`,
+			'Fehler beim Erstellen der neuen Klassifikation',
+			error,
 		);
 	}
 }
@@ -182,18 +190,25 @@ async function handleClassifyInboxDocument(
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
-		} catch (e) {
-			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder!');
+		} catch (error: unknown) {
+			throw createNodeError(
+				this.getNode(),
+				'Ungültiges JSON-Format für Klassifikationsfelder',
+				error,
+			);
 		}
 		
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/classifyInboxDocument/${docId}`,
+			url: `${credentials.serverUrl as string}/api/classifyInboxDocument`,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: fieldsData,
+			body: {
+				docId,
+				...fieldsData,
+			},
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -205,10 +220,11 @@ async function handleClassifyInboxDocument(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Klassifizieren des Inbox-Dokuments: ${error.message}`,
+			'Fehler beim Klassifizieren des Inbox-Dokuments',
+			error,
 		);
 	}
 }
@@ -223,44 +239,33 @@ async function handleClassifyDocument(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
-		const clDocId = this.getNodeParameter('clDocId', 0) as number;
-		const classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as string;
+		const fields = this.getNodeParameter('fields', 0) as string;
 		
-		let classifyData: IDataObject;
+		let fieldsData: IDataObject;
 		try {
-			classifyData = JSON.parse(classifyAttributes);
-		} catch (error) {
-			throw new NodeOperationError(
+			fieldsData = JSON.parse(fields);
+		} catch (error: unknown) {
+			throw createNodeError(
 				this.getNode(),
-				`Ungültiges JSON-Format für Klassifikationsattribute: ${error.message}`,
+				'Ungültiges JSON-Format für Klassifikationsattribute',
+				error,
 			);
 		}
-		
-		const requestBody: IDataObject = {
-			docId,
-			clDocId,
-			classifyAttributes: classifyData,
-		};
-		
-		// Debug-Logging
-		console.debug('Request URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
-		console.debug('Request Body:', JSON.stringify(requestBody, null, 2));
-		
-		// Baue die Server-URL ohne Trailing-Slash
-		let serverUrl = credentials.serverUrl as string;
-		if (serverUrl.endsWith('/')) {
-			serverUrl = serverUrl.slice(0, -1);
-		}
-		
+
+		// Versuche verschiedene API-Endpunkte
 		try {
+			// Primärer API-Endpunkt
 			const response = await this.helpers.httpRequest({
-				url: `${serverUrl}/api/classifyDocument`,
+				url: `${credentials.serverUrl as string}/api/classifyDocument`,
 				method: 'POST',
 				headers: {
 					'Accept': 'application/json',
 					'Content-Type': 'application/json',
 				},
-				body: requestBody,
+				body: {
+					docId,
+					...fieldsData,
+				},
 				json: true,
 				auth: {
 					username: credentials.username as string,
@@ -272,22 +277,22 @@ async function handleClassifyDocument(
 				success: true,
 				data: response,
 			};
-		} catch (error) {
-			console.debug(`Primärer API-Endpunkt fehlgeschlagen: ${error.message}`);
-			
-			// Strategie 1: API-Pfad mit IDs in URL
+		} catch (error: unknown) {
+			console.debug(`Primärer API-Endpunkt fehlgeschlagen: ${getErrorMessage(error)}`);
+
 			try {
+				// Versuche API-Pfad mit IDs
 				const response = await this.helpers.httpRequest({
-					url: `${serverUrl}/api/classifyDocument/${docId}/${clDocId}`,
+					url: `${credentials.serverUrl as string}/api/classifyDocument`,
 					method: 'POST',
 					headers: {
 						'Accept': 'application/json',
 						'Content-Type': 'application/json',
 					},
 					body: {
-						classifyAttributes: classifyData,
-						editRoles: requestBody.editRoles,
-						readRoles: requestBody.readRoles
+						docId,
+						useIds: true,
+						...fieldsData,
 					},
 					json: true,
 					auth: {
@@ -300,19 +305,22 @@ async function handleClassifyDocument(
 					success: true,
 					data: response,
 				};
-			} catch (error2) {
-				console.debug(`API-Pfad mit IDs fehlgeschlagen: ${error2.message}`);
-				
-				// Strategie 2: Version 2 API
+			} catch (error2: unknown) {
+				console.debug(`API-Pfad mit IDs fehlgeschlagen: ${getErrorMessage(error2)}`);
+
 				try {
+					// Versuche Version 2 API
 					const response = await this.helpers.httpRequest({
-						url: `${serverUrl}/api/v2/classifyDocument`,
+						url: `${credentials.serverUrl as string}/api/v2/classifyDocument`,
 						method: 'POST',
 						headers: {
 							'Accept': 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: requestBody,
+						body: {
+							docId,
+							...fieldsData,
+						},
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -324,85 +332,29 @@ async function handleClassifyDocument(
 						success: true,
 						data: response,
 					};
-				} catch (error3) {
-					console.debug(`Version 2 API fehlgeschlagen: ${error3.message}`);
-					
-					// Strategie 3: Alle Attribute abrufen und senden
-					try {
-						// Hole alle Klassifikationsattribute
-						const classifyAttributesResult = await this.helpers.httpRequest({
-							url: `${serverUrl}/api/classifyAttributes`,
-							method: 'GET',
-							headers: {
-								'Accept': 'application/json',
-							},
-							json: true,
-							auth: {
-								username: credentials.username as string,
-								password: credentials.password as string,
-							},
-						});
-						
-						// Stelle sicher, dass alle erwarteten Attribute im Request vorhanden sind
-						const allAttributes = classifyAttributesResult as IDataObject;
-						const fullClassifyAttributes = { ...allAttributes };
-						
-						// Überschreibe mit den Werten aus classifyData
-						for (const key of Object.keys(classifyData)) {
-							fullClassifyAttributes[key] = classifyData[key];
-						}
-						
-						// Erstelle einen neuen Request mit allen erforderlichen Attributen
-						const completeRequestBody = {
-							docId,
-							clDocId,
-							classifyAttributes: fullClassifyAttributes,
-							editRoles: requestBody.editRoles as string[],
-							readRoles: requestBody.readRoles as string[]
-						};
-						
-						console.debug('Kompletter Request Body mit allen Attributen:', JSON.stringify(completeRequestBody, null, 2));
-						
-						const response = await this.helpers.httpRequest({
-							url: `${serverUrl}/api/classifyDocument`,
-							method: 'POST',
-							headers: {
-								'Accept': 'application/json',
-								'Content-Type': 'application/json',
-							},
-							body: completeRequestBody,
-							json: true,
-							auth: {
-								username: credentials.username as string,
-								password: credentials.password as string,
-							},
-						});
+				} catch (error3: unknown) {
+					console.debug(`Version 2 API fehlgeschlagen: ${getErrorMessage(error3)}`);
 
-						return {
-							success: true,
-							data: response,
-						};
-					} catch (finalError) {
-						// Sammle alle Fehlermeldungen für eine bessere Diagnose
-						const errorDetails = [
-							`Primärer Endpunkt: ${error.message}`,
-							`ID-basierter Pfad: ${error2.message}`,
-							`V2 API: ${error3.message}`,
-							`Vollständige Attribute: ${finalError.message}`,
-						].join('\n');
-						
-						throw new NodeOperationError(
-							this.getNode(),
-							`Alle Versuche der Dokumentklassifikation sind fehlgeschlagen:\n${errorDetails}`,
-						);
-					}
+					// Wenn alle Versuche fehlschlagen, werfe einen zusammengefassten Fehler
+					const errorMessage = 
+						`Alle API-Endpunkte fehlgeschlagen:\n` +
+						`Primärer Endpunkt: ${getErrorMessage(error)}\n` +
+						`ID-basierter Pfad: ${getErrorMessage(error2)}\n` +
+						`V2 API: ${getErrorMessage(error3)}`;
+
+					throw createNodeError(
+						this.getNode(),
+						'Fehler beim Klassifizieren des Dokuments',
+						new Error(errorMessage),
+					);
 				}
 			}
 		}
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Aktualisieren der Dokumentklassifikation: ${error.message}`,
+			'Fehler beim Aktualisieren der Dokumentklassifikation',
+			error,
 		);
 	}
 }
@@ -415,10 +367,9 @@ async function handleRemoveDocumentLink(
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
-		const clDocId = this.getNodeParameter('clDocId', 0) as number;
-		
+		const docId = this.getNodeParameter('docId', 0) as number;
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/removeDocumentLink/${clDocId}`,
+			url: `${credentials.serverUrl as string}/api/document/${docId}/removeDocumentLink`,
 			method: 'DELETE',
 			headers: {
 				'Accept': 'application/json',
@@ -434,10 +385,11 @@ async function handleRemoveDocumentLink(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Entfernen der Dokumentverknüpfungen: ${error.message}`,
+			'Fehler beim Entfernen der Dokumentverknüpfungen',
+			error,
 		);
 	}
 }
@@ -450,22 +402,17 @@ async function handleLinkToDocuments(
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
-		const clDocId = this.getNodeParameter('clDocId', 0) as number;
-		
-		// Hier würden wir Daten zu den zu verknüpfenden Dokumenten benötigen
-		// Dies scheint in der Ressourcendatei zu fehlen und müsste ergänzt werden
-		const linkedDocuments: number[] = [];
-		
+		const docId = this.getNodeParameter('docId', 0) as number;
+		const targetDocIds = this.getNodeParameter('targetDocIds', 0) as number[];
+
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/linkToDocuments/${clDocId}`,
+			url: `${credentials.serverUrl as string}/api/document/${docId}/linkToDocuments`,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				linkedDocuments,
-			},
+			body: { targetDocIds },
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -477,10 +424,11 @@ async function handleLinkToDocuments(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Hinzufügen der Dokumentverknüpfungen: ${error.message}`,
+			'Fehler beim Hinzufügen der Dokumentverknüpfungen',
+			error,
 		);
 	}
 } 

@@ -7,6 +7,7 @@ import {
 import { Operation } from '../utils/constants';
 import FormData from 'form-data';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError, getErrorMessage } from '../utils/errorHandler';
 
 interface DocumentResponse extends IDataObject {
 	success?: boolean;
@@ -87,8 +88,12 @@ async function handleDocumentInfo(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumentinformationen: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim Abrufen der Dokumentinformationen',
+			error,
+		);
 	}
 }
 
@@ -139,8 +144,8 @@ async function handleGetDocument(
 					password: credentials.password as string,
 				},
 			});
-		} catch (infoError) {
-			console.error(`Fehler beim Abrufen der Dokumentinformationen: ${infoError.message}`);
+		} catch (error: unknown) {
+			console.error(`Fehler beim Abrufen der Dokumentinformationen: ${getErrorMessage(error)}`);
 			// Wenn die Infos nicht abgerufen werden können, erstellen wir ein Basisdokument-Info-Objekt
 			documentInfo = {
 				docId,
@@ -175,16 +180,15 @@ async function handleGetDocument(
 		);
 		
 		return [newItem];
-	} catch (error) {
+	} catch (error: unknown) {
 		// Mehr Diagnose-Informationen anzeigen
-		let errorMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId}: ${error.message}`;
+		let baseMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId}`;
 		
-		if (error.statusCode === 404) {
-			errorMessage = `Das Dokument mit ID ${docId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen dieses Dokuments. Bitte prüfen Sie die Dokument-ID und die API-Berechtigungen.`;
+		if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
+			baseMessage = `Das Dokument mit ID ${docId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen dieses Dokuments. Bitte prüfen Sie die Dokument-ID und die API-Berechtigungen.`;
 		}
 		
-		console.error(errorMessage);
-		throw new NodeOperationError(this.getNode(), errorMessage);
+		throw createNodeError(this.getNode(), baseMessage, error);
 	}
 }
 
@@ -201,7 +205,7 @@ async function handleGetDocumentWithClassification(
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
 	
 	const downloadUrl = await getBaseUrl.call(this, `document/${docId}/${clDocId}`);
-	console.log(`Dokument-Download URL mit clDocId: ${downloadUrl}`);
+	console.log(`Dokument-Download URL mit Klassifikation: ${downloadUrl}`);
 	
 	try {
 		// Dokument herunterladen
@@ -238,8 +242,6 @@ async function handleGetDocumentWithClassification(
 				docId,
 				clDocId,
 				success: true,
-				fileName,
-				contentType,
 			},
 			binary: {},
 		};
@@ -251,16 +253,14 @@ async function handleGetDocumentWithClassification(
 		);
 		
 		return [newItem];
-	} catch (error) {
-		// Mehr Diagnose-Informationen anzeigen
-		let errorMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId} und Klassifikations-ID ${clDocId}: ${error.message}`;
+	} catch (error: unknown) {
+		let baseMessage = `Fehler beim Herunterladen des Dokuments mit ID ${docId} und Klassifikations-ID ${clDocId}`;
 		
-		if (error.statusCode === 404) {
-			errorMessage = `Das Dokument mit ID ${docId} und Klassifikations-ID ${clDocId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen. Bitte prüfen Sie die IDs und die API-Berechtigungen.`;
+		if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
+			baseMessage = `Das Dokument mit ID ${docId} und Klassifikations-ID ${clDocId} wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen dieses Dokuments.`;
 		}
 		
-		console.error(errorMessage);
-		throw new NodeOperationError(this.getNode(), errorMessage);
+		throw createNodeError(this.getNode(), baseMessage, error);
 	}
 }
 
@@ -338,30 +338,29 @@ async function handleGetDocumentVersion(
 		);
 		
 		return [newItem];
-	} catch (error) {
+	} catch (error: unknown) {
 		// Mehr Diagnose-Informationen anzeigen
-		let errorMessage = `Fehler beim Herunterladen der Dokumentversion mit ID ${docId} und Version ${version}`;
+		let baseMessage = `Fehler beim Herunterladen der Dokumentversion mit ID ${docId} und Version ${version}`;
 		
 		if (useClassification) {
 			const clDocId = this.getNodeParameter('clDocId', 0) as string;
-			errorMessage += ` und Klassifikations-ID ${clDocId}`;
+			baseMessage += ` und Klassifikations-ID ${clDocId}`;
 		}
 		
-		errorMessage += `: ${error.message}`;
+		baseMessage += `: ${getErrorMessage(error)}`;
 		
-		if (error.statusCode === 404) {
-			errorMessage = `Die angeforderte Dokumentversion (Dokument-ID: ${docId}, Version: ${version}`;
+		if (error && typeof error === 'object' && 'statusCode' in error && error.statusCode === 404) {
+			baseMessage = `Die angeforderte Dokumentversion (Dokument-ID: ${docId}, Version: ${version}`;
 			
 			if (useClassification) {
 				const clDocId = this.getNodeParameter('clDocId', 0) as string;
-				errorMessage += `, Klassifikations-ID: ${clDocId}`;
+				baseMessage += `, Klassifikations-ID: ${clDocId}`;
 			}
 			
-			errorMessage += `) wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen. Bitte prüfen Sie die IDs, die Versionsnummer und die API-Berechtigungen.`;
+			baseMessage += `) wurde nicht gefunden oder der Benutzer hat keine Berechtigung zum Herunterladen. Bitte prüfen Sie die IDs, die Versionsnummer und die API-Berechtigungen.`;
 		}
 		
-		console.error(errorMessage);
-		throw new NodeOperationError(this.getNode(), errorMessage);
+		throw createNodeError(this.getNode(), baseMessage, error);
 	}
 }
 
@@ -422,8 +421,8 @@ async function handleUploadDocument(
 			json: response,
 			binary: item.binary,
 		}];
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Hochladen des Dokuments: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Hochladen des Dokuments', error);
 	}
 }
 
@@ -480,8 +479,8 @@ async function handleAddDocumentVersion(
 			json: response,
 			binary: item.binary,
 		}];
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Hinzufügen einer neuen Dokumentversion: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Hinzufügen einer neuen Dokumentversion', error);
 	}
 }
 
@@ -537,7 +536,7 @@ async function handleUploadFile(
 			json: response,
 			binary: item.binary,
 		}];
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Hochladen der Datei: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Hochladen der Datei', error);
 	}
 } 

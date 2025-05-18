@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
-    "strict": true,
+    "lib": ["es2019", "es2020", "es2021", "es2022", "es2023"],
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es2019",
-    "lib": ["es2019", "es2020", "es2022"],
-    "removeComments": true,
-    "useUnknownInCatchVariables": false,
-    "forceConsistentCasingInFileNames": true,
+    "strict": true,
     "outDir": "./dist/",
-    "rootDir": "./",
-    "skipLibCheck": true,
+    "types": ["node", "jest"],
     "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "types": ["node"]
+    "importHelpers": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "declaration": true
   },
-  "include": ["credentials/**/*", "nodes/**/*", "nodes/**/*.json"]
+  "include": ["nodes/**/*", "credentials/**/*"],
+  "exclude": ["node_modules/**/*", "**/*.test.ts"]
 } 

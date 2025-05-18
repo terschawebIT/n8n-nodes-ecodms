@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError } from '../utils/errorHandler';
 
 interface LicenseResponse extends IDataObject {
 	success?: boolean;
@@ -63,7 +64,11 @@ async function handleGetLicenseInfo(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Lizenzinformationen: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim Abrufen der Lizenzinformationen',
+			error,
+		);
 	}
 } 
