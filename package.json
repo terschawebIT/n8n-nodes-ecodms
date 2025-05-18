@@ -21,7 +21,8 @@
     "url": "git+https://github.com/terschawebIT/n8n-nodes-ecodms.git"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.15.0",
+    "npm": ">=10.0.0"
   },
   "main": "index.js",
   "type": "module",
@@ -33,7 +34,9 @@
     "lint": "eslint 'nodes/**/*.ts' 'credentials/**/*.ts'",
     "lintfix": "eslint 'nodes/**/*.ts' 'credentials/**/*.ts' --fix",
     "prepublishOnly": "npm run build && npm run lint",
-    "clean": "rimraf dist/ node_modules/ package-lock.json"
+    "clean": "rimraf dist/ node_modules/ package-lock.json",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "files": [
     "dist"
@@ -57,9 +60,21 @@
     "n8n-workflow": "~1.82.0",
     "prettier": "^3.2.5",
     "rimraf": "^6.0.1",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.2",
+    "@types/jest": "^29.5.12",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2"
+  },
+  "dependencies": {
+    "winston": "^3.11.0",
+    "memory-cache": "^0.2.0"
   },
   "peerDependencies": {
     "n8n-workflow": "~1.82.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": ["<rootDir>/nodes/**/*.test.ts"]
   }
 }
