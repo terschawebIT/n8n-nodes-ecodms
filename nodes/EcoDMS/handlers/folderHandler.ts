@@ -5,6 +5,13 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { getBaseUrl } from '../utils/helpers';
+
+interface FolderResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
  * Behandelt alle Folder-Operationen für ecoDMS
@@ -14,19 +21,28 @@ export async function handleFolderOperations(
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: FolderResponse | INodeExecutionData[];
+
 	switch (operation) {
-		case Operation.EditFolder:
-			return await handleEditFolder.call(this, credentials);
-		case Operation.CreateFolder:
-			return await handleCreateFolder.call(this, credentials);
-		case Operation.CreateSubfolder:
-			return await handleCreateSubfolder.call(this, credentials);
 		case Operation.GetFolders:
-			return await handleGetFolders.call(this, credentials);
+			result = await handleGetFolders.call(this, credentials);
+			break;
+		case Operation.CreateFolder:
+			result = await handleCreateFolder.call(this, credentials);
+			break;
+		case Operation.CreateSubfolder:
+			result = await handleCreateSubfolder.call(this, credentials);
+			break;
+		case Operation.EditFolder:
+			result = await handleEditFolder.call(this, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
+	return Array.isArray(result) ? result : [{ json: result }];
 }
 
 /**
@@ -35,48 +51,35 @@ export async function handleFolderOperations(
 async function handleEditFolder(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<FolderResponse> {
+	const folderId = this.getNodeParameter('folderId', 0) as string;
+	const folderName = this.getNodeParameter('folderName', 0) as string;
+	const url = await getBaseUrl.call(this, `folders/${folderId}`);
+	
 	try {
-		const folderId = this.getNodeParameter('folderId', 0) as string;
-		const folderName = this.getNodeParameter('folderName', 0) as string;
-		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
-		
-		const requestBody: IDataObject = {
-			folderName,
-		};
-		
-		// Zusätzliche Felder hinzufügen, wenn vorhanden
-		if (additionalFields.externalKey) {
-			requestBody.externalKey = additionalFields.externalKey;
-		}
-		
-		if (additionalFields.buzzwords) {
-			requestBody.buzzwords = additionalFields.buzzwords;
-		}
-		
-		if (additionalFields.dataString) {
-			requestBody.dataString = additionalFields.dataString;
-		}
-		
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/editFolder/${folderId}`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'PUT',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: requestBody,
+			body: {
+				name: folderName,
+			},
 			json: true,
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Bearbeiten des Ordners: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Bearbeiten des Ordners: ${error.message}`);
 	}
 }
 
@@ -86,38 +89,34 @@ async function handleEditFolder(
 async function handleCreateFolder(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<FolderResponse> {
+	const folderName = this.getNodeParameter('folderName', 0) as string;
+	const url = await getBaseUrl.call(this, 'folders');
+	
 	try {
-		const foldername = this.getNodeParameter('foldername', 0) as string;
-		const description = this.getNodeParameter('description', 0, '') as string;
-		
-		const requestBody: IDataObject = {
-			folderName: foldername,
-		};
-		
-		if (description) {
-			requestBody.description = description;
-		}
-		
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/createFolder`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: requestBody,
+			body: {
+				name: folderName,
+			},
 			json: true,
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Erstellen des Ordners: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Erstellen des Ordners: ${error.message}`);
 	}
 }
 
@@ -127,39 +126,35 @@ async function handleCreateFolder(
 async function handleCreateSubfolder(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<FolderResponse> {
+	const parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
+	const folderName = this.getNodeParameter('folderName', 0) as string;
+	const url = await getBaseUrl.call(this, `folders/${parentFolderId}/subfolders`);
+	
 	try {
-		const parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
-		const foldername = this.getNodeParameter('foldername', 0) as string;
-		const description = this.getNodeParameter('description', 0, '') as string;
-		
-		const requestBody: IDataObject = {
-			folderName: foldername,
-		};
-		
-		if (description) {
-			requestBody.description = description;
-		}
-		
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/createSubfolder/${parentFolderId}`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: requestBody,
+			body: {
+				name: folderName,
+			},
 			json: true,
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Erstellen des Unterordners: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Erstellen des Unterordners: ${error.message}`);
 	}
 }
 
@@ -169,10 +164,12 @@ async function handleCreateSubfolder(
 async function handleGetFolders(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<FolderResponse> {
+	const url = await getBaseUrl.call(this, 'folders');
+	
 	try {
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/folders`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -183,10 +180,12 @@ async function handleGetFolders(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Abrufen der Ordner: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Ordner: ${error.message}`);
 	}
 } 

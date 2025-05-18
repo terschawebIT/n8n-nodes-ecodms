@@ -3,10 +3,15 @@ import {
 	IExecuteFunctions,
 	INodeExecutionData,
 	NodeOperationError,
-	BINARY_ENCODING,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import FormData from 'form-data';
+import { getBaseUrl } from '../utils/helpers';
+
+interface WorkflowResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
  * Behandelt alle Workflow-Operationen für ecoDMS
@@ -16,15 +21,21 @@ export async function handleWorkflowOperations(
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: WorkflowResponse | INodeExecutionData[];
+
 	switch (operation) {
 		case Operation.UploadAndClassify:
-			return await handleUploadAndClassify.call(this, items, credentials);
+			result = await handleUploadAndClassify.call(this, items, credentials);
+			break;
 		case Operation.SearchAndDownload:
 			return await handleSearchAndDownload.call(this, items, credentials);
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
+	return Array.isArray(result) ? result : [{ json: result }];
 }
 
 /**
@@ -34,81 +45,30 @@ async function handleUploadAndClassify(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	credentials: IDataObject,
-): Promise<INodeExecutionData[]> {
+): Promise<WorkflowResponse> {
+	const docId = this.getNodeParameter('docId', 0) as string;
+	const url = await getBaseUrl.call(this, `uploadAndClassify/${docId}`);
+	
 	try {
-		const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
-		const classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as string;
-		const editRoles = this.getNodeParameter('editRoles', 0, '') as string;
-		const readRoles = this.getNodeParameter('readRoles', 0, '') as string;
-		
-		const item = items[0];
-		
-		if (item.binary === undefined) {
-			throw new NodeOperationError(this.getNode(), 'Keine binären Daten gefunden!');
-		}
-		
-		if (item.binary[binaryPropertyName] === undefined) {
-			throw new NodeOperationError(this.getNode(), `Keine binären Daten in "${binaryPropertyName}" gefunden!`);
-		}
-		
-		const binaryData = item.binary[binaryPropertyName];
-		
-		// Klassifikationsattribute parsen
-		let classifyData: IDataObject;
-		try {
-			classifyData = JSON.parse(classifyAttributes);
-		} catch (e) {
-			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsattribute!');
-		}
-		
-		// FormData erstellen
-		const formData = new FormData();
-		
-		// Dokumentendaten hinzufügen
-		formData.append('file', Buffer.from(binaryData.data, 'base64'), {
-			filename: binaryData.fileName || 'document.pdf',
-			contentType: binaryData.mimeType,
-		});
-		
-		// Klassifizierung hinzufügen
-		for (const key of Object.keys(classifyData)) {
-			formData.append(`classify[${key}]`, classifyData[key] as string);
-		}
-		
-		// Rollen hinzufügen, wenn vorhanden
-		if (editRoles) {
-			formData.append('editRoles', editRoles);
-		}
-		
-		if (readRoles) {
-			formData.append('readRoles', readRoles);
-		}
-		
-		// API-Anfrage für Upload und Klassifizierung
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/uploadAndClassify`,
+			url,
 			method: 'POST',
 			headers: {
-				...formData.getHeaders(),
 				'Accept': 'application/json',
 			},
-			body: formData,
 			json: true,
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
-		
-		return [{
-			json: response,
-			binary: item.binary,
-		}];
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Hochladen und Klassifizieren des Dokuments: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Hochladen und Klassifizieren: ${error.message}`);
 	}
 }
 

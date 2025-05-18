@@ -5,61 +5,64 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { getBaseUrl } from '../utils/helpers';
+
+interface ArchiveResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
- * Behandelt alle Archive-Operationen für ecoDMS
+ * Behandelt alle Archiv-Operationen für ecoDMS
  */
 export async function handleArchiveOperations(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: ArchiveResponse;
+
 	switch (operation) {
-		case Operation.Connect:
-			return await handleConnect.call(this, credentials);
+		case Operation.GetInfo:
+			result = await handleGetArchiveInfo.call(this, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	return [{ json: result }];
 }
 
 /**
- * Stellt eine Verbindung zum Archiv her
+ * Implementiert das Abrufen der Archiv-Informationen
  */
-async function handleConnect(
+async function handleGetArchiveInfo(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ArchiveResponse> {
+	const url = await getBaseUrl.call(this, 'archiveInfo');
+	
 	try {
-		const archiveId = this.getNodeParameter('archiveId', 0) as string;
-		const apiKey = this.getNodeParameter('apiKey', 0, '') as string;
-		
-		const requestBody: IDataObject = {
-			archiveId,
-		};
-		
-		if (apiKey) {
-			requestBody.apiKey = apiKey;
-		}
-		
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/connect`,
-			method: 'POST',
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
-				'Content-Type': 'application/json',
 			},
-			body: requestBody,
 			json: true,
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Herstellen der Verbindung zum Archiv: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Archiv-Informationen: ${error.message}`);
 	}
 } 

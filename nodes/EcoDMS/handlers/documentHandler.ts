@@ -6,8 +6,13 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import FormData from 'form-data';
-import { basename } from 'path';
 import { getBaseUrl } from '../utils/helpers';
+
+interface DocumentResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
  * Behandelt alle Document-Operationen für ecoDMS
@@ -17,25 +22,39 @@ export async function handleDocumentOperations(
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: DocumentResponse | INodeExecutionData[];
+	let info: DocumentResponse;
+	
 	switch (operation) {
 		case Operation.Get:
-			return await handleGetDocument.call(this, credentials);
+			result = await handleGetDocument.call(this, credentials);
+			break;
 		case Operation.GetDocumentInfo:
-			return await handleDocumentInfo.call(this, credentials);
+			info = await handleDocumentInfo.call(this, credentials);
+			result = [{ json: info }];
+			break;
 		case Operation.GetDocumentWithClassification:
-			return await handleGetDocumentWithClassification.call(this, items, credentials);
+			result = await handleGetDocumentWithClassification.call(this, items, credentials);
+			break;
 		case Operation.GetDocumentVersion:
-			return await handleGetDocumentVersion.call(this, items, credentials);
+			result = await handleGetDocumentVersion.call(this, items, credentials);
+			break;
 		case Operation.Upload:
-			return await handleUploadDocument.call(this, items, credentials);
+			result = await handleUploadDocument.call(this, items, credentials);
+			break;
 		case Operation.AddVersion:
-			return await handleAddDocumentVersion.call(this, items, credentials);
+			result = await handleAddDocumentVersion.call(this, items, credentials);
+			break;
 		case Operation.UploadFile:
-			return await handleUploadFile.call(this, items, credentials);
+			result = await handleUploadFile.call(this, items, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
+	return Array.isArray(result) ? result : [{ json: result }];
 }
 
 /**
@@ -44,24 +63,33 @@ export async function handleDocumentOperations(
 async function handleDocumentInfo(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<DocumentResponse> {
 	const docId = this.getNodeParameter('docId', 0) as string;
 	
 	const url = await getBaseUrl.call(this, `documentInfo/${docId}`);
 	console.log('Dokument-Info URL:', url);
 	
-	return await this.helpers.httpRequest({
-		url,
-		method: 'GET',
-		headers: {
-			'Accept': 'application/json',
-		},
-		json: true,
-		auth: {
-			username: credentials.username as string,
-			password: credentials.password as string,
-		},
-	});
+	try {
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
+
+		return {
+			success: true,
+			data: response,
+		};
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumentinformationen: ${error.message}`);
+	}
 }
 
 /**

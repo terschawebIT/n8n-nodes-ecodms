@@ -1,6 +1,5 @@
-import { ILoadOptionsFunctions, INodeProperties, INodePropertyOptions } from 'n8n-workflow';
+import { INodeProperties } from 'n8n-workflow';
 import { Resource, Operation } from '../utils/constants';
-import { getFolders, getDocumentTypes, getStatusValues } from '../utils/helpers';
 
 export const searchOperations: INodeProperties = {
 	displayName: 'Operation',

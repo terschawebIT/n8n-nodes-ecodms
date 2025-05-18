@@ -1,4 +1,9 @@
-import { IDataObject, IExecuteFunctions, ILoadOptionsFunctions, ICredentialDataDecryptedObject, INodePropertyOptions } from 'n8n-workflow';
+import {
+	IExecuteFunctions,
+	ILoadOptionsFunctions,
+	INodePropertyOptions,
+	ICredentialDataDecryptedObject,
+} from 'n8n-workflow';
 
 interface EcoDmsApiCredentials extends ICredentialDataDecryptedObject {
 	serverUrl: string;

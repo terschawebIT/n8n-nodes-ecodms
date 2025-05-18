@@ -5,34 +5,52 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { getBaseUrl } from '../utils/helpers';
+
+interface DocumentTypeResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
- * Behandelt alle DocumentType-Operationen für ecoDMS
+ * Behandelt alle Dokumenttyp-Operationen für ecoDMS
  */
 export async function handleDocumentTypeOperations(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: DocumentTypeResponse | INodeExecutionData[];
+
 	switch (operation) {
 		case Operation.GetTypes:
-			return await handleGetTypes.call(this, credentials);
+			result = await handleGetTypes.call(this, credentials);
+			break;
+		case Operation.GetTypeClassifications:
+			result = await handleGetTypeClassifications.call(this, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
+	return Array.isArray(result) ? result : [{ json: result }];
 }
 
 /**
- * Liste aller Dokumenttypen abrufen
+ * Implementiert das Abrufen der Dokumenttypen
  */
 async function handleGetTypes(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<DocumentTypeResponse> {
+	const url = await getBaseUrl.call(this, 'documentTypes');
+	
 	try {
-		const result = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/types`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -43,14 +61,45 @@ async function handleGetTypes(
 				password: credentials.password as string,
 			},
 		});
-		
-		console.log(`Dokumenttypen abgerufen: ${result.length || 0} Einträge gefunden`);
-		
-		return { types: Array.isArray(result) ? result : [] };
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Abrufen der Dokumenttypen: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumenttypen: ${error.message}`);
+	}
+}
+
+/**
+ * Implementiert das Abrufen der Dokumenttyp-Klassifikationen
+ */
+async function handleGetTypeClassifications(
+	this: IExecuteFunctions,
+	credentials: IDataObject,
+): Promise<DocumentTypeResponse> {
+	const typeId = this.getNodeParameter('typeId', 0) as string;
+	const url = await getBaseUrl.call(this, `documentTypes/${typeId}/classifications`);
+	
+	try {
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				'Accept': 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
+
+		return {
+			success: true,
+			data: response,
+		};
+	} catch (error) {
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumenttyp-Klassifikationen: ${error.message}`);
 	}
 } 

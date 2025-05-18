@@ -6,33 +6,50 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 
+interface ClassificationResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
+
 /**
- * Behandelt alle Classification-Operationen für ecoDMS
+ * Behandelt alle Klassifikations-Operationen für ecoDMS
  */
 export async function handleClassificationOperations(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: ClassificationResponse;
+
 	switch (operation) {
 		case Operation.GetClassifyAttributes:
-			return await handleGetClassifyAttributes.call(this, credentials);
+			result = await handleGetClassifyAttributes.call(this, credentials);
+			break;
 		case Operation.GetClassifyAttributesDetail:
-			return await handleGetClassifyAttributesDetail.call(this, credentials);
+			result = await handleGetClassifyAttributesDetail.call(this, credentials);
+			break;
 		case Operation.CreateNewClassify:
-			return await handleCreateNewClassify.call(this, items, credentials);
+			result = await handleCreateNewClassify.call(this, items, credentials);
+			break;
 		case Operation.ClassifyInboxDocument:
-			return await handleClassifyInboxDocument.call(this, items, credentials);
+			result = await handleClassifyInboxDocument.call(this, items, credentials);
+			break;
 		case Operation.ClassifyDocument:
-			return await handleClassifyDocument.call(this, items, credentials);
+			result = await handleClassifyDocument.call(this, items, credentials);
+			break;
 		case Operation.RemoveDocumentLink:
-			return await handleRemoveDocumentLink.call(this, credentials);
+			result = await handleRemoveDocumentLink.call(this, credentials);
+			break;
 		case Operation.LinkToDocuments:
-			return await handleLinkToDocuments.call(this, credentials);
+			result = await handleLinkToDocuments.call(this, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	return [{ json: result }];
 }
 
 /**
@@ -41,9 +58,9 @@ export async function handleClassificationOperations(
 async function handleGetClassifyAttributes(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyAttributes`,
 			method: 'GET',
 			headers: {
@@ -55,6 +72,11 @@ async function handleGetClassifyAttributes(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -69,9 +91,9 @@ async function handleGetClassifyAttributes(
 async function handleGetClassifyAttributesDetail(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
 			method: 'GET',
 			headers: {
@@ -83,6 +105,11 @@ async function handleGetClassifyAttributesDetail(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -98,7 +125,7 @@ async function handleCreateNewClassify(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
@@ -106,11 +133,14 @@ async function handleCreateNewClassify(
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
-		} catch (e) {
-			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder!');
+		} catch (error) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Ungültiges JSON-Format für Klassifikationsfelder: ${error.message}`,
+			);
 		}
 		
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/createNewClassify/${docId}`,
 			method: 'POST',
 			headers: {
@@ -124,6 +154,11 @@ async function handleCreateNewClassify(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -139,7 +174,7 @@ async function handleClassifyInboxDocument(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
@@ -151,7 +186,7 @@ async function handleClassifyInboxDocument(
 			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder!');
 		}
 		
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyInboxDocument/${docId}`,
 			method: 'POST',
 			headers: {
@@ -165,6 +200,11 @@ async function handleClassifyInboxDocument(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -180,41 +220,20 @@ async function handleClassifyDocument(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const clDocId = this.getNodeParameter('clDocId', 0) as number;
 		const classifyAttributes = this.getNodeParameter('classifyAttributes', 0) as string;
 		
-		// Überprüfe, ob editRoles und readRoles direkt im Input-Item vorhanden sind
-		let editRolesFromInput: string[] | undefined;
-		let readRolesFromInput: string[] | undefined;
-		
-		// Versuche, die Daten aus dem ersten Item zu extrahieren
-		if (items.length > 0 && items[0].json) {
-			const jsonData = items[0].json as IDataObject;
-			if (jsonData.editRoles && Array.isArray(jsonData.editRoles)) {
-				editRolesFromInput = jsonData.editRoles as string[];
-			}
-			if (jsonData.readRoles && Array.isArray(jsonData.readRoles)) {
-				readRolesFromInput = jsonData.readRoles as string[];
-			}
-		}
-		
-		// Fallback zu den Parametern, falls im Input nicht vorhanden
-		const editRoles = editRolesFromInput ? 
-			editRolesFromInput.join(',') : 
-			this.getNodeParameter('editRoles', 0, '') as string;
-		
-		const readRoles = readRolesFromInput ? 
-			readRolesFromInput.join(',') : 
-			this.getNodeParameter('readRoles', 0, '') as string;
-		
 		let classifyData: IDataObject;
 		try {
 			classifyData = JSON.parse(classifyAttributes);
-		} catch (e) {
-			throw new NodeOperationError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsattribute!');
+		} catch (error) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Ungültiges JSON-Format für Klassifikationsattribute: ${error.message}`,
+			);
 		}
 		
 		const requestBody: IDataObject = {
@@ -223,21 +242,9 @@ async function handleClassifyDocument(
 			classifyAttributes: classifyData,
 		};
 		
-		if (editRolesFromInput || editRoles) {
-			requestBody.editRoles = editRolesFromInput || 
-				(editRoles ? editRoles.split(',').map(role => role.trim()) : []);
-		} else {
-			// Immer editRoles senden, auch wenn leer
-			requestBody.editRoles = [];
-		}
-		
-		// Immer readRoles senden, auch wenn leer
-		requestBody.readRoles = readRolesFromInput || 
-			(readRoles ? readRoles.split(',').map(role => role.trim()) : []);
-		
 		// Debug-Logging
-		console.log('Request URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
-		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+		console.debug('Request URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
+		console.debug('Request Body:', JSON.stringify(requestBody, null, 2));
 		
 		// Baue die Server-URL ohne Trailing-Slash
 		let serverUrl = credentials.serverUrl as string;
@@ -246,7 +253,7 @@ async function handleClassifyDocument(
 		}
 		
 		try {
-			return await this.helpers.httpRequest({
+			const response = await this.helpers.httpRequest({
 				url: `${serverUrl}/api/classifyDocument`,
 				method: 'POST',
 				headers: {
@@ -260,12 +267,17 @@ async function handleClassifyDocument(
 					password: credentials.password as string,
 				},
 			});
+
+			return {
+				success: true,
+				data: response,
+			};
 		} catch (error) {
-			console.log('Erster Versuch mit /api/classifyDocument fehlgeschlagen, versuche alternativen Pfad...');
+			console.debug(`Primärer API-Endpunkt fehlgeschlagen: ${error.message}`);
 			
 			// Strategie 1: API-Pfad mit IDs in URL
 			try {
-				return await this.helpers.httpRequest({
+				const response = await this.helpers.httpRequest({
 					url: `${serverUrl}/api/classifyDocument/${docId}/${clDocId}`,
 					method: 'POST',
 					headers: {
@@ -283,12 +295,17 @@ async function handleClassifyDocument(
 						password: credentials.password as string,
 					},
 				});
-			} catch (urlError) {
-				console.log('Pfad mit IDs in URL fehlgeschlagen, versuche Version 2 API...');
+
+				return {
+					success: true,
+					data: response,
+				};
+			} catch (error2) {
+				console.debug(`API-Pfad mit IDs fehlgeschlagen: ${error2.message}`);
 				
 				// Strategie 2: Version 2 API
 				try {
-					return await this.helpers.httpRequest({
+					const response = await this.helpers.httpRequest({
 						url: `${serverUrl}/api/v2/classifyDocument`,
 						method: 'POST',
 						headers: {
@@ -302,8 +319,13 @@ async function handleClassifyDocument(
 							password: credentials.password as string,
 						},
 					});
-				} catch (v2Error) {
-					console.log('Version 2 API fehlgeschlagen, versuche mit vollständigen Attributen...');
+
+					return {
+						success: true,
+						data: response,
+					};
+				} catch (error3) {
+					console.debug(`Version 2 API fehlgeschlagen: ${error3.message}`);
 					
 					// Strategie 3: Alle Attribute abrufen und senden
 					try {
@@ -339,9 +361,9 @@ async function handleClassifyDocument(
 							readRoles: requestBody.readRoles as string[]
 						};
 						
-						console.log('Kompletter Request Body mit allen Attributen:', JSON.stringify(completeRequestBody, null, 2));
+						console.debug('Kompletter Request Body mit allen Attributen:', JSON.stringify(completeRequestBody, null, 2));
 						
-						return await this.helpers.httpRequest({
+						const response = await this.helpers.httpRequest({
 							url: `${serverUrl}/api/classifyDocument`,
 							method: 'POST',
 							headers: {
@@ -355,34 +377,24 @@ async function handleClassifyDocument(
 								password: credentials.password as string,
 							},
 						});
-					} catch (attributeError) {
-						console.log('Versuch mit vollständigen Attributen fehlgeschlagen, versuche Minimalansatz...');
+
+						return {
+							success: true,
+							data: response,
+						};
+					} catch (finalError) {
+						// Sammle alle Fehlermeldungen für eine bessere Diagnose
+						const errorDetails = [
+							`Primärer Endpunkt: ${error.message}`,
+							`ID-basierter Pfad: ${error2.message}`,
+							`V2 API: ${error3.message}`,
+							`Vollständige Attribute: ${finalError.message}`,
+						].join('\n');
 						
-						// Strategie 4: Minimaler Ansatz
-						try {
-							return await this.helpers.httpRequest({
-								url: `${serverUrl}/api/classifyDocument`,
-								method: 'POST',
-								headers: {
-									'Accept': 'application/json',
-									'Content-Type': 'application/json',
-								},
-								body: {
-									docId,
-									clDocId,
-									editRoles: requestBody.editRoles,
-									readRoles: requestBody.readRoles
-								},
-								json: true,
-								auth: {
-									username: credentials.username as string,
-									password: credentials.password as string,
-								},
-							});
-						} catch (minimalError) {
-							console.log('Alle API-Pfad-Versuche fehlgeschlagen:', error.message);
-							throw error;
-						}
+						throw new NodeOperationError(
+							this.getNode(),
+							`Alle Versuche der Dokumentklassifikation sind fehlgeschlagen:\n${errorDetails}`,
+						);
 					}
 				}
 			}
@@ -401,11 +413,11 @@ async function handleClassifyDocument(
 async function handleRemoveDocumentLink(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
 		const clDocId = this.getNodeParameter('clDocId', 0) as number;
 		
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/removeDocumentLink/${clDocId}`,
 			method: 'DELETE',
 			headers: {
@@ -417,6 +429,11 @@ async function handleRemoveDocumentLink(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -431,7 +448,7 @@ async function handleRemoveDocumentLink(
 async function handleLinkToDocuments(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<ClassificationResponse> {
 	try {
 		const clDocId = this.getNodeParameter('clDocId', 0) as number;
 		
@@ -439,7 +456,7 @@ async function handleLinkToDocuments(
 		// Dies scheint in der Ressourcendatei zu fehlen und müsste ergänzt werden
 		const linkedDocuments: number[] = [];
 		
-		return await this.helpers.httpRequest({
+		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/linkToDocuments/${clDocId}`,
 			method: 'POST',
 			headers: {
@@ -455,6 +472,11 @@ async function handleLinkToDocuments(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
 		throw new NodeOperationError(
 			this.getNode(),

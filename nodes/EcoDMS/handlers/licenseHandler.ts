@@ -5,34 +5,49 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
+import { getBaseUrl } from '../utils/helpers';
+
+interface LicenseResponse extends IDataObject {
+	success?: boolean;
+	message?: string;
+	data?: IDataObject;
+}
 
 /**
- * Behandelt alle License-Operationen für ecoDMS
+ * Behandelt alle Lizenz-Operationen für ecoDMS
  */
 export async function handleLicenseOperations(
 	this: IExecuteFunctions,
 	items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
-): Promise<INodeExecutionData[] | IDataObject> {
+): Promise<INodeExecutionData[]> {
+	let result: LicenseResponse | INodeExecutionData[];
+
 	switch (operation) {
 		case Operation.GetInfo:
-			return await handleGetLicenseInfo.call(this, credentials);
+			result = await handleGetLicenseInfo.call(this, credentials);
+			break;
 		default:
 			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
 	}
+
+	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
+	return Array.isArray(result) ? result : [{ json: result }];
 }
 
 /**
- * Informationen über die aktuelle Lizenz abrufen
+ * Implementiert das Abrufen der Lizenzinformationen
  */
 async function handleGetLicenseInfo(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<IDataObject> {
+): Promise<LicenseResponse> {
+	const url = await getBaseUrl.call(this, 'licenseInfo');
+	
 	try {
-		return await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/getLicenseInfo`,
+		const response = await this.helpers.httpRequest({
+			url,
 			method: 'GET',
 			headers: {
 				'Accept': 'application/json',
@@ -43,10 +58,12 @@ async function handleGetLicenseInfo(
 				password: credentials.password as string,
 			},
 		});
+
+		return {
+			success: true,
+			data: response,
+		};
 	} catch (error) {
-		throw new NodeOperationError(
-			this.getNode(),
-			`Fehler beim Abrufen der Lizenzinformationen: ${error.message}`,
-		);
+		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Lizenzinformationen: ${error.message}`);
 	}
 } 

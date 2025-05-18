@@ -1,13 +1,10 @@
 import {
-	BINARY_ENCODING,
-	IDataObject,
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
 	INodeTypeDescription,
 	ILoadOptionsFunctions,
 	INodePropertyOptions,
-	IRequestOptions,
 	NodeOperationError,
 	NodeConnectionType,
 } from 'n8n-workflow';
@@ -131,7 +128,6 @@ export class EcoDMS implements INodeType {
 	// Methoden für dynamische Optionen in Dropdown-Menüs
 	methods = {
 		loadOptions: {
-			// Methoden für dynamische Optionen in Dropdown-Menüs
 			async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getFolders.call(this);
 			},
@@ -148,7 +144,7 @@ export class EcoDMS implements INodeType {
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const items = this.getInputData();
-		let responseData: any;
+		let responseData: INodeExecutionData[] = [];
 		const resource = this.getNodeParameter('resource', 0) as string;
 		const operation = this.getNodeParameter('operation', 0) as string;
 
@@ -195,28 +191,6 @@ export class EcoDMS implements INodeType {
 			throw new NodeOperationError(this.getNode(), `Fehler bei der Verarbeitung: ${error.message}`);
 		}
 
-		// Antwortdaten verarbeiten und zurückgeben
-		const returnData: INodeExecutionData[] = [];
-		
-		if (Array.isArray(responseData)) {
-			// Direkt zurückgeben, wenn es sich um ein Array von Nodes handelt
-			if (responseData.length > 0 && responseData[0].binary !== undefined) {
-				return [responseData];
-			}
-			
-			// Ansonsten jedes Element konvertieren und hinzufügen
-			for (const item of responseData) {
-				if (item.json !== undefined) {
-					returnData.push(item as INodeExecutionData);
-				} else {
-					returnData.push({ json: item });
-				}
-			}
-		} else if (responseData !== undefined) {
-			// Einzelobjekt in Array umwandeln
-			returnData.push({ json: responseData });
-		}
-
-		return [returnData];
+		return [responseData];
 	}
 } 
