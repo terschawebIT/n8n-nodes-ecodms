@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ecodms",
-  "version": "0.1.8",
+  "version": "0.2.0",
   "description": "Custom n8n node for ecoDMS document management system",
   "keywords": [
     "n8n-community-node-package",
@@ -75,6 +75,8 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "testMatch": ["<rootDir>/nodes/**/*.test.ts"]
+    "testMatch": [
+      "<rootDir>/nodes/**/*.test.ts"
+    ]
   }
 }
