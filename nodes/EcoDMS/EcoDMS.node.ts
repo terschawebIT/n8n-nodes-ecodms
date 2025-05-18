@@ -29,8 +29,6 @@ import { handleWorkflowOperations } from './handlers/workflowHandler';
 import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
 import { createNodeError } from './utils/errorHandler';
 
-export { Resource, Operation };
-
 export class EcoDMS implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'ecoDMS',
