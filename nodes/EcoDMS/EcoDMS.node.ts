@@ -27,6 +27,7 @@ import { handleFolderOperations } from './handlers/folderHandler';
 import { handleLicenseOperations } from './handlers/licenseHandler';
 import { handleWorkflowOperations } from './handlers/workflowHandler';
 import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
+import { createNodeError } from './utils/errorHandler';
 
 export { Resource, Operation };
 
@@ -184,11 +185,11 @@ export class EcoDMS implements INodeType {
 				default:
 					throw new NodeOperationError(this.getNode(), `Die Ressource "${resource}" wird nicht unterstützt!`);
 			}
-		} catch (error) {
-			if (error.constructor.name === 'NodeOperationError') {
+		} catch (error: unknown) {
+			if (error instanceof NodeOperationError) {
 				throw error;
 			}
-			throw new NodeOperationError(this.getNode(), `Fehler bei der Verarbeitung: ${error.message}`);
+			throw createNodeError(this.getNode(), 'Fehler bei der Verarbeitung', error);
 		}
 
 		return [responseData];

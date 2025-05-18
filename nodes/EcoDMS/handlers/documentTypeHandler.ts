@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError } from '../utils/errorHandler';
 
 interface DocumentTypeResponse extends IDataObject {
 	success?: boolean;
@@ -66,8 +67,8 @@ async function handleGetTypes(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumenttypen: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Dokumenttypen', error);
 	}
 }
 
@@ -99,7 +100,7 @@ async function handleGetTypeClassifications(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumenttyp-Klassifikationen: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Dokumenttyp-Klassifikationen', error);
 	}
 } 

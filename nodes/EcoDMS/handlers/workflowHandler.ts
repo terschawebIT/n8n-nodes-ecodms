@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError, getErrorMessage } from '../utils/errorHandler';
 
 interface WorkflowResponse extends IDataObject {
 	success?: boolean;
@@ -67,8 +68,8 @@ async function handleUploadAndClassify(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Hochladen und Klassifizieren: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Hochladen und Klassifizieren', error);
 	}
 }
 
@@ -160,23 +161,24 @@ async function handleSearchAndDownload(
 				);
 				
 				returnItems.push(newItem);
-			} catch (error) {
+			} catch (error: unknown) {
 				// Bei Fehler beim Herunterladen eines einzelnen Dokuments weitermachen
 				returnItems.push({
 					json: {
 						...document,
 						downloadSuccess: false,
-						downloadError: error.message,
+						downloadError: getErrorMessage(error),
 					},
 				});
 			}
 		}
 		
 		return returnItems;
-	} catch (error) {
-		throw new NodeOperationError(
+	} catch (error: unknown) {
+		throw createNodeError(
 			this.getNode(),
-			`Fehler beim Suchen und Herunterladen der Dokumente: ${error.message}`,
+			'Fehler beim Suchen und Herunterladen der Dokumente',
+			error,
 		);
 	}
 } 

@@ -1,12 +1,22 @@
-import cache from 'memory-cache';
+import { INodePropertyOptions } from 'n8n-workflow';
 import logger from './logger';
+
+interface CacheEntry {
+	data: INodePropertyOptions[];
+	timestamp: number;
+}
+
+interface Cache {
+	[key: string]: CacheEntry;
+}
 
 export class CacheManager {
     private static instance: CacheManager;
-    private cache: typeof cache;
+    private cache: Cache = {};
+    private readonly ttl: number;
 
-    private constructor() {
-        this.cache = cache;
+    private constructor(ttlInMinutes = 5) {
+        this.ttl = ttlInMinutes * 60 * 1000; // Konvertiere Minuten in Millisekunden
     }
 
     public static getInstance(): CacheManager {
@@ -16,29 +26,29 @@ export class CacheManager {
         return CacheManager.instance;
     }
 
-    public set(key: string, value: any, duration: number = 3600000): void {
-        try {
-            this.cache.put(key, value, duration);
-            logger.debug(`Cache: Set key "${key}" with duration ${duration}ms`);
-        } catch (error) {
-            logger.error(`Cache: Error setting key "${key}": ${error}`);
-        }
-    }
+    public get(key: string): INodePropertyOptions[] | null {
+        const entry = this.cache[key];
+        if (!entry) return null;
 
-    public get(key: string): any {
-        try {
-            const value = this.cache.get(key);
-            logger.debug(`Cache: Get key "${key}" - ${value ? 'Hit' : 'Miss'}`);
-            return value;
-        } catch (error) {
-            logger.error(`Cache: Error getting key "${key}": ${error}`);
+        // Prüfe, ob der Cache-Eintrag abgelaufen ist
+        if (Date.now() - entry.timestamp > this.ttl) {
+            delete this.cache[key];
             return null;
         }
+
+        return entry.data;
+    }
+
+    public set(key: string, data: INodePropertyOptions[]): void {
+        this.cache[key] = {
+            data,
+            timestamp: Date.now(),
+        };
     }
 
     public del(key: string): void {
         try {
-            this.cache.del(key);
+            delete this.cache[key];
             logger.debug(`Cache: Deleted key "${key}"`);
         } catch (error) {
             logger.error(`Cache: Error deleting key "${key}": ${error}`);
@@ -46,11 +56,6 @@ export class CacheManager {
     }
 
     public clear(): void {
-        try {
-            this.cache.clear();
-            logger.debug('Cache: Cleared all entries');
-        } catch (error) {
-            logger.error(`Cache: Error clearing cache: ${error}`);
-        }
+        this.cache = {};
     }
 } 

@@ -4,6 +4,7 @@ import {
 	INodePropertyOptions,
 	ICredentialDataDecryptedObject,
 } from 'n8n-workflow';
+import { getErrorMessage } from './errorHandler';
 
 interface EcoDmsApiCredentials extends ICredentialDataDecryptedObject {
 	serverUrl: string;
@@ -137,14 +138,11 @@ export async function getFolders(
 		
 		if (!Array.isArray(response)) {
 			console.error(`Unerwartetes Antwortformat beim Abrufen der Ordner: ${JSON.stringify(response).substring(0, 200)}`);
-			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-			return [
-				{
-					name: '-- Fehler beim Laden der Ordner --',
-					value: '',
-					description: 'Ordner konnten nicht geladen werden, bitte prüfen Sie die Logs',
-				}
-			];
+			return [{
+				name: '-- Fehler beim Laden der Ordner --',
+				value: '',
+				description: 'Unerwartetes Antwortformat',
+			}];
 		}
 		
 		// Ordner in das erforderliche Format konvertieren
@@ -174,17 +172,13 @@ export async function getFolders(
 		
 		console.log(`${options.length} Ordner-Optionen geladen`);
 		return options;
-	} catch (error) {
+	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Ordner:', error);
-		
-		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-		return [
-			{
-				name: '-- Fehler beim Laden der Ordner --',
-				value: '',
-				description: `Fehler: ${error.message}`,
-			}
-		];
+		return [{
+			name: '-- Fehler beim Laden der Ordner --',
+			value: '',
+			description: `Fehler: ${getErrorMessage(error)}`,
+		}];
 	}
 }
 
@@ -220,14 +214,11 @@ export async function getDocumentTypes(
 		
 		if (!Array.isArray(response)) {
 			console.error(`Unerwartetes Antwortformat beim Abrufen der Dokumentarten: ${JSON.stringify(response).substring(0, 200)}`);
-			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-			return [
-				{
-					name: '-- Fehler beim Laden der Dokumentarten --',
-					value: '',
-					description: 'Dokumentarten konnten nicht geladen werden, bitte prüfen Sie die Logs',
-				}
-			];
+			return [{
+				name: '-- Fehler beim Laden der Dokumentarten --',
+				value: '',
+				description: 'Unerwartetes Antwortformat',
+			}];
 		}
 		
 		// Dokumentarten in das erforderliche Format konvertieren
@@ -257,17 +248,13 @@ export async function getDocumentTypes(
 		
 		console.log(`${options.length} Dokumenttyp-Optionen geladen`);
 		return options;
-	} catch (error) {
+	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Dokumentarten:', error);
-		
-		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-		return [
-			{
-				name: '-- Fehler beim Laden der Dokumentarten --',
-				value: '',
-				description: `Fehler: ${error.message}`,
-			}
-		];
+		return [{
+			name: '-- Fehler beim Laden der Dokumentarten --',
+			value: '',
+			description: `Fehler: ${getErrorMessage(error)}`,
+		}];
 	}
 }
 
@@ -303,14 +290,11 @@ export async function getStatusValues(
 		
 		if (!Array.isArray(response)) {
 			console.error(`Unerwartetes Antwortformat beim Abrufen der Status-Werte: ${JSON.stringify(response).substring(0, 200)}`);
-			// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-			return [
-				{
-					name: '-- Fehler beim Laden der Status-Werte --',
-					value: '',
-					description: 'Status-Werte konnten nicht geladen werden, bitte prüfen Sie die Logs',
-				}
-			];
+			return [{
+				name: '-- Fehler beim Laden der Status-Werte --',
+				value: '',
+				description: 'Unerwartetes Antwortformat',
+			}];
 		}
 		
 		// Status-Werte in das erforderliche Format konvertieren
@@ -340,16 +324,12 @@ export async function getStatusValues(
 		
 		console.log(`${options.length} Status-Optionen geladen`);
 		return options;
-	} catch (error) {
+	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Status-Werte:', error);
-		
-		// Statt eine Exception zu werfen, geben wir ein Standard-Fallback zurück
-		return [
-			{
-				name: '-- Fehler beim Laden der Status-Werte --',
-				value: '',
-				description: `Fehler: ${error.message}`,
-			}
-		];
+		return [{
+			name: '-- Fehler beim Laden der Status-Werte --',
+			value: '',
+			description: `Fehler: ${getErrorMessage(error)}`,
+		}];
 	}
 } 

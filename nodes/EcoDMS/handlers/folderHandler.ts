@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { getBaseUrl } from '../utils/helpers';
+import { createNodeError } from '../utils/errorHandler';
 
 interface FolderResponse extends IDataObject {
 	success?: boolean;
@@ -78,8 +79,8 @@ async function handleEditFolder(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Bearbeiten des Ordners: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Bearbeiten des Ordners', error);
 	}
 }
 
@@ -115,8 +116,8 @@ async function handleCreateFolder(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Erstellen des Ordners: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Erstellen des Ordners', error);
 	}
 }
 
@@ -153,8 +154,8 @@ async function handleCreateSubfolder(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Erstellen des Unterordners: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Erstellen des Unterordners', error);
 	}
 }
 
@@ -185,7 +186,7 @@ async function handleGetFolders(
 			success: true,
 			data: response,
 		};
-	} catch (error) {
-		throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Ordner: ${error.message}`);
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Ordner', error);
 	}
 } 
