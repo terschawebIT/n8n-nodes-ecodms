@@ -1,47 +1,48 @@
-import js from '@eslint/js';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tseslintParser from '@typescript-eslint/parser';
-import n8nNodesBase from 'eslint-plugin-n8n-nodes-base';
+const js = require('@eslint/js');
+const globals = require('globals');
+const typescriptParser = require('@typescript-eslint/parser');
+const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+const n8nNodesBase = require('eslint-plugin-n8n-nodes-base');
 
-export default [
+module.exports = [
   js.configs.recommended,
   {
-    ignores: ['dist/**', 'node_modules/**'],
-  },
-  {
     files: ['**/*.ts'],
-    plugins: {
-      '@typescript-eslint': tseslint,
-      'n8n-nodes-base': n8nNodesBase,
-    },
     languageOptions: {
-      parser: tseslintParser,
+      parser: typescriptParser,
       parserOptions: {
         project: './tsconfig.json',
-        sourceType: 'module',
-        ecmaVersion: 2020,
       },
       globals: {
-        console: 'readonly',
-        Buffer: 'readonly',
+        ...globals.node,
       },
     },
+    plugins: {
+      '@typescript-eslint': typescriptPlugin,
+      'n8n-nodes-base': n8nNodesBase,
+    },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-        args: 'none',
-      }],
-      '@typescript-eslint/explicit-function-return-type': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      'prefer-const': 'warn',
-      'no-console': ['warn', { 
-        allow: ['warn', 'error', 'info', 'debug', 'log'] 
-      }],
-      'no-unused-vars': 'off',
-      'no-undef': 'off',
+      ...typescriptPlugin.configs.recommended.rules,
+      'n8n-nodes-base/node-class-description-inputs-wrong-regular-node': 'error',
+      'n8n-nodes-base/node-class-description-missing-subtitle': 'error',
+      'n8n-nodes-base/node-class-description-display-name-wrong-for-regular-node': 'error',
+      'n8n-nodes-base/node-class-description-icon-not-svg': 'error',
+      'n8n-nodes-base/node-execute-block-missing-continue-on-fail': 'error',
+      'n8n-nodes-base/node-resource-description-filename-against-convention': 'error',
+      'n8n-nodes-base/node-param-description-missing-for-return-all': 'error',
+      'n8n-nodes-base/node-param-description-wrong-for-limit': 'error',
+      'n8n-nodes-base/node-param-description-missing-for-simplify': 'error',
+      'n8n-nodes-base/node-param-description-missing-for-upsert': 'error',
+      'n8n-nodes-base/node-param-default-missing': 'error',
+      'n8n-nodes-base/node-param-default-wrong': 'error',
+      'n8n-nodes-base/node-param-description-missing': 'error',
+      'n8n-nodes-base/node-param-display-name-wrong-for-dynamic-options': 'error',
+      'n8n-nodes-base/node-param-operation-without-no-data-expression': 'error',
+      'n8n-nodes-base/node-param-option-name-containing-star': 'error',
+      'n8n-nodes-base/node-param-option-name-wrong-for-get-all': 'error',
+      'n8n-nodes-base/node-param-option-name-wrong-for-upsert': 'error',
+      'n8n-nodes-base/node-param-option-value-wrong-for-get-all': 'error',
+      'n8n-nodes-base/node-param-required-false': 'error',
     },
   },
 ]; 
