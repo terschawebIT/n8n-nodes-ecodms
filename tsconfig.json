@@ -14,7 +14,11 @@
     "importHelpers": true,
     "removeComments": true,
     "sourceMap": true,
-    "declaration": true
+    "declaration": true,
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": false,
+    "isolatedModules": false
   },
   "include": ["nodes/**/*", "credentials/**/*"],
   "exclude": ["node_modules/**/*", "**/*.test.ts"]
