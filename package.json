@@ -70,6 +70,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
+    "globals": "^16.1.0",
     "memory-cache": "^0.2.0",
     "winston": "^3.11.0"
   },
