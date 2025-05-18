@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ecodms",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Custom n8n node for ecoDMS document management system",
   "keywords": [
     "n8n-community-node-package",
