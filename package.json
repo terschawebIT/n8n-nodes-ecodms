@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-ecodms",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "ecoDMS-Integration für n8n",
   "keywords": [
     "n8n-community-node-package",
