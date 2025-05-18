@@ -9,7 +9,7 @@ import {
 	NodeConnectionType,
 } from 'n8n-workflow';
 
-import { Resource, Operation } from './utils/constants';
+import { Resource } from './utils/constants';
 import { documentOperations, documentFields } from './resources/document';
 import { classificationOperations, classificationFields } from './resources/classification';
 import { documentTypeOperations, documentTypeFields } from './resources/documentType';
