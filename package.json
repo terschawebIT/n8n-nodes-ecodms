@@ -25,10 +25,7 @@
     "npm": ">=10.0.0"
   },
   "main": "dist/nodes/EcoDMS/EcoDMS.node.js",
-  "exports": {
-    ".": "./dist/nodes/EcoDMS/EcoDMS.node.js",
-    "./credentials": "./dist/credentials/EcoDmsApi.credentials.js"
-  },
+  "types": "dist/nodes/EcoDMS/EcoDMS.node.d.ts",
   "scripts": {
     "build": "tsc && npm run copy-icons",
     "copy-icons": "mkdir -p dist/nodes dist/credentials && cp -r nodes/**/*.svg dist/nodes/ && cp -r credentials/*.svg dist/credentials/ 2>/dev/null || true",

@@ -11,15 +11,22 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "importHelpers": true,
     "removeComments": true,
     "sourceMap": true,
     "declaration": true,
     "allowJs": true,
     "checkJs": false,
     "noEmit": false,
-    "isolatedModules": false
+    "isolatedModules": false,
+    "allowSyntheticDefaultImports": true,
+    "moduleDetection": "force",
+    "verbatimModuleSyntax": false
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
   },
   "include": ["nodes/**/*", "credentials/**/*"],
-  "exclude": ["node_modules/**/*", "**/*.test.ts"]
+  "exclude": ["node_modules/**/*", "**/*.test.ts", "dist/**/*"]
 } 
