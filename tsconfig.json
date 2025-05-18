@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["es2019", "es2020", "es2021", "es2022", "es2023"],
+    "lib": ["es2019"],
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "es2019",
+    "target": "es2017",
     "strict": true,
     "outDir": "./dist/",
     "types": ["node", "jest"],
