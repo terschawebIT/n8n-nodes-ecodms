@@ -33,7 +33,7 @@ export class EcoDMS implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'ecoDMS',
 		name: 'ecoDMS',
-		icon: 'file:ecoDms.svg',
+		icon: 'file:../ecoDms.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{ $parameter["operation"] + ": " + $parameter["resource"] }}',
