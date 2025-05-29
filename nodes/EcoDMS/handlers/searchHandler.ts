@@ -59,11 +59,12 @@ async function handleSearch(
 		const url = await getBaseUrl.call(this, 'searchDocuments');
 		
 		// Erstelle den korrekten Search Filter für Volltext-Suche
+		// Verwende 'fulltext-ext' für Suche in Dokumentinhalten UND Klassifikationsattributen
 		const searchFilters = [
 			{
-				classifyAttribut: 'bemerkung',
+				classifyAttribut: 'fulltext-ext',
 				searchValue: searchTerm,
-				searchOperator: 'ilike'
+				searchOperator: '='
 			}
 		];
 		
@@ -174,9 +175,9 @@ async function handleSearchAndDownload(
 		
 		const searchFilters = [
 			{
-				classifyAttribut: 'bemerkung',
+				classifyAttribut: 'fulltext-ext',
 				searchValue: searchTerm,
-				searchOperator: 'ilike'
+				searchOperator: '='
 			}
 		];
 		
