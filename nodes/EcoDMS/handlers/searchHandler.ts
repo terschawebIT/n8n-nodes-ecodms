@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface SearchResponse extends IDataObject {
 	success?: boolean;
@@ -51,18 +52,29 @@ async function handleSearch(
 	credentials: IDataObject,
 ): Promise<SearchResponse> {
 	const searchTerm = this.getNodeParameter('searchText', 0) as string;
+	const maxDocuments = this.getNodeParameter('maxDocuments', 0, 100) as number;
 	
 	try {
+		// Verwende die korrekte ecoDMS API URL
+		const url = await getBaseUrl.call(this, 'searchDocuments');
+		
+		// Erstelle den korrekten Search Filter für Volltext-Suche
+		const searchFilters = [
+			{
+				classifyAttribut: 'bemerkung',
+				searchValue: searchTerm,
+				searchOperator: 'ilike'
+			}
+		];
+		
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/search`,
+			url,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				searchTerm,
-			},
+			body: searchFilters,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -70,9 +82,19 @@ async function handleSearch(
 			},
 		});
 
+		// Limitiere die Ergebnisse entsprechend dem maxDocuments Parameter
+		let documents = Array.isArray(response) ? response : [];
+		if (maxDocuments > 0 && documents.length > maxDocuments) {
+			documents = documents.slice(0, maxDocuments);
+		}
+
 		return {
 			success: true,
-			data: response,
+			data: {
+				documents,
+				totalFound: Array.isArray(response) ? response.length : 0,
+				limitedTo: maxDocuments,
+			},
 		};
 	} catch (error: unknown) {
 		throw createNodeError(
@@ -94,17 +116,24 @@ async function handleAdvancedSearch(
 	const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
 	
 	try {
+		// Verwende die korrekte ecoDMS API URL
+		const url = await getBaseUrl.call(this, 'searchDocuments');
+		
+		// Konvertiere die Filter in das richtige Format
+		const searchFilters = filters.map((filter: IDataObject) => ({
+			classifyAttribut: filter.classifyAttribut,
+			searchValue: filter.searchValueText || filter.searchValueDocumentType || filter.searchValueFolder || filter.searchValueStatus || '',
+			searchOperator: filter.searchOperator || '='
+		}));
+		
 		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/advancedSearch`,
+			url,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				filters,
-				...additionalOptions,
-			},
+			body: searchFilters,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -114,7 +143,10 @@ async function handleAdvancedSearch(
 
 		return {
 			success: true,
-			data: response,
+			data: {
+				documents: Array.isArray(response) ? response : [],
+				totalFound: Array.isArray(response) ? response.length : 0,
+			},
 		};
 	} catch (error: unknown) {
 		throw createNodeError(
@@ -137,17 +169,25 @@ async function handleSearchAndDownload(
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
 	
 	try {
-		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/searchAndDownload`,
+		// Erst suchen
+		const searchUrl = await getBaseUrl.call(this, 'searchDocuments');
+		
+		const searchFilters = [
+			{
+				classifyAttribut: 'bemerkung',
+				searchValue: searchTerm,
+				searchOperator: 'ilike'
+			}
+		];
+		
+		const searchResponse = await this.helpers.httpRequest({
+			url: searchUrl,
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				searchTerm,
-			},
-			encoding: 'arraybuffer',
+			body: searchFilters,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -155,21 +195,80 @@ async function handleSearchAndDownload(
 			},
 		});
 
-		const newItem: INodeExecutionData = {
-			json: {
-				success: true,
-				searchTerm,
-			},
-			binary: {},
-		};
+		if (!Array.isArray(searchResponse) || searchResponse.length === 0) {
+			return [{
+				json: {
+					success: true,
+					message: 'Keine Dokumente gefunden',
+					searchTerm,
+				}
+			}];
+		}
 
-		newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
-			Buffer.from(response as Buffer),
-			'search_results.zip',
-			'application/zip',
-		);
+		const returnItems: INodeExecutionData[] = [];
 
-		return [newItem];
+		// Für jedes gefundene Dokument versuchen wir es herunterzuladen
+		for (const document of searchResponse) {
+			try {
+				const docId = document.docId;
+				const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
+				
+				const downloadResponse = await this.helpers.httpRequest({
+					url: downloadUrl,
+					method: 'GET',
+					headers: {
+						'Accept': '*/*',
+					},
+					encoding: 'arraybuffer',
+					returnFullResponse: true,
+					auth: {
+						username: credentials.username as string,
+						password: credentials.password as string,
+					},
+				});
+
+				// Dateiname aus Content-Disposition oder aus bemerkung extrahieren
+				const contentDisposition = downloadResponse.headers['content-disposition'] as string;
+				let fileName = document.classifyAttributes?.bemerkung || `document_${docId}.pdf`;
+				if (contentDisposition) {
+					const match = contentDisposition.match(/filename="(.+)"/);
+					if (match) {
+						fileName = match[1];
+					}
+				}
+
+				const contentType = downloadResponse.headers['content-type'] as string || 'application/pdf';
+
+				const newItem: INodeExecutionData = {
+					json: {
+						...document,
+						downloadSuccess: true,
+						searchTerm,
+					},
+					binary: {},
+				};
+
+				newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
+					Buffer.from(downloadResponse.body as Buffer),
+					fileName,
+					contentType,
+				);
+
+				returnItems.push(newItem);
+			} catch (downloadError: unknown) {
+				// Bei Download-Fehler trotzdem das Dokument mit Fehlerinfo zurückgeben
+				returnItems.push({
+					json: {
+						...document,
+						downloadSuccess: false,
+						downloadError: (downloadError as Error).message,
+						searchTerm,
+					},
+				});
+			}
+		}
+
+		return returnItems;
 	} catch (error: unknown) {
 		throw createNodeError(
 			this.getNode(),
