@@ -91,7 +91,7 @@ async function handleCreateFolder(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<FolderResponse> {
-	const folderName = this.getNodeParameter('folderName', 0) as string;
+	const folderName = this.getNodeParameter('foldername', 0) as string;
 	const url = await getBaseUrl.call(this, 'folders');
 	
 	try {
@@ -129,7 +129,7 @@ async function handleCreateSubfolder(
 	credentials: IDataObject,
 ): Promise<FolderResponse> {
 	const parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
-	const folderName = this.getNodeParameter('folderName', 0) as string;
+	const folderName = this.getNodeParameter('foldername', 0) as string;
 	const url = await getBaseUrl.call(this, `folders/${parentFolderId}/subfolders`);
 	
 	try {
