@@ -50,7 +50,7 @@ async function handleSearch(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<SearchResponse> {
-	const searchTerm = this.getNodeParameter('searchTerm', 0) as string;
+	const searchTerm = this.getNodeParameter('searchText', 0) as string;
 	
 	try {
 		const response = await this.helpers.httpRequest({
@@ -133,7 +133,7 @@ async function handleSearchAndDownload(
 	items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
-	const searchTerm = this.getNodeParameter('searchTerm', 0) as string;
+	const searchTerm = this.getNodeParameter('searchText', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
 	
 	try {
