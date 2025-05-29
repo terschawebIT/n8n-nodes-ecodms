@@ -157,8 +157,8 @@ export async function getFolders(
 		
 		for (const folder of response) {
 			options.push({
-				name: folder.name || `Ordner ${folder.id}`,
-				value: folder.id.toString(),
+				name: folder.foldername || `Ordner ${folder.oId}`,
+				value: folder.oId.toString(),
 				description: folder.description || '',
 			});
 		}
