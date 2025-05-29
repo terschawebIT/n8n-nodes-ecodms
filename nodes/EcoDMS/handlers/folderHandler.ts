@@ -55,18 +55,19 @@ async function handleEditFolder(
 ): Promise<FolderResponse> {
 	const folderId = this.getNodeParameter('folderId', 0) as string;
 	const folderName = this.getNodeParameter('folderName', 0) as string;
-	const url = await getBaseUrl.call(this, `folders/${folderId}`);
+	const url = await getBaseUrl.call(this, 'editFolder');
 	
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
-			method: 'PUT',
+			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
-				name: folderName,
+				oId: folderId,
+				foldername: folderName,
 			},
 			json: true,
 			auth: {
@@ -92,7 +93,7 @@ async function handleCreateFolder(
 	credentials: IDataObject,
 ): Promise<FolderResponse> {
 	const folderName = this.getNodeParameter('foldername', 0) as string;
-	const url = await getBaseUrl.call(this, 'folders');
+	const url = await getBaseUrl.call(this, 'createFolder');
 	
 	try {
 		const response = await this.helpers.httpRequest({
@@ -103,7 +104,8 @@ async function handleCreateFolder(
 				'Content-Type': 'application/json',
 			},
 			body: {
-				name: folderName,
+				mainFolder: true,
+				foldername: folderName,
 			},
 			json: true,
 			auth: {
@@ -128,9 +130,18 @@ async function handleCreateSubfolder(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<FolderResponse> {
-	const parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
+	const parentFolderSelection = this.getNodeParameter('parentFolderSelection', 0) as string;
+	let parentFolderId: string;
+	
+	// Je nach Auswahl des Benutzers die richtige Ordner-ID ermitteln
+	if (parentFolderSelection === 'manual') {
+		parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
+	} else {
+		parentFolderId = this.getNodeParameter('parentFolderDropdown', 0) as string;
+	}
+	
 	const folderName = this.getNodeParameter('foldername', 0) as string;
-	const url = await getBaseUrl.call(this, `folders/${parentFolderId}/subfolders`);
+	const url = await getBaseUrl.call(this, `createFolder/parent/${parentFolderId}`);
 	
 	try {
 		const response = await this.helpers.httpRequest({
@@ -141,7 +152,8 @@ async function handleCreateSubfolder(
 				'Content-Type': 'application/json',
 			},
 			body: {
-				name: folderName,
+				mainFolder: false,
+				foldername: folderName,
 			},
 			json: true,
 			auth: {

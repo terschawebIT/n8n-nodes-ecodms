@@ -139,6 +139,32 @@ export const folderFields: INodeProperties[] = [
 	
 	// Unterordner erstellen
 	{
+		displayName: 'Übergeordneter Ordner auswählen',
+		name: 'parentFolderSelection',
+		type: 'options',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Folder],
+				operation: [Operation.CreateSubfolder],
+			},
+		},
+		options: [
+			{
+				name: 'ID manuell eingeben',
+				value: 'manual',
+				description: 'Ordner-ID direkt eingeben',
+			},
+			{
+				name: 'Aus Liste auswählen',
+				value: 'dropdown',
+				description: 'Ordner aus einer Liste auswählen',
+			},
+		],
+		default: 'dropdown',
+		description: 'Wählen Sie, wie Sie den übergeordneten Ordner auswählen möchten',
+	},
+	{
 		displayName: 'Übergeordneter Ordner-ID',
 		name: 'parentFolderId',
 		type: 'string',
@@ -147,10 +173,29 @@ export const folderFields: INodeProperties[] = [
 			show: {
 				resource: [Resource.Folder],
 				operation: [Operation.CreateSubfolder],
+				parentFolderSelection: ['manual'],
 			},
 		},
 		default: '',
 		description: 'ID des übergeordneten Ordners, in dem der Unterordner erstellt werden soll',
+	},
+	{
+		displayName: 'Übergeordneter Ordner',
+		name: 'parentFolderDropdown',
+		type: 'options',
+		required: true,
+		typeOptions: {
+			loadOptionsMethod: 'getFolders',
+		},
+		displayOptions: {
+			show: {
+				resource: [Resource.Folder],
+				operation: [Operation.CreateSubfolder],
+				parentFolderSelection: ['dropdown'],
+			},
+		},
+		default: '',
+		description: 'Übergeordneter Ordner aus der Liste auswählen',
 	},
 	{
 		displayName: 'Ordnername',
