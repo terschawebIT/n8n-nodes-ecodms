@@ -7,7 +7,7 @@ export const Resource = {
 	Thumbnail: 'thumbnail',
 	License: 'license',
 	Folder: 'folder',
-	Workflow: 'workflow'
+	Workflow: 'workflow',
 } as const;
 
 export const Operation = {
@@ -44,5 +44,5 @@ export const Operation = {
 	GetFolders: 'getFolders',
 	Connect: 'connect',
 	UploadAndClassify: 'uploadAndClassify',
-	SearchAndDownload: 'searchAndDownload'
-} as const; 
+	SearchAndDownload: 'searchAndDownload',
+} as const;

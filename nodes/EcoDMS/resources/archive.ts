@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const archiveOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -54,4 +54,4 @@ export const archiveFields: INodeProperties[] = [
 		},
 		description: 'Optional: API-Schlüssel für die Verbindung zum Archiv',
 	},
-]; 
+];

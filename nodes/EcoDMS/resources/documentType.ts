@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const documentTypeOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -17,6 +17,13 @@ export const documentTypeOperations: INodeProperties = {
 			description: 'Liste aller Dokumenttypen abrufen',
 			action: 'Liste aller Dokumenttypen abrufen',
 		},
+		{
+			name: 'Dokumenttyp-Klassifikationen abrufen',
+			value: Operation.GetTypeClassifications,
+			description:
+				'Erforderliche und versteckte Klassifikationsattribute für einen Dokumenttyp abrufen',
+			action: 'Dokumenttyp-Klassifikationen abrufen',
+		},
 	],
 	default: Operation.GetTypes,
 	noDataExpression: true,
@@ -26,4 +33,21 @@ export const documentTypeOperations: INodeProperties = {
 export const documentTypeFields: INodeProperties[] = [
 	// Parameter für Dokumenttypen abrufen
 	// Hier keine speziellen Parameter nötig - der Endpunkt benötigt keine zusätzlichen Parameter
-]; 
+
+	// Parameter für Dokumenttyp-Klassifikationen abrufen
+	{
+		displayName: 'Dokumenttyp-ID',
+		name: 'typeId',
+		type: 'string',
+		displayOptions: {
+			show: {
+				resource: [Resource.DocumentType],
+				operation: [Operation.GetTypeClassifications],
+			},
+		},
+		default: '',
+		required: true,
+		description:
+			'Eindeutige ID des Dokumenttyps, für den die Klassifikationen abgerufen werden sollen',
+	},
+];

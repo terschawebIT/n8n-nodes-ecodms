@@ -46,5 +46,8 @@ coverage/
 # Build artifacts
 *.tsbuildinfo
 
+# Package files
+*.tgz
+
 # Environment variables
 .env 

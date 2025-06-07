@@ -1,12 +1,12 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { getBaseUrl } from '../utils/helpers';
 import { createNodeError } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface DocumentTypeResponse extends IDataObject {
 	success?: boolean;
@@ -33,7 +33,10 @@ export async function handleDocumentTypeOperations(
 			result = await handleGetTypeClassifications.call(this, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
@@ -47,14 +50,14 @@ async function handleGetTypes(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<DocumentTypeResponse> {
-	const url = await getBaseUrl.call(this, 'documentTypes');
-	
+	const url = await getBaseUrl.call(this, 'types');
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -80,14 +83,14 @@ async function handleGetTypeClassifications(
 	credentials: IDataObject,
 ): Promise<DocumentTypeResponse> {
 	const typeId = this.getNodeParameter('typeId', 0) as string;
-	const url = await getBaseUrl.call(this, `documentTypes/${typeId}/classifications`);
-	
+	const url = await getBaseUrl.call(this, `typeClassifications/${typeId}`);
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -101,6 +104,10 @@ async function handleGetTypeClassifications(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Dokumenttyp-Klassifikationen', error);
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim Abrufen der Dokumenttyp-Klassifikationen',
+			error,
+		);
 	}
-} 
+}

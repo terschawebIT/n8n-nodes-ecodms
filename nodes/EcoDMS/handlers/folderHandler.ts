@@ -1,12 +1,12 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { getBaseUrl } from '../utils/helpers';
 import { createNodeError } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface FolderResponse extends IDataObject {
 	success?: boolean;
@@ -39,7 +39,10 @@ export async function handleFolderOperations(
 			result = await handleEditFolder.call(this, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
@@ -56,13 +59,13 @@ async function handleEditFolder(
 	const folderId = this.getNodeParameter('folderId', 0) as string;
 	const folderName = this.getNodeParameter('folderName', 0) as string;
 	const url = await getBaseUrl.call(this, 'editFolder');
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -94,13 +97,13 @@ async function handleCreateFolder(
 ): Promise<FolderResponse> {
 	const folderName = this.getNodeParameter('foldername', 0) as string;
 	const url = await getBaseUrl.call(this, 'createFolder');
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -132,23 +135,23 @@ async function handleCreateSubfolder(
 ): Promise<FolderResponse> {
 	const parentFolderSelection = this.getNodeParameter('parentFolderSelection', 0) as string;
 	let parentFolderId: string;
-	
+
 	// Je nach Auswahl des Benutzers die richtige Ordner-ID ermitteln
 	if (parentFolderSelection === 'manual') {
 		parentFolderId = this.getNodeParameter('parentFolderId', 0) as string;
 	} else {
 		parentFolderId = this.getNodeParameter('parentFolderDropdown', 0) as string;
 	}
-	
+
 	const folderName = this.getNodeParameter('foldername', 0) as string;
 	const url = await getBaseUrl.call(this, `createFolder/parent/${parentFolderId}`);
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -179,13 +182,13 @@ async function handleGetFolders(
 	credentials: IDataObject,
 ): Promise<FolderResponse> {
 	const url = await getBaseUrl.call(this, 'folders');
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -201,4 +204,4 @@ async function handleGetFolders(
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Ordner', error);
 	}
-} 
+}

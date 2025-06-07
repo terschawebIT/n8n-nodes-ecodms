@@ -1,7 +1,7 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
@@ -47,7 +47,10 @@ export async function handleClassificationOperations(
 			result = await handleLinkToDocuments.call(this, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	return [{ json: result }];
@@ -65,7 +68,7 @@ async function handleGetClassifyAttributes(
 			url: `${credentials.serverUrl as string}/api/classifyAttributes`,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -79,11 +82,7 @@ async function handleGetClassifyAttributes(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Abrufen der Klassifikationsattribute',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Klassifikationsattribute', error);
 	}
 }
 
@@ -99,7 +98,7 @@ async function handleGetClassifyAttributesDetail(
 			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -132,23 +131,19 @@ async function handleCreateNewClassify(
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
-		
+
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
 		} catch (error: unknown) {
-			throw createNodeError(
-				this.getNode(),
-				'Ungültiges JSON-Format für Klassifikationsfelder',
-				error,
-			);
+			throw createNodeError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder', error);
 		}
-		
+
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/createNewClassify`,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -167,11 +162,7 @@ async function handleCreateNewClassify(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Erstellen der neuen Klassifikation',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Erstellen der neuen Klassifikation', error);
 	}
 }
 
@@ -186,23 +177,19 @@ async function handleClassifyInboxDocument(
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
-		
+
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
 		} catch (error: unknown) {
-			throw createNodeError(
-				this.getNode(),
-				'Ungültiges JSON-Format für Klassifikationsfelder',
-				error,
-			);
+			throw createNodeError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder', error);
 		}
-		
+
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyInboxDocument`,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -221,11 +208,7 @@ async function handleClassifyInboxDocument(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Klassifizieren des Inbox-Dokuments',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Klassifizieren des Inbox-Dokuments', error);
 	}
 }
 
@@ -240,7 +223,7 @@ async function handleClassifyDocument(
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
-		
+
 		let fieldsData: IDataObject;
 		try {
 			fieldsData = JSON.parse(fields);
@@ -259,7 +242,7 @@ async function handleClassifyDocument(
 				url: `${credentials.serverUrl as string}/api/classifyDocument`,
 				method: 'POST',
 				headers: {
-					'Accept': 'application/json',
+					Accept: 'application/json',
 					'Content-Type': 'application/json',
 				},
 				body: {
@@ -286,7 +269,7 @@ async function handleClassifyDocument(
 					url: `${credentials.serverUrl as string}/api/classifyDocument`,
 					method: 'POST',
 					headers: {
-						'Accept': 'application/json',
+						Accept: 'application/json',
 						'Content-Type': 'application/json',
 					},
 					body: {
@@ -314,7 +297,7 @@ async function handleClassifyDocument(
 						url: `${credentials.serverUrl as string}/api/v2/classifyDocument`,
 						method: 'POST',
 						headers: {
-							'Accept': 'application/json',
+							Accept: 'application/json',
 							'Content-Type': 'application/json',
 						},
 						body: {
@@ -336,8 +319,8 @@ async function handleClassifyDocument(
 					console.debug(`Version 2 API fehlgeschlagen: ${getErrorMessage(error3)}`);
 
 					// Wenn alle Versuche fehlschlagen, werfe einen zusammengefassten Fehler
-					const errorMessage = 
-						`Alle API-Endpunkte fehlgeschlagen:\n` +
+					const errorMessage =
+						'Alle API-Endpunkte fehlgeschlagen:\n' +
 						`Primärer Endpunkt: ${getErrorMessage(error)}\n` +
 						`ID-basierter Pfad: ${getErrorMessage(error2)}\n` +
 						`V2 API: ${getErrorMessage(error3)}`;
@@ -372,7 +355,7 @@ async function handleRemoveDocumentLink(
 			url: `${credentials.serverUrl as string}/api/document/${docId}/removeDocumentLink`,
 			method: 'DELETE',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -386,11 +369,7 @@ async function handleRemoveDocumentLink(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Entfernen der Dokumentverknüpfungen',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Entfernen der Dokumentverknüpfungen', error);
 	}
 }
 
@@ -409,7 +388,7 @@ async function handleLinkToDocuments(
 			url: `${credentials.serverUrl as string}/api/document/${docId}/linkToDocuments`,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: { targetDocIds },
@@ -425,10 +404,6 @@ async function handleLinkToDocuments(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Hinzufügen der Dokumentverknüpfungen',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Hinzufügen der Dokumentverknüpfungen', error);
 	}
-} 
+}

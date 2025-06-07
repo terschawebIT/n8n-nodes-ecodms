@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const workflowOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -49,7 +49,8 @@ export const workflowFields: INodeProperties[] = [
 		displayName: 'Klassifikationsattribute',
 		name: 'classifyAttributes',
 		type: 'json',
-		default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Automatisch klassifiziert",\n  "folder": "1.4",\n  "status": "1"\n}',
+		default:
+			'{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Automatisch klassifiziert",\n  "folder": "1.4",\n  "status": "1"\n}',
 		required: true,
 		displayOptions: {
 			show: {
@@ -87,7 +88,7 @@ export const workflowFields: INodeProperties[] = [
 		},
 		description: 'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen',
 	},
-	
+
 	// Suchen und Herunterladen
 	{
 		displayName: 'Suchbegriff',
@@ -115,7 +116,8 @@ export const workflowFields: INodeProperties[] = [
 				operation: [Operation.SearchAndDownload],
 			},
 		},
-		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Dokumente gespeichert werden',
+		description:
+			'Name der binären Eigenschaft, in der die heruntergeladenen Dokumente gespeichert werden',
 	},
 	{
 		displayName: 'Ergebnislimit',
@@ -134,4 +136,4 @@ export const workflowFields: INodeProperties[] = [
 		},
 		description: 'Maximale Anzahl der zurückgegebenen und heruntergeladenen Dokumente',
 	},
-]; 
+];

@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const searchOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -69,7 +69,7 @@ export const searchFields: INodeProperties[] = [
 		},
 		description: 'Maximale Anzahl der zurückgegebenen Dokumente (maximal 100)',
 	},
-	
+
 	// Erweiterte Suche
 	{
 		displayName: 'Suchfilter',
@@ -123,7 +123,14 @@ export const searchFields: INodeProperties[] = [
 						],
 						displayOptions: {
 							show: {
-								classifyAttribut: ['docart', 'folder', 'folderonly', 'mainfolder', 'mainfolderonly', 'status'],
+								classifyAttribut: [
+									'docart',
+									'folder',
+									'folderonly',
+									'mainfolder',
+									'mainfolderonly',
+									'status',
+								],
 							},
 						},
 						default: '=',
@@ -137,7 +144,14 @@ export const searchFields: INodeProperties[] = [
 						default: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
-								classifyAttribut: ['docart', 'folder', 'folderonly', 'mainfolder', 'mainfolderonly', 'status'],
+								classifyAttribut: [
+									'docart',
+									'folder',
+									'folderonly',
+									'mainfolder',
+									'mainfolderonly',
+									'status',
+								],
 							},
 						},
 						description: 'Der Text, nach dem gesucht werden soll',
@@ -192,7 +206,7 @@ export const searchFields: INodeProperties[] = [
 		],
 		description: 'Filter für die Suche. Mehrere Filter werden mit UND verknüpft.',
 	},
-	
+
 	// Zusätzliche Parameter für erweiterte Suche
 	{
 		displayName: 'Zusätzliche Optionen',
@@ -212,14 +226,16 @@ export const searchFields: INodeProperties[] = [
 				name: 'personalDocumentsOnly',
 				type: 'boolean',
 				default: false,
-				description: 'Wenn aktiviert, werden nur Dokumente zurückgegeben, die dem Benutzer direkt zugewiesen sind (über eine Benutzerrolle oder eine Rolle, der der Benutzer zugewiesen ist)',
+				description:
+					'Wenn aktiviert, werden nur Dokumente zurückgegeben, die dem Benutzer direkt zugewiesen sind (über eine Benutzerrolle oder eine Rolle, der der Benutzer zugewiesen ist)',
 			},
 			{
 				displayName: 'Gelöschte Dokumente',
 				name: 'trashedDocuments',
 				type: 'boolean',
 				default: false,
-				description: 'Wenn aktiviert, werden nur gelöschte Dokumente in der Suche berücksichtigt, sonst nur nicht gelöschte Dokumente',
+				description:
+					'Wenn aktiviert, werden nur gelöschte Dokumente in der Suche berücksichtigt, sonst nur nicht gelöschte Dokumente',
 			},
 			{
 				displayName: 'Maximale Anzahl Dokumente',
@@ -237,11 +253,12 @@ export const searchFields: INodeProperties[] = [
 				name: 'readRoles',
 				type: 'boolean',
 				default: true,
-				description: 'Bestimmt, ob editRoles und readRoles im Ergebnis zurückgegeben werden. Wenn deaktiviert, werden leere Listen für die Rollen zurückgegeben',
+				description:
+					'Bestimmt, ob editRoles und readRoles im Ergebnis zurückgegeben werden. Wenn deaktiviert, werden leere Listen für die Rollen zurückgegeben',
 			},
 		],
 	},
-	
+
 	// Suchen und Herunterladen
 	{
 		displayName: 'Suchfilter',
@@ -405,7 +422,7 @@ export const searchFields: INodeProperties[] = [
 		],
 		description: 'Filter für die Suche und das Herunterladen von Dokumenten',
 	},
-	
+
 	{
 		displayName: 'Binäre Eigenschaft',
 		name: 'binaryProperty',
@@ -418,9 +435,10 @@ export const searchFields: INodeProperties[] = [
 				operation: [Operation.SearchAndDownload],
 			},
 		},
-		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Dokumente gespeichert werden',
+		description:
+			'Name der binären Eigenschaft, in der die heruntergeladenen Dokumente gespeichert werden',
 	},
-	
+
 	{
 		displayName: 'Maximale Anzahl Dokumente',
 		name: 'maxDocuments',
@@ -439,4 +457,4 @@ export const searchFields: INodeProperties[] = [
 		},
 		description: 'Maximale Anzahl der heruntergeladenen Dokumente (aus Leistungsgründen maximal 100)',
 	},
-]; 
+];

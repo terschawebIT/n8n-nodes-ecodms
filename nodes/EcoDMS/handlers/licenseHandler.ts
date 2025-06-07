@@ -1,12 +1,12 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { getBaseUrl } from '../utils/helpers';
 import { createNodeError } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface LicenseResponse extends IDataObject {
 	success?: boolean;
@@ -30,7 +30,10 @@ export async function handleLicenseOperations(
 			result = await handleGetLicenseInfo.call(this, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
@@ -45,13 +48,13 @@ async function handleGetLicenseInfo(
 	credentials: IDataObject,
 ): Promise<LicenseResponse> {
 	const url = await getBaseUrl.call(this, 'licenseInfo');
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -65,10 +68,6 @@ async function handleGetLicenseInfo(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Abrufen der Lizenzinformationen',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Lizenzinformationen', error);
 	}
-} 
+}

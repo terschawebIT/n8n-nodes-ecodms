@@ -1,0 +1,54 @@
+# Cursor Development Rules for n8n-nodes-ecodms
+
+## Language Rules
+- All commit messages MUST be in English
+- All code comments MUST be in English
+- All documentation MUST be in English
+- Variable names and function names MUST be in English
+
+## Git Workflow Rules
+- Use conventional commits format: `type(scope): description`
+- Examples:
+  - `fix(documentType): correct API endpoint for document types`
+  - `feat(api): add typeClassifications endpoint support`
+  - `docs: update API documentation`
+
+## Combined Commands
+Create these npm scripts in package.json for streamlined workflow:
+
+```json
+{
+  "scripts": {
+    "dev": "npm run build && npm run test",
+    "release": "npm run build && npm run test && git add . && git commit -m 'build: update distribution' && git push && npm publish",
+    "quick-fix": "npm run build && git add . && git commit && git push",
+    "patch": "npm version patch && npm run build && git add . && git commit -m 'chore: version bump' && git push && npm publish"
+  }
+}
+```
+
+## Code Style Rules
+- Use TypeScript strict mode
+- Always add JSDoc comments for public functions
+- Use descriptive variable names
+- Follow n8n node development best practices
+- All error messages should be user-friendly and in German (UI facing)
+- All internal logs and comments should be in English
+
+## API Integration Rules
+- Always check API documentation before implementing endpoints
+- Use correct HTTP methods as specified in ecoDMS API docs
+- Handle errors gracefully with proper error messages
+- Add proper TypeScript interfaces for API responses
+
+## Testing Rules
+- Test all API endpoints after changes
+- Verify error handling works correctly
+- Test with different ecoDMS server configurations
+- Document any breaking changes
+
+## Publication Rules
+- Update version number before publishing
+- Build and test before publishing
+- Update changelog with meaningful descriptions
+- Tag releases appropriately 

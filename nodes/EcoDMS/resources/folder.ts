@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const folderOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -107,7 +107,7 @@ export const folderFields: INodeProperties[] = [
 			},
 		],
 	},
-	
+
 	// Ordner erstellen
 	{
 		displayName: 'Ordnername',
@@ -136,7 +136,7 @@ export const folderFields: INodeProperties[] = [
 		default: '',
 		description: 'Beschreibung des neuen Ordners',
 	},
-	
+
 	// Unterordner erstellen
 	{
 		displayName: 'Übergeordneter Ordner auswählen',
@@ -224,4 +224,4 @@ export const folderFields: INodeProperties[] = [
 		default: '',
 		description: 'Beschreibung des neuen Unterordners',
 	},
-]; 
+];

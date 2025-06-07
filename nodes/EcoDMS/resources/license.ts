@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const licenseOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -24,4 +24,4 @@ export const licenseOperations: INodeProperties = {
 };
 
 // Keine weiteren Parameter für die License-Ressource erforderlich
-export const licenseFields: INodeProperties[] = []; 
+export const licenseFields: INodeProperties[] = [];

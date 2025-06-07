@@ -1,12 +1,12 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { getBaseUrl } from '../utils/helpers';
 import { createNodeError, getErrorMessage } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface WorkflowResponse extends IDataObject {
 	success?: boolean;
@@ -32,7 +32,10 @@ export async function handleWorkflowOperations(
 		case Operation.SearchAndDownload:
 			return await handleSearchAndDownload.call(this, items, credentials);
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
@@ -49,13 +52,13 @@ async function handleUploadAndClassify(
 ): Promise<WorkflowResponse> {
 	const docId = this.getNodeParameter('docId', 0) as string;
 	const url = await getBaseUrl.call(this, `uploadAndClassify/${docId}`);
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -85,13 +88,13 @@ async function handleSearchAndDownload(
 		const searchTerm = this.getNodeParameter('searchTerm', 0) as string;
 		const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
 		const limit = this.getNodeParameter('limit', 0, 10) as number;
-		
+
 		// Suche nach Dokumenten
 		const searchResponse = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/search`,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: {
@@ -104,24 +107,28 @@ async function handleSearchAndDownload(
 				password: credentials.password as string,
 			},
 		});
-		
-		if (!searchResponse.results || !Array.isArray(searchResponse.results) || searchResponse.results.length === 0) {
+
+		if (
+			!searchResponse.results ||
+			!Array.isArray(searchResponse.results) ||
+			searchResponse.results.length === 0
+		) {
 			return [{ json: { success: true, message: 'Keine Dokumente gefunden' } }];
 		}
-		
+
 		const returnItems: INodeExecutionData[] = [];
-		
+
 		// Für jedes gefundene Dokument
 		for (const document of searchResponse.results) {
 			try {
 				const docId = document.id;
-				
+
 				// Dokument herunterladen
 				const downloadResponse = await this.helpers.httpRequest({
 					url: `${credentials.serverUrl as string}/api/document/${docId}`,
 					method: 'GET',
 					headers: {
-						'Accept': '*/*',
+						Accept: '*/*',
 					},
 					encoding: 'arraybuffer',
 					returnFullResponse: true,
@@ -130,7 +137,7 @@ async function handleSearchAndDownload(
 						password: credentials.password as string,
 					},
 				});
-				
+
 				// Dateiname aus Content-Disposition-Header extrahieren
 				const contentDisposition = downloadResponse.headers['content-disposition'] as string;
 				let fileName = `document_${docId}.pdf`;
@@ -140,10 +147,11 @@ async function handleSearchAndDownload(
 						fileName = match[1];
 					}
 				}
-				
+
 				// Mime-Typ bestimmen
-				const contentType = downloadResponse.headers['content-type'] as string || 'application/octet-stream';
-				
+				const contentType =
+					(downloadResponse.headers['content-type'] as string) || 'application/octet-stream';
+
 				// Neues Item mit Dokumentinformationen und Binärdaten erstellen
 				const newItem: INodeExecutionData = {
 					json: {
@@ -152,14 +160,14 @@ async function handleSearchAndDownload(
 					},
 					binary: {},
 				};
-				
+
 				// Binäre Daten hinzufügen
 				newItem.binary![binaryPropertyName] = await this.helpers.prepareBinaryData(
 					Buffer.from(downloadResponse.body as Buffer),
 					fileName,
 					contentType,
 				);
-				
+
 				returnItems.push(newItem);
 			} catch (error: unknown) {
 				// Bei Fehler beim Herunterladen eines einzelnen Dokuments weitermachen
@@ -172,7 +180,7 @@ async function handleSearchAndDownload(
 				});
 			}
 		}
-		
+
 		return returnItems;
 	} catch (error: unknown) {
 		throw createNodeError(
@@ -181,4 +189,4 @@ async function handleSearchAndDownload(
 			error,
 		);
 	}
-} 
+}

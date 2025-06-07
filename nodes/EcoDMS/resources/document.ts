@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const documentOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -123,9 +123,10 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.Get],
 			},
 		},
-		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
+		description:
+			'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
 	},
-	
+
 	// Parameter für Dokument hochladen
 	{
 		displayName: 'Binäre Eigenschaft',
@@ -153,9 +154,10 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.Upload],
 			},
 		},
-		description: 'Ob das Dokument versioniert werden soll. Bei true können später weitere Versionen hinzugefügt werden.',
+		description:
+			'Ob das Dokument versioniert werden soll. Bei true können später weitere Versionen hinzugefügt werden.',
 	},
-	
+
 	// Parameter für PDF-Dateien hochladen
 	{
 		displayName: 'PDF-Eigenschaft',
@@ -187,7 +189,7 @@ export const documentFields: INodeProperties[] = [
 		},
 		description: 'Name der binären Eigenschaft, die die zu prüfende Datei enthält',
 	},
-	
+
 	// Parameter für Klassifikation mit Template-Erkennung abrufen
 	{
 		displayName: 'Modus',
@@ -211,7 +213,8 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.GetClassificationWithTemplateRecognition],
 			},
 		},
-		description: 'Ob die Klassifikation für eine Datei oder ein bestehendes Dokument abgerufen werden soll',
+		description:
+			'Ob die Klassifikation für eine Datei oder ein bestehendes Dokument abgerufen werden soll',
 	},
 	{
 		displayName: 'Binäre Eigenschaft',
@@ -258,7 +261,7 @@ export const documentFields: INodeProperties[] = [
 		required: true,
 		description: 'Versionsnummer des Dokuments, für das die Klassifikationen abgerufen werden sollen',
 	},
-	
+
 	// Parameter für Duplikate prüfen
 	{
 		displayName: 'Binärdaten',
@@ -305,9 +308,10 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.CheckDuplicates],
 			},
 		},
-		description: 'Legt fest, wie stark Dokumente übereinstimmen müssen, um als Duplikat erkannt zu werden (1-100). Je niedriger der Wert, desto weniger Übereinstimmungen sind nötig.',
+		description:
+			'Legt fest, wie stark Dokumente übereinstimmen müssen, um als Duplikat erkannt zu werden (1-100). Je niedriger der Wert, desto weniger Übereinstimmungen sind nötig.',
 	},
-	
+
 	// Parameter für Version mit PDF hinzufügen
 	{
 		displayName: 'Dokument-ID',
@@ -335,7 +339,8 @@ export const documentFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Bei Aktivierung können nach dem Archivieren keine weiteren Versionen zu diesem Dokument hinzugefügt werden',
+		description:
+			'Bei Aktivierung können nach dem Archivieren keine weiteren Versionen zu diesem Dokument hinzugefügt werden',
 	},
 	{
 		displayName: 'Originaldatei',
@@ -365,7 +370,7 @@ export const documentFields: INodeProperties[] = [
 		default: 'pdf',
 		description: 'Name der binären Eigenschaft, die die PDF-Datei enthält',
 	},
-	
+
 	// Parameter für Version hinzufügen
 	{
 		displayName: 'Dokument-ID',
@@ -393,7 +398,8 @@ export const documentFields: INodeProperties[] = [
 			},
 		},
 		default: false,
-		description: 'Bei Aktivierung können nach dem Archivieren keine weiteren Versionen zu diesem Dokument hinzugefügt werden',
+		description:
+			'Bei Aktivierung können nach dem Archivieren keine weiteren Versionen zu diesem Dokument hinzugefügt werden',
 	},
 	{
 		displayName: 'Binäre Eigenschaft',
@@ -409,7 +415,7 @@ export const documentFields: INodeProperties[] = [
 		default: 'data',
 		description: 'Name der binären Eigenschaft, die die Datei enthält',
 	},
-	
+
 	// Parameter für Dokumentinformationen abrufen
 	{
 		displayName: 'Dokument-ID',
@@ -425,7 +431,7 @@ export const documentFields: INodeProperties[] = [
 		default: 0,
 		description: 'ID des Dokuments, für das Informationen abgerufen werden sollen',
 	},
-	
+
 	// Parameter für Dokument mit Klassifikation herunterladen
 	{
 		displayName: 'Dokument-ID',
@@ -467,9 +473,10 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.GetDocumentWithClassification],
 			},
 		},
-		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
+		description:
+			'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
 	},
-	
+
 	// Parameter für Dokumentversion herunterladen
 	{
 		displayName: 'Dokument-ID',
@@ -539,6 +546,7 @@ export const documentFields: INodeProperties[] = [
 				operation: [Operation.GetDocumentVersion],
 			},
 		},
-		description: 'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
+		description:
+			'Name der binären Eigenschaft, in der die heruntergeladenen Daten gespeichert werden sollen',
 	},
-]; 
+];

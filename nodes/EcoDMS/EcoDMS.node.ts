@@ -1,33 +1,33 @@
 import {
-	IExecuteFunctions,
-	INodeExecutionData,
-	INodeType,
-	INodeTypeDescription,
-	ILoadOptionsFunctions,
-	INodePropertyOptions,
-	NodeOperationError,
+	type IExecuteFunctions,
+	type ILoadOptionsFunctions,
+	type INodeExecutionData,
+	type INodePropertyOptions,
+	type INodeType,
+	type INodeTypeDescription,
 	NodeConnectionType,
+	NodeOperationError,
 } from 'n8n-workflow';
 
-import { Resource } from './utils/constants';
-import { documentOperations, documentFields } from './resources/document';
-import { classificationOperations, classificationFields } from './resources/classification';
-import { documentTypeOperations, documentTypeFields } from './resources/documentType';
-import { archiveOperations, archiveFields } from './resources/archive';
-import { searchOperations, searchFields } from './resources/search';
-import { folderOperations, folderFields } from './resources/folder';
-import { licenseOperations, licenseFields } from './resources/license';
-import { workflowOperations, workflowFields } from './resources/workflow';
-import { getFolders, getDocumentTypes, getStatusValues } from './utils/helpers';
-import { handleDocumentOperations } from './handlers/documentHandler';
-import { handleSearchOperations } from './handlers/searchHandler';
-import { handleClassificationOperations } from './handlers/classificationHandler';
 import { handleArchiveOperations } from './handlers/archiveHandler';
+import { handleClassificationOperations } from './handlers/classificationHandler';
+import { handleDocumentOperations } from './handlers/documentHandler';
+import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
 import { handleFolderOperations } from './handlers/folderHandler';
 import { handleLicenseOperations } from './handlers/licenseHandler';
+import { handleSearchOperations } from './handlers/searchHandler';
 import { handleWorkflowOperations } from './handlers/workflowHandler';
-import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
+import { archiveFields, archiveOperations } from './resources/archive';
+import { classificationFields, classificationOperations } from './resources/classification';
+import { documentFields, documentOperations } from './resources/document';
+import { documentTypeFields, documentTypeOperations } from './resources/documentType';
+import { folderFields, folderOperations } from './resources/folder';
+import { licenseFields, licenseOperations } from './resources/license';
+import { searchFields, searchOperations } from './resources/search';
+import { workflowFields, workflowOperations } from './resources/workflow';
+import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
+import { getDocumentTypes, getFolders, getStatusValues } from './utils/helpers';
 
 export class EcoDMS implements INodeType {
 	description: INodeTypeDescription = {
@@ -41,8 +41,8 @@ export class EcoDMS implements INodeType {
 		defaults: {
 			name: 'ecoDMS',
 		},
-		inputs: [{type: NodeConnectionType.Main}],
-		outputs: [{type: NodeConnectionType.Main}],
+		inputs: [{ type: NodeConnectionType.Main }],
+		outputs: [{ type: NodeConnectionType.Main }],
 		credentials: [
 			{
 				name: 'ecoDmsApi',
@@ -101,7 +101,7 @@ export class EcoDMS implements INodeType {
 				default: Resource.Document,
 				required: true,
 			},
-			
+
 			// Operations für die verschiedenen Ressourcentypen
 			documentOperations,
 			classificationOperations,
@@ -111,7 +111,7 @@ export class EcoDMS implements INodeType {
 			folderOperations,
 			licenseOperations,
 			workflowOperations,
-			
+
 			// Parameter für die Ressourcentypen
 			...documentFields,
 			...classificationFields,
@@ -130,15 +130,15 @@ export class EcoDMS implements INodeType {
 			async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getFolders.call(this);
 			},
-			
+
 			async getDocumentTypes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getDocumentTypes.call(this);
 			},
-			
+
 			async getStatusValues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getStatusValues.call(this);
-			}
-		}
+			},
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -150,7 +150,10 @@ export class EcoDMS implements INodeType {
 		// Prüfe und hole Anmeldedaten
 		const credentials = await this.getCredentials('ecoDmsApi');
 		if (!credentials.serverUrl) {
-			throw new NodeOperationError(this.getNode(), 'Server-URL ist nicht konfiguriert. Bitte in den Anmeldedaten angeben.');
+			throw new NodeOperationError(
+				this.getNode(),
+				'Server-URL ist nicht konfiguriert. Bitte in den Anmeldedaten angeben.',
+			);
 		}
 
 		// An die entsprechenden Resource-Handler delegieren
@@ -181,7 +184,10 @@ export class EcoDMS implements INodeType {
 					responseData = await handleDocumentTypeOperations.call(this, items, operation, credentials);
 					break;
 				default:
-					throw new NodeOperationError(this.getNode(), `Die Ressource "${resource}" wird nicht unterstützt!`);
+					throw new NodeOperationError(
+						this.getNode(),
+						`Die Ressource "${resource}" wird nicht unterstützt!`,
+					);
 			}
 		} catch (error: unknown) {
 			if (error instanceof NodeOperationError) {
@@ -192,4 +198,4 @@ export class EcoDMS implements INodeType {
 
 		return [responseData];
 	}
-} 
+}

@@ -1,57 +1,52 @@
 {
-  "name": "n8n-nodes-ecodms",
-  "version": "0.2.20",
-  "description": "ecoDMS-Integration für n8n",
-  "keywords": [
-    "n8n-community-node-package",
-    "n8n",
-    "ecodms"
-  ],
-  "license": "MIT",
-  "homepage": "https://github.com/terschawebIT/n8n-nodes-ecodms",
-  "author": {
-    "name": "terschawebIT",
-    "email": "info@terschaweb.it"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/terschawebIT/n8n-nodes-ecodms.git"
-  },
-  "main": "index.js",
-  "scripts": {
-    "build": "tsc && npm run copy-icons",
-    "build:watch": "tsc --watch",
-    "copy-icons": "mkdir -p dist/nodes dist/credentials && cp -r nodes/**/*.svg dist/nodes/ && cp -r credentials/*.svg dist/credentials/ 2>/dev/null || true",
-    "lint": "eslint 'nodes/**/*.ts' 'credentials/**/*.ts'",
-    "lint:fix": "eslint 'nodes/**/*.ts' 'credentials/**/*.ts' --fix",
-    "prepublishOnly": "npm run build && npm run lint",
-    "test": "jest"
-  },
-  "files": [
-    "dist",
-    "index.js"
-  ],
-  "n8n": {
-    "n8nNodesApiVersion": 1,
-    "credentials": [
-      "dist/credentials/EcoDmsApi.credentials.js"
-    ],
-    "nodes": [
-      "dist/nodes/EcoDMS/EcoDMS.node.js"
-    ]
-  },
-  "devDependencies": {
-    "@types/express": "^4.17.17",
-    "@types/request-promise-native": "~1.0.18",
-    "@typescript-eslint/parser": "~5.45",
-    "eslint-plugin-n8n-nodes-base": "^1.11.0",
-    "jest": "^29.2.0",
-    "n8n-core": "~0.125.0",
-    "n8n-workflow": "~0.107.0",
-    "prettier": "^2.7.1",
-    "typescript": "~4.8.4"
-  },
-  "dependencies": {
-    "form-data": "^4.0.0"
-  }
+	"name": "n8n-nodes-ecodms",
+	"version": "0.2.20",
+	"description": "ecoDMS-Integration für n8n",
+	"keywords": ["n8n-community-node-package", "n8n", "ecodms"],
+	"license": "MIT",
+	"homepage": "https://github.com/terschawebIT/n8n-nodes-ecodms",
+	"author": {
+		"name": "terschawebIT",
+		"email": "info@terschaweb.it"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/terschawebIT/n8n-nodes-ecodms.git"
+	},
+	"engines": {
+		"node": ">=18.10",
+		"npm": ">=8.0"
+	},
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc && gulp build:icons",
+		"build:watch": "tsc --watch",
+		"lint": "biome check .",
+		"lint:fix": "biome check --fix .",
+		"format": "biome format --write .",
+		"clean": "rm -rf dist",
+		"prepublishOnly": "npm run clean && npm run build && npm run lint",
+		"test": "jest",
+		"dev": "npm run build && npm run test",
+		"release": "npm run build && npm run test && git add . && git commit -m 'build: update distribution' && git push && npm publish",
+		"quick-fix": "npm run build && git add . && git commit && git push",
+		"patch": "npm version patch && npm run build && git add . && git commit -m 'chore: version bump' && git push && npm publish",
+		"package": "npm run build && npm pack"
+	},
+	"files": ["dist"],
+	"n8n": {
+		"n8nNodesApiVersion": 1,
+		"credentials": ["dist/credentials/EcoDmsApi.credentials.js"],
+		"nodes": ["dist/nodes/EcoDMS/EcoDMS.node.js"]
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^20.10.6",
+		"gulp": "^5.0.1",
+		"n8n-workflow": "*",
+		"typescript": "^5.3.3"
+	},
+	"dependencies": {
+		"form-data": "^4.0.0"
+	}
 }

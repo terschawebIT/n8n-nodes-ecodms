@@ -1,5 +1,5 @@
-import { INodeProperties } from 'n8n-workflow';
-import { Resource, Operation } from '../utils/constants';
+import type { INodeProperties } from 'n8n-workflow';
+import { Operation, Resource } from '../utils/constants';
 
 export const classificationOperations: INodeProperties = {
 	displayName: 'Operation',
@@ -38,7 +38,8 @@ export const classificationOperations: INodeProperties = {
 		{
 			name: 'Dokument-Klassifikation aktualisieren',
 			value: Operation.ClassifyDocument,
-			description: 'Eine bestehende Dokumentklassifikation aktualisieren. Vorgehensweise:\n1. Ermittle docId und clDocId mit "Dokumentinformationen abrufen"\n2. Ermittle verfügbare Klassifikationsattribute mit "Klassifikationsattribute abrufen"\n3. Aktualisiere die gewünschten Attribute\n\nBeispielantwort: Klassifikations-ID, die aktualisiert wurde.',
+			description:
+				'Eine bestehende Dokumentklassifikation aktualisieren. Vorgehensweise:\n1. Ermittle docId und clDocId mit "Dokumentinformationen abrufen"\n2. Ermittle verfügbare Klassifikationsattribute mit "Klassifikationsattribute abrufen"\n3. Aktualisiere die gewünschten Attribute\n\nBeispielantwort: Klassifikations-ID, die aktualisiert wurde.',
 			action: 'Dokument-Klassifikation aktualisieren',
 		},
 		{
@@ -121,7 +122,8 @@ export const classificationFields: INodeProperties[] = [
 		displayName: 'Klassifikationsattribute',
 		name: 'classifyAttributes',
 		type: 'json',
-		default: '{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "status": "1"\n}',
+		default:
+			'{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "status": "1"\n}',
 		required: true,
 		displayOptions: {
 			show: {
@@ -143,7 +145,8 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.ClassifyDocument],
 			},
 		},
-		description: 'Kommagetrennte Liste von Rollen, die das Dokument bearbeiten dürfen (z.B. "r_ecodms,Elite")',
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument bearbeiten dürfen (z.B. "r_ecodms,Elite")',
 	},
 	{
 		displayName: 'Leserollen',
@@ -157,7 +160,8 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.ClassifyDocument],
 			},
 		},
-		description: 'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen (z.B. "ecoSIMSUSER,Gast")',
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen (z.B. "ecoSIMSUSER,Gast")',
 	},
 	{
 		displayName: 'Klassifikations-ID',
@@ -171,7 +175,8 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.RemoveDocumentLink, Operation.LinkToDocuments],
 			},
 		},
-		description: 'Die ID der Dokumentklassifikation, für die Links entfernt oder hinzugefügt werden sollen',
+		description:
+			'Die ID der Dokumentklassifikation, für die Links entfernt oder hinzugefügt werden sollen',
 	},
 	{
 		displayName: 'Felder',
@@ -187,4 +192,4 @@ export const classificationFields: INodeProperties[] = [
 		},
 		description: 'Die Klassifikationsfelder im JSON-Format',
 	},
-]; 
+];

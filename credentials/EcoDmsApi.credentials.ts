@@ -1,9 +1,9 @@
-import {
+import type {
 	IAuthenticateGeneric,
-	Icon,
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
+	Icon,
 } from 'n8n-workflow';
 
 export class EcoDmsApi implements ICredentialType {
@@ -67,7 +67,7 @@ export class EcoDmsApi implements ICredentialType {
 				password: '={{$credentials.password}}',
 			},
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 		},
@@ -80,4 +80,4 @@ export class EcoDmsApi implements ICredentialType {
 			method: 'GET',
 		},
 	};
-} 
+}

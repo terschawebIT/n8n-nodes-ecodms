@@ -1,7 +1,7 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
@@ -37,7 +37,10 @@ export async function handleSearchOperations(
 			result = await handleSearchAndDownload.call(this, items, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
@@ -53,26 +56,26 @@ async function handleSearch(
 ): Promise<SearchResponse> {
 	const searchTerm = this.getNodeParameter('searchText', 0) as string;
 	const maxDocuments = this.getNodeParameter('maxDocuments', 0, 100) as number;
-	
+
 	try {
 		// Verwende die korrekte ecoDMS API URL
 		const url = await getBaseUrl.call(this, 'searchDocuments');
-		
+
 		// Erstelle den korrekten Search Filter für Volltext-Suche
 		// Verwende 'fulltext-ext' für Suche in Dokumentinhalten UND Klassifikationsattributen
 		const searchFilters = [
 			{
 				classifyAttribut: 'fulltext-ext',
 				searchValue: searchTerm,
-				searchOperator: '='
-			}
+				searchOperator: '=',
+			},
 		];
-		
+
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: searchFilters,
@@ -98,11 +101,7 @@ async function handleSearch(
 			},
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler bei der Suche',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler bei der Suche', error);
 	}
 }
 
@@ -115,23 +114,28 @@ async function handleAdvancedSearch(
 ): Promise<SearchResponse> {
 	const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 	const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
-	
+
 	try {
 		// Verwende die korrekte ecoDMS API URL
 		const url = await getBaseUrl.call(this, 'searchDocuments');
-		
+
 		// Konvertiere die Filter in das richtige Format
 		const searchFilters = filters.map((filter: IDataObject) => ({
 			classifyAttribut: filter.classifyAttribut,
-			searchValue: filter.searchValueText || filter.searchValueDocumentType || filter.searchValueFolder || filter.searchValueStatus || '',
-			searchOperator: filter.searchOperator || '='
+			searchValue:
+				filter.searchValueText ||
+				filter.searchValueDocumentType ||
+				filter.searchValueFolder ||
+				filter.searchValueStatus ||
+				'',
+			searchOperator: filter.searchOperator || '=',
 		}));
-		
+
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: searchFilters,
@@ -150,11 +154,7 @@ async function handleAdvancedSearch(
 			},
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler bei der erweiterten Suche',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler bei der erweiterten Suche', error);
 	}
 }
 
@@ -168,24 +168,24 @@ async function handleSearchAndDownload(
 ): Promise<INodeExecutionData[]> {
 	const searchTerm = this.getNodeParameter('searchText', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
-	
+
 	try {
 		// Erst suchen
 		const searchUrl = await getBaseUrl.call(this, 'searchDocuments');
-		
+
 		const searchFilters = [
 			{
 				classifyAttribut: 'fulltext-ext',
 				searchValue: searchTerm,
-				searchOperator: '='
-			}
+				searchOperator: '=',
+			},
 		];
-		
+
 		const searchResponse = await this.helpers.httpRequest({
 			url: searchUrl,
 			method: 'POST',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
 			body: searchFilters,
@@ -197,13 +197,15 @@ async function handleSearchAndDownload(
 		});
 
 		if (!Array.isArray(searchResponse) || searchResponse.length === 0) {
-			return [{
-				json: {
-					success: true,
-					message: 'Keine Dokumente gefunden',
-					searchTerm,
-				}
-			}];
+			return [
+				{
+					json: {
+						success: true,
+						message: 'Keine Dokumente gefunden',
+						searchTerm,
+					},
+				},
+			];
 		}
 
 		const returnItems: INodeExecutionData[] = [];
@@ -213,12 +215,12 @@ async function handleSearchAndDownload(
 			try {
 				const docId = document.docId;
 				const downloadUrl = await getBaseUrl.call(this, `document/${docId}`);
-				
+
 				const downloadResponse = await this.helpers.httpRequest({
 					url: downloadUrl,
 					method: 'GET',
 					headers: {
-						'Accept': '*/*',
+						Accept: '*/*',
 					},
 					encoding: 'arraybuffer',
 					returnFullResponse: true,
@@ -238,7 +240,7 @@ async function handleSearchAndDownload(
 					}
 				}
 
-				const contentType = downloadResponse.headers['content-type'] as string || 'application/pdf';
+				const contentType = (downloadResponse.headers['content-type'] as string) || 'application/pdf';
 
 				const newItem: INodeExecutionData = {
 					json: {
@@ -271,10 +273,6 @@ async function handleSearchAndDownload(
 
 		return returnItems;
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler bei der Suche und dem Download',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler bei der Suche und dem Download', error);
 	}
-} 
+}

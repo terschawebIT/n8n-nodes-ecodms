@@ -1,12 +1,12 @@
 import {
-	IDataObject,
-	IExecuteFunctions,
-	INodeExecutionData,
+	type IDataObject,
+	type IExecuteFunctions,
+	type INodeExecutionData,
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { getBaseUrl } from '../utils/helpers';
 import { createNodeError } from '../utils/errorHandler';
+import { getBaseUrl } from '../utils/helpers';
 
 interface ArchiveResponse extends IDataObject {
 	success?: boolean;
@@ -30,7 +30,10 @@ export async function handleArchiveOperations(
 			result = await handleGetArchiveInfo.call(this, credentials);
 			break;
 		default:
-			throw new NodeOperationError(this.getNode(), `Die Operation "${operation}" wird nicht unterstützt!`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Die Operation "${operation}" wird nicht unterstützt!`,
+			);
 	}
 
 	return [{ json: result }];
@@ -44,13 +47,13 @@ async function handleGetArchiveInfo(
 	credentials: IDataObject,
 ): Promise<ArchiveResponse> {
 	const url = await getBaseUrl.call(this, 'archiveInfo');
-	
+
 	try {
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
 			headers: {
-				'Accept': 'application/json',
+				Accept: 'application/json',
 			},
 			json: true,
 			auth: {
@@ -64,10 +67,6 @@ async function handleGetArchiveInfo(
 			data: response,
 		};
 	} catch (error: unknown) {
-		throw createNodeError(
-			this.getNode(),
-			'Fehler beim Abrufen der Archiv-Informationen',
-			error,
-		);
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Archiv-Informationen', error);
 	}
-} 
+}
