@@ -23,7 +23,7 @@ export async function handleDocumentTypeOperations(
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
-	let result: DocumentTypeResponse | INodeExecutionData[];
+	let result: any;
 
 	switch (operation) {
 		case Operation.GetTypes:
@@ -39,6 +39,11 @@ export async function handleDocumentTypeOperations(
 			);
 	}
 
+	// Für GetTypes: Wenn result ein Array ist, konvertiere es zu INodeExecutionData
+	if (operation === Operation.GetTypes && Array.isArray(result)) {
+		return result.map((item) => ({ json: item }));
+	}
+	
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
 	return Array.isArray(result) ? result : [{ json: result }];
 }
@@ -49,7 +54,7 @@ export async function handleDocumentTypeOperations(
 async function handleGetTypes(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
-): Promise<DocumentTypeResponse> {
+): Promise<any> {
 	const url = await getBaseUrl.call(this, 'types');
 
 	try {
@@ -66,10 +71,8 @@ async function handleGetTypes(
 			},
 		});
 
-		return {
-			success: true,
-			data: response,
-		};
+		// API gibt direkt ein Array zurück laut Dokumentation
+		return response;
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Dokumenttypen', error);
 	}
