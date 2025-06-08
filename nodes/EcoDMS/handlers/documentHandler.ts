@@ -447,7 +447,7 @@ async function handleUploadDocument(
 		console.log('Upload response:', response);
 
 		// Response verarbeiten
-		let responseData;
+		let responseData: any;
 		try {
 			responseData = typeof response === 'string' ? JSON.parse(response) : response;
 		} catch {
