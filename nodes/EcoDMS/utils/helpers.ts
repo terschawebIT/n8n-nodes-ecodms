@@ -611,8 +611,12 @@ export async function getCustomFields(
 		>();
 
 		// Versuche mehrere Ansätze um Custom Fields zu finden
-		const endpoints = ['classifyAttributes/detailInformation', 'search?maxHits=1', 'classifyAttributes'];
-		
+		const endpoints = [
+			'classifyAttributes/detailInformation',
+			'search?maxHits=1',
+			'classifyAttributes',
+		];
+
 		for (const endpoint of endpoints) {
 			try {
 				const url = await getBaseUrl.call(this, endpoint);
@@ -640,7 +644,12 @@ export async function getCustomFields(
 					// Verarbeite die Antwort je nach Endpoint
 					if (endpoint === 'classifyAttributes/detailInformation') {
 						// Detaillierte Informationen haben das Format: [{ success: true, data: { ... } }]
-						if (Array.isArray(response) && response.length > 0 && response[0].success && response[0].data) {
+						if (
+							Array.isArray(response) &&
+							response.length > 0 &&
+							response[0].success &&
+							response[0].data
+						) {
 							console.log('Processing detailInformation response with success/data structure');
 							await extractDynFieldsFromAttributes(response[0].data, customFieldsMap);
 						} else if (typeof response === 'object') {
@@ -652,7 +661,7 @@ export async function getCustomFields(
 						// Aus Suchergebnissen extrahieren - oft haben diese vollständige Feldstrukturen
 						if (Array.isArray(response) && response.length > 0) {
 							const searchResult = response[0];
-							if (searchResult && searchResult.classifyAttributes) {
+							if (searchResult?.classifyAttributes) {
 								await extractDynFieldsFromAttributes(searchResult.classifyAttributes, customFieldsMap);
 							}
 						}
@@ -694,9 +703,9 @@ export async function getCustomFields(
 
 						if (Array.isArray(docInfoResponse) && docInfoResponse.length > 0) {
 							const docInfo = docInfoResponse[0];
-							if (docInfo && docInfo.classifyAttributes) {
+							if (docInfo?.classifyAttributes) {
 								await extractDynFieldsFromAttributes(docInfo.classifyAttributes, customFieldsMap);
-								
+
 								if (customFieldsMap.size > 0) {
 									console.log(`Found ${customFieldsMap.size} custom fields from documentInfo/${docId}`);
 									break;
@@ -759,8 +768,8 @@ export async function getCustomFields(
  * Hilfsfunktion um dyn_* Felder aus classifyAttributes zu extrahieren
  */
 async function extractDynFieldsFromAttributes(
-	attributes: any, 
-	customFieldsMap: Map<string, { displayName: string; fieldType: string; fieldInfo: any }>
+	attributes: any,
+	customFieldsMap: Map<string, { displayName: string; fieldType: string; fieldInfo: any }>,
 ): Promise<void> {
 	if (!attributes || typeof attributes !== 'object') {
 		return;
@@ -774,9 +783,30 @@ async function extractDynFieldsFromAttributes(
 			// Prüfe ob es die detaillierte API-Struktur ist
 			if (value && typeof value === 'object' && 'fieldType' in value) {
 				const fieldInfo = value as any;
-				
+
 				// Nutze den korrekten fieldName aus der API
 				displayName = fieldInfo.fieldName || fieldInfo.displayName || key;
+				
+				// Verbessere Display-Namen für wichtige Felder um Klarheit zu schaffen
+				const improvedDisplayNames: { [key: string]: string } = {
+					'defdate': 'Wiedervorlagedatum',
+					'cdate': 'Dokumentendatum', 
+					'ctimestamp': 'Erstellungsdatum',
+					'changeid': 'Bearbeiter',
+					'docid': 'Dokument-ID',
+					'docart': 'Dokumentenart',
+					'folder': 'Ordner',
+					'mainfolder': 'Hauptordner',
+					'status': 'Status',
+					'bemerkung': 'Bemerkung',
+					'revision': 'Revision',
+					'rechte': 'Berechtigung'
+				};
+
+				// Nutze verbesserte Namen falls verfügbar
+				if (improvedDisplayNames[fieldInfo.fieldID || key]) {
+					displayName = improvedDisplayNames[fieldInfo.fieldID || key];
+				}
 				
 				// Mappe ecoDMS Feldtypen zu n8n-kompatible Typen
 				switch (fieldInfo.fieldType) {
@@ -794,34 +824,43 @@ async function extractDynFieldsFromAttributes(
 					case 'eco_DateField':
 						fieldType = 'Date';
 						break;
-					case 'eco_TextField':
 					default:
 						fieldType = 'Text';
 						break;
 				}
 
-				customFieldsMap.set(key, { 
+				customFieldsMap.set(key, {
 					displayName: displayName,
-					fieldType, 
+					fieldType,
 					fieldInfo: {
 						key,
 						originalFieldType: fieldInfo.fieldType,
 						classificationContent: fieldInfo.classificationContent,
 						fieldID: fieldInfo.fieldID,
-						fieldName: fieldInfo.fieldName
-					}
+						fieldName: fieldInfo.fieldName,
+					},
 				});
 			} else {
 				// Fallback für einfache Wert-Strukturen
-				// Versuche Typ aus dem Feldnamen zu ermitteln  
+				// Versuche Typ aus dem Feldnamen zu ermitteln
 				const lowerKey = key.toLowerCase();
 				if (lowerKey.includes('datum') || lowerKey.includes('date')) {
 					fieldType = 'Date';
 					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
-				} else if (lowerKey.includes('betrag') || lowerKey.includes('amount') || lowerKey.includes('nummer') || lowerKey.includes('number')) {
+				} else if (
+					lowerKey.includes('betrag') ||
+					lowerKey.includes('amount') ||
+					lowerKey.includes('nummer') ||
+					lowerKey.includes('number')
+				) {
 					fieldType = 'Number';
 					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
-				} else if (lowerKey.includes('aktiv') || lowerKey.includes('bezahlt') || lowerKey.includes('paid') || lowerKey.includes('enabled')) {
+				} else if (
+					lowerKey.includes('aktiv') ||
+					lowerKey.includes('bezahlt') ||
+					lowerKey.includes('paid') ||
+					lowerKey.includes('enabled')
+				) {
 					fieldType = 'Boolean';
 					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
 				} else {
@@ -835,10 +874,10 @@ async function extractDynFieldsFromAttributes(
 					displayName = key;
 				}
 
-				customFieldsMap.set(key, { 
+				customFieldsMap.set(key, {
 					displayName: displayName,
-					fieldType, 
-					fieldInfo: { key, value, originalValue: value }
+					fieldType,
+					fieldInfo: { key, value, originalValue: value },
 				});
 			}
 		}
