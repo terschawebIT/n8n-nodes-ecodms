@@ -18,6 +18,12 @@ export const workflowOperations: INodeProperties = {
 			action: 'Dokument hochladen und klassifizieren',
 		},
 		{
+			name: 'Benutzerfreundlich hochladen und klassifizieren',
+			value: 'uploadAndClassifyUserFriendly',
+			description: 'Dokument hochladen und mit strukturierten Feldern klassifizieren - VIEL EINFACHER!',
+			action: 'Benutzerfreundlich hochladen und klassifizieren',
+		},
+		{
 			name: 'Suchen und Herunterladen',
 			value: Operation.SearchAndDownload,
 			description: 'Nach Dokumenten suchen und als Binärdaten herunterladen',
@@ -87,6 +93,181 @@ export const workflowFields: INodeProperties[] = [
 			},
 		},
 		description: 'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen',
+	},
+
+	// ===== BENUTZERFREUNDLICH HOCHLADEN UND KLASSIFIZIEREN =====
+	{
+		displayName: 'Binäre Eigenschaft',
+		name: 'binaryProperty',
+		type: 'string',
+		default: 'data',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		description: 'Name der binären Eigenschaft, die die hochzuladende Datei enthält',
+	},
+
+	// === PFLICHTFELDER (Top-Level) ===
+	{
+		displayName: 'Dokumententyp',
+		name: 'documentType',
+		type: 'options',
+		typeOptions: {
+			loadOptionsMethod: 'getDocumentTypes',
+		},
+		default: '',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		description: 'Wählen Sie den Dokumententyp aus',
+	},
+	{
+		displayName: 'Ablageordner',
+		name: 'folder',
+		type: 'options',
+		typeOptions: {
+			loadOptionsMethod: 'getFolders',
+		},
+		default: '',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		description: 'Wählen Sie den Ablageordner aus',
+	},
+	{
+		displayName: 'Status',
+		name: 'status',
+		type: 'options',
+		typeOptions: {
+			loadOptionsMethod: 'getStatusValues',
+		},
+		default: '',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		description: 'Wählen Sie den Dokumentstatus aus',
+	},
+	{
+		displayName: 'Titel/Bemerkung',
+		name: 'documentTitle',
+		type: 'string',
+		default: '',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		description: 'Titel oder Bemerkung für das Dokument',
+	},
+
+	// === ZUSÄTZLICHE FELDER (Optional) ===
+	{
+		displayName: 'Zusätzliche Felder',
+		name: 'additionalFields',
+		type: 'collection',
+		placeholder: 'Zusätzliche Felder hinzufügen',
+		default: {},
+		displayOptions: {
+			show: {
+				resource: [Resource.Workflow],
+				operation: ['uploadAndClassifyUserFriendly'],
+			},
+		},
+		options: [
+			{
+				displayName: 'Revision',
+				name: 'revision',
+				type: 'string',
+				default: '1.0',
+				description: 'Versionsnummer des Dokuments',
+			},
+			{
+				displayName: 'Schlagwörter',
+				name: 'keywords',
+				type: 'string',
+				default: '',
+				description: 'Kommagetrennte Liste von Schlagwörtern',
+			},
+			{
+				displayName: 'Autor',
+				name: 'author',
+				type: 'string',
+				default: '',
+				description: 'Autor des Dokuments',
+			},
+			{
+				displayName: 'Datum',
+				name: 'documentDate',
+				type: 'dateTime',
+				default: '',
+				description: 'Datum des Dokuments',
+			},
+			{
+				displayName: 'Bearbeitungsrollen',
+				name: 'editRoles',
+				type: 'string',
+				default: 'Elite',
+				description: 'Kommagetrennte Liste von Rollen mit Bearbeitungsrechten',
+			},
+			{
+				displayName: 'Leserollen',
+				name: 'readRoles',
+				type: 'string',
+				default: '',
+				description: 'Kommagetrennte Liste von Rollen mit Leserechten',
+			},
+			{
+				displayName: 'Benutzerdefinierte Felder',
+				name: 'customFields',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Feld',
+						name: 'customField',
+						values: [
+							{
+								displayName: 'Feldname',
+								name: 'name',
+								type: 'string',
+								default: '',
+								description: 'Name des benutzerdefinierten Feldes (z.B. dyn_0_1619856272598)',
+							},
+							{
+								displayName: 'Wert',
+								name: 'value',
+								type: 'string',
+								default: '',
+								description: 'Wert für das benutzerdefinierte Feld',
+							},
+						],
+					},
+				],
+				description: 'Benutzerdefinierte Felder für spezielle Dokumententypen',
+			},
+		],
+		description: 'Optionale Zusatzfelder für Upload und Klassifizierung',
 	},
 
 	// Suchen und Herunterladen

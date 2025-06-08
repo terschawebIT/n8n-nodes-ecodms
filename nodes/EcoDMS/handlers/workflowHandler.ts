@@ -29,6 +29,9 @@ export async function handleWorkflowOperations(
 		case Operation.UploadAndClassify:
 			result = await handleUploadAndClassify.call(this, items, credentials);
 			break;
+		case 'uploadAndClassifyUserFriendly':
+			result = await handleUploadAndClassifyUserFriendly.call(this, items, credentials);
+			break;
 		case Operation.SearchAndDownload:
 			return await handleSearchAndDownload.call(this, items, credentials);
 		default:
@@ -73,6 +76,144 @@ async function handleUploadAndClassify(
 		};
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Hochladen und Klassifizieren', error);
+	}
+}
+
+/**
+ * Benutzerfreundlich: Dokument hochladen und mit strukturierten Feldern klassifizieren
+ */
+async function handleUploadAndClassifyUserFriendly(
+	this: IExecuteFunctions,
+	items: INodeExecutionData[],
+	credentials: IDataObject,
+): Promise<WorkflowResponse> {
+	try {
+		const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
+		const documentType = this.getNodeParameter('documentType', 0) as string;
+		const folder = this.getNodeParameter('folder', 0) as string;
+		const status = this.getNodeParameter('status', 0) as string;
+		const documentTitle = this.getNodeParameter('documentTitle', 0) as string;
+		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
+
+		// Binäre Daten aus dem ersten Item holen
+		const binaryData = items[0].binary?.[binaryPropertyName];
+		if (!binaryData) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Keine binären Daten in der Eigenschaft "${binaryPropertyName}" gefunden!`,
+			);
+		}
+
+		// 1. Dokument hochladen
+		const uploadUrl = await getBaseUrl.call(this, 'document/upload');
+		
+		const uploadResponse = await this.helpers.httpRequestWithAuthentication.call(this, 'ecoDmsApi', {
+			url: uploadUrl,
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+			},
+			body: {
+				file: {
+					value: binaryData.data,
+					options: {
+						filename: binaryData.fileName || 'document.pdf',
+						contentType: binaryData.mimeType || 'application/pdf',
+					},
+				},
+			},
+			json: true,
+		});
+
+		if (!uploadResponse || !uploadResponse.docId) {
+			throw new NodeOperationError(
+				this.getNode(),
+				'Upload fehlgeschlagen - keine Dokument-ID erhalten',
+			);
+		}
+
+		const docId = uploadResponse.docId;
+
+		// 2. Klassifikationsdaten zusammenstellen
+		const classifyData: IDataObject = {
+			docart: documentType,
+			folder: folder,
+			status: status,
+			bemerkung: documentTitle,
+		};
+
+		// Zusätzliche Felder hinzufügen
+		if (additionalFields.revision) {
+			classifyData.revision = additionalFields.revision;
+		}
+		if (additionalFields.keywords) {
+			classifyData.keywords = additionalFields.keywords;
+		}
+		if (additionalFields.author) {
+			classifyData.author = additionalFields.author;
+		}
+		if (additionalFields.documentDate) {
+			classifyData.documentDate = additionalFields.documentDate;
+		}
+
+		// Benutzerdefinierte Felder behandeln
+		if (additionalFields.customFields && Array.isArray(additionalFields.customFields)) {
+			const customFields = additionalFields.customFields as IDataObject[];
+			for (const customField of customFields) {
+				if (customField.customField && typeof customField.customField === 'object') {
+					const field = customField.customField as IDataObject;
+					if (field.name && field.value) {
+						classifyData[field.name as string] = field.value;
+					}
+				}
+			}
+		}
+
+		// Berechtigungen vorbereiten
+		const editRoles = (additionalFields.editRoles as string) || 'Elite';
+		const readRoles = (additionalFields.readRoles as string) || '';
+
+		// 3. Dokument klassifizieren
+		const classifyUrl = await getBaseUrl.call(this, 'classifyDocument');
+		
+		const classifyResponse = await this.helpers.httpRequest({
+			url: classifyUrl,
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: {
+				docId,
+				...classifyData,
+				editRoles: editRoles
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role),
+				readRoles: readRoles
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role),
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
+
+		return {
+			success: true,
+			message: 'Dokument erfolgreich hochgeladen und klassifiziert',
+			data: {
+				docId,
+				uploadResponse,
+				classificationData: classifyData,
+				classifyResponse,
+			},
+		};
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim benutzerfreundlichen Upload und Klassifizierung', error);
 	}
 }
 

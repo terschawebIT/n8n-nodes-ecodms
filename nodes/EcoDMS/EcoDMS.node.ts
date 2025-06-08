@@ -29,6 +29,7 @@ import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
 import {
 	getClassificationAttributes,
+	getCustomFields,
 	getDocumentTypes,
 	getFolders,
 	getStatusValues,
@@ -39,7 +40,7 @@ export class EcoDMS implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'ecoDMS',
 		name: 'ecoDMS',
-		icon: 'file:../ecoDms.svg',
+		icon: 'file:ecoDms.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{ $parameter["operation"] + ": " + $parameter["resource"] }}',
@@ -151,6 +152,10 @@ export class EcoDMS implements INodeType {
 
 			async getTypeClassifications(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getTypeClassifications.call(this);
+			},
+
+			async getCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getCustomFields.call(this);
 			},
 		},
 	};

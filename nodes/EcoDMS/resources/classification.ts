@@ -89,11 +89,8 @@ export const classificationFields: INodeProperties[] = [
 	{
 		displayName: 'Dokumententyp',
 		name: 'documentType',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getDocumentTypes',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -101,16 +98,37 @@ export const classificationFields: INodeProperties[] = [
 				operation: ['classifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Dokumententyp aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getDocumentTypes',
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9]+$',
+							errorMessage: 'Bitte eine gültige Dokumententyp-ID eingeben',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Dokumententyp aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Ablageordner',
 		name: 'folder',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getFolders',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -118,16 +136,37 @@ export const classificationFields: INodeProperties[] = [
 				operation: ['classifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Ablageordner aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getFolders',
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9.]+$',
+							errorMessage: 'Bitte eine gültige Ordner-ID eingeben (z.B. 1.4)',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Ablageordner aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Status',
 		name: 'status',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getStatusValues',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -135,7 +174,31 @@ export const classificationFields: INodeProperties[] = [
 				operation: ['classifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Dokumentstatus aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'getStatusValues',
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9]+$',
+							errorMessage: 'Bitte eine gültige Status-ID eingeben',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Dokumentstatus aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Titel/Bemerkung',
@@ -209,8 +272,43 @@ export const classificationFields: INodeProperties[] = [
 				description: 'Kommagetrennte Liste von Rollen mit Leserechten',
 			},
 			{
-				displayName: 'Benutzerdefinierte Felder',
-				name: 'customFields',
+				displayName: 'Dynamische Custom Fields',
+				name: 'dynamicCustomFields',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Custom Field',
+						name: 'customField',
+						values: [
+							{
+								displayName: 'Feldname',
+								name: 'fieldName',
+								type: 'options',
+								typeOptions: {
+									loadOptionsMethod: 'getCustomFields',
+								},
+								default: '',
+								description: 'Verfügbare Custom Fields aus der ecoDMS-Instanz',
+							},
+							{
+								displayName: 'Wert',
+								name: 'fieldValue',
+								type: 'string',
+								default: '',
+								description: 'Wert für das Custom Field',
+							},
+						],
+					},
+				],
+				description: 'Dynamisch geladene Custom Fields basierend auf der ecoDMS-Instanz',
+			},
+			{
+				displayName: 'Manuelle Custom Fields',
+				name: 'manualCustomFields',
 				type: 'fixedCollection',
 				typeOptions: {
 					multipleValues: true,
@@ -238,7 +336,7 @@ export const classificationFields: INodeProperties[] = [
 						],
 					},
 				],
-				description: 'Benutzerdefinierte Felder für spezielle Dokumententypen',
+				description: 'Manuell eingegebene Custom Fields für spezielle Anforderungen',
 			},
 		],
 		description: 'Optionale Zusatzfelder für die Klassifizierung',

@@ -44,6 +44,7 @@ export const Operation = {
 	GetFolders: 'getFolders',
 	Connect: 'connect',
 	UploadAndClassify: 'uploadAndClassify',
+	UploadAndClassifyUserFriendly: 'uploadAndClassifyUserFriendly',
 	SearchAndDownload: 'searchAndDownload',
 	ClassifyUserFriendly: 'classifyUserFriendly',
 } as const;

@@ -514,3 +514,92 @@ export async function getTypeClassifications(
 		];
 	}
 }
+
+/**
+ * Lädt verfügbare Custom Fields für die aktuelle ecoDMS-Instanz
+ */
+export async function getCustomFields(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'classifyAttributes/detailInformation');
+
+		console.log('CustomFields-API-URL:', url);
+
+		// API-Aufruf, um Custom Fields abzurufen
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		console.log('CustomFields-API-Antwort:', JSON.stringify(response).substring(0, 200));
+
+		if (!response || typeof response !== 'object') {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Custom Fields: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Custom Fields --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
+		}
+
+		// Custom Fields aus der Antwort extrahieren
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte ein Custom Field auswählen',
+		});
+
+		// Durchsuche alle Eigenschaften der Antwort nach Custom Fields (dyn_*)
+		for (const [key, value] of Object.entries(response)) {
+			if (key.startsWith('dyn_') && typeof value === 'object' && value !== null) {
+				const fieldInfo = value as any;
+				const displayName = fieldInfo.displayName || fieldInfo.name || key;
+				const description = fieldInfo.description || fieldInfo.hint || `Custom Field: ${key}`;
+				
+				options.push({
+					name: displayName,
+					value: key,
+					description: description,
+				});
+			}
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} Custom Field-Optionen geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Custom Fields:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Custom Fields --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+		];
+	}
+}

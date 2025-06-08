@@ -355,11 +355,16 @@ async function handleClassifyUserFriendly(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
-		const documentType = this.getNodeParameter('documentType', 0) as string;
-		const folder = this.getNodeParameter('folder', 0) as string;
-		const status = this.getNodeParameter('status', 0) as string;
+		const documentTypeLocator = this.getNodeParameter('documentType', 0) as any;
+		const folderLocator = this.getNodeParameter('folder', 0) as any;
+		const statusLocator = this.getNodeParameter('status', 0) as any;
 		const documentTitle = this.getNodeParameter('documentTitle', 0) as string;
 		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
+
+		// Resource Locator Values extrahieren
+		const documentType = documentTypeLocator.value || documentTypeLocator;
+		const folder = folderLocator.value || folderLocator;
+		const status = statusLocator.value || statusLocator;
 
 		// Baue das Klassifikationsobjekt zusammen
 		const classifyData: IDataObject = {
@@ -383,12 +388,25 @@ async function handleClassifyUserFriendly(
 			classifyData.documentDate = additionalFields.documentDate;
 		}
 
-		// Behandle benutzerdefinierte Felder
-		if (additionalFields.customFields && Array.isArray(additionalFields.customFields)) {
-			const customFields = additionalFields.customFields as IDataObject[];
-			for (const customField of customFields) {
-				if (customField.customField && typeof customField.customField === 'object') {
-					const field = customField.customField as IDataObject;
+		// Behandle dynamische Custom Fields
+		if (additionalFields.dynamicCustomFields && Array.isArray(additionalFields.dynamicCustomFields)) {
+			const dynamicFields = additionalFields.dynamicCustomFields as IDataObject[];
+			for (const dynamicField of dynamicFields) {
+				if (dynamicField.customField && typeof dynamicField.customField === 'object') {
+					const field = dynamicField.customField as IDataObject;
+					if (field.fieldName && field.fieldValue) {
+						classifyData[field.fieldName as string] = field.fieldValue;
+					}
+				}
+			}
+		}
+
+		// Behandle manuelle Custom Fields
+		if (additionalFields.manualCustomFields && Array.isArray(additionalFields.manualCustomFields)) {
+			const manualFields = additionalFields.manualCustomFields as IDataObject[];
+			for (const manualField of manualFields) {
+				if (manualField.customField && typeof manualField.customField === 'object') {
+					const field = manualField.customField as IDataObject;
 					if (field.name && field.value) {
 						classifyData[field.name as string] = field.value;
 					}
