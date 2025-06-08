@@ -32,6 +32,9 @@ export async function handleClassificationOperations(
 		case Operation.GetClassifyAttributesDetail:
 			result = await handleGetClassifyAttributesDetail.call(this, credentials);
 			break;
+		case Operation.GetAttributeDetails:
+			result = await handleGetAttributeDetails.call(this, credentials);
+			break;
 		case Operation.CreateNewClassify:
 			result = await handleCreateNewClassify.call(this, items, credentials);
 			break;
@@ -418,25 +421,14 @@ async function handleClassifyUserFriendly(
 		console.log('Felder:', Object.keys(existingAttributes));
 		console.log('Vollständig:', JSON.stringify(existingAttributes, null, 2));
 
-		// Filtere leere dyn_* Felder heraus - diese sollen nur gesendet werden wenn explizit konfiguriert
-		const filteredExistingAttributes: IDataObject = {};
-		for (const [key, value] of Object.entries(existingAttributes)) {
-			// Behalte alle nicht-dyn Felder
-			if (!key.startsWith('dyn_')) {
-				filteredExistingAttributes[key] = value as string;
-			}
-			// Behalte nur dyn_* Felder die nicht leer sind
-			else if (value && value !== '') {
-				filteredExistingAttributes[key] = value as string;
-			}
-		}
-
-		console.log('=== FILTERED ATTRIBUTES (ohne leere dyn_* Felder) ===');
-		console.log('Anzahl Felder:', Object.keys(filteredExistingAttributes).length);
-		console.log('Felder:', Object.keys(filteredExistingAttributes));
+		// WICHTIG: Behalte ALLE existierenden Felder (inkl. leere dyn_* Felder)
+		// Die ecoDMS API erwartet alle ursprünglichen Felder, auch wenn sie leer sind
+		console.log('=== USING ALL ATTRIBUTES (including empty dyn_* fields) ===');
+		console.log('Anzahl Felder:', Object.keys(existingAttributes).length);
+		console.log('Felder:', Object.keys(existingAttributes));
 
 		const classifyAttributes: IDataObject = {
-			...filteredExistingAttributes, // Gefilterte existierende Felder übernehmen
+			...existingAttributes, // ALLE existierenden Felder übernehmen (auch leere dyn_* Felder)
 			// Überschreibe nur die gewünschten Felder
 			docart: documentType,
 			folder: folder,
@@ -668,5 +660,152 @@ async function handleLinkToDocuments(
 		};
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Hinzufügen der Dokumentverknüpfungen', error);
+	}
+}
+
+/**
+ * Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen
+ */
+async function handleGetAttributeDetails(
+	this: IExecuteFunctions,
+	credentials: IDataObject,
+): Promise<ClassificationResponse> {
+	try {
+		const docId = this.getNodeParameter('docId', 0) as number;
+		const attributeNameParam = this.getNodeParameter('attributeName', 0) as any;
+		
+		// ResourceLocator-Wert extrahieren
+		const attributeName = 
+			typeof attributeNameParam === 'object' 
+				? attributeNameParam.value || attributeNameParam 
+				: attributeNameParam;
+
+		console.log('=== ATTRIBUT DETAILS ABRUFEN ===');
+		console.log('DocID:', docId);
+		console.log('Attribut Name:', attributeName);
+
+		// Dokumentinformationen abrufen, um die verfügbaren Attribute zu bekommen
+		const documentInfoOptions = {
+			url: `${credentials.serverUrl as string}/api/documentInfo/${docId}`,
+			method: 'GET' as const,
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		};
+
+		let documentInfo: any;
+		try {
+			documentInfo = await this.helpers.request(documentInfoOptions);
+			console.log('Dokumentinformationen erhalten:', JSON.stringify(documentInfo).substring(0, 200));
+		} catch (error) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Fehler beim Abrufen der Dokumentinformationen: ${(error as Error).message}`,
+			);
+		}
+
+		// Extrahiere Attribut-Details
+		const classifyAttributes = documentInfo?.[0]?.classifyAttributes || {};
+		
+		if (!classifyAttributes.hasOwnProperty(attributeName)) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Attribut "${attributeName}" wurde im Dokument nicht gefunden`,
+			);
+		}
+
+		const attributeValue = classifyAttributes[attributeName];
+		
+		// Versuche zusätzliche Informationen über das Attribut zu bekommen
+		let attributeDetails: any = {
+			name: attributeName,
+			value: attributeValue,
+			type: typeof attributeValue,
+		};
+
+		// Für dynamische Felder versuche mehr Details zu bekommen
+		if (attributeName.startsWith('dyn_')) {
+			try {
+				// Versuche Custom Fields Details zu bekommen
+				const customFieldsUrl = `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`;
+				const customFieldsResponse = await this.helpers.httpRequest({
+					url: customFieldsUrl,
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+					},
+					json: true,
+					auth: {
+						username: credentials.username as string,
+						password: credentials.password as string,
+					},
+				});
+
+				// Suche nach dem spezifischen Feld
+				if (Array.isArray(customFieldsResponse)) {
+					const fieldDetail = customFieldsResponse.find((field: any) => 
+						field.name === attributeName || 
+						field.id === attributeName ||
+						field.fieldName === attributeName
+					);
+					
+					if (fieldDetail) {
+						attributeDetails = {
+							...attributeDetails,
+							displayName: fieldDetail.displayName || fieldDetail.caption || fieldDetail.name,
+							description: fieldDetail.description || '',
+							fieldType: fieldDetail.type || fieldDetail.fieldType,
+							required: fieldDetail.required || false,
+							maxLength: fieldDetail.maxLength,
+							options: fieldDetail.options || [],
+						};
+					}
+				}
+			} catch (error) {
+				console.log('Keine zusätzlichen Custom Field Details verfügbar:', error);
+			}
+		} else {
+			// Standard-Attribute mit bekannten Details
+			const standardAttributeInfo: Record<string, any> = {
+				docart: { displayName: 'Dokumententyp', description: 'Art des Dokuments', fieldType: 'select' },
+				folder: { displayName: 'Ordner', description: 'Ablageordner', fieldType: 'select' },
+				status: { displayName: 'Status', description: 'Dokumentstatus', fieldType: 'select' },
+				bemerkung: { displayName: 'Titel/Bemerkung', description: 'Dokumenttitel oder Bemerkung', fieldType: 'text' },
+				revision: { displayName: 'Revision', description: 'Versionsnummer', fieldType: 'text' },
+				cdate: { displayName: 'Dokumentdatum', description: 'Erstellungsdatum des Dokuments', fieldType: 'date' },
+				changeid: { displayName: 'Bearbeiter', description: 'Letzter Bearbeiter', fieldType: 'text' },
+				ctimestamp: { displayName: 'Zeitstempel', description: 'Letzter Änderungszeitpunkt', fieldType: 'datetime' },
+				rechte: { displayName: 'Rechte', description: 'Dokumentrechte', fieldType: 'text' },
+				docid: { displayName: 'Dokument-ID', description: 'Eindeutige Dokument-ID', fieldType: 'text' },
+				mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },
+			};
+
+			if (standardAttributeInfo[attributeName]) {
+				attributeDetails = {
+					...attributeDetails,
+					...standardAttributeInfo[attributeName],
+				};
+			}
+		}
+
+		console.log('Attribut-Details:', JSON.stringify(attributeDetails, null, 2));
+
+		return {
+			success: true,
+			message: `Details für Attribut "${attributeName}" erfolgreich abgerufen`,
+			data: {
+				docId,
+				attribute: attributeDetails,
+				allAttributes: Object.keys(classifyAttributes),
+				documentInfo: documentInfo?.[0],
+			},
+		};
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Attribut-Details', error);
 	}
 }

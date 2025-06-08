@@ -24,6 +24,12 @@ export const classificationOperations: INodeProperties = {
 			action: 'Detaillierte Klassifikationsattribute abrufen',
 		},
 		{
+			name: 'Attribut-Details abrufen',
+			value: Operation.GetAttributeDetails,
+			description: 'Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen',
+			action: 'Attribut-Details abrufen',
+		},
+		{
 			name: 'Neue Klassifikation erstellen',
 			value: Operation.CreateNewClassify,
 			description: 'Eine neue Klassifikation für ein bestehendes Dokument erstellen',
@@ -649,5 +655,60 @@ export const classificationFields: INodeProperties[] = [
 			},
 		},
 		description: 'Die Klassifikationsfelder im JSON-Format',
+	},
+
+	// ===== ATTRIBUT-DETAILS ABRUFEN =====
+	{
+		displayName: 'Dokument-ID',
+		name: 'docId',
+		type: 'number',
+		default: 0,
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.GetAttributeDetails],
+			},
+		},
+		description: 'Die ID des Dokuments, für das Attribut-Details abgerufen werden sollen',
+	},
+	{
+		displayName: 'Attribut auswählen',
+		name: 'attributeName',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.GetAttributeDetails],
+			},
+		},
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchClassificationAttributes',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'Name eingeben',
+				name: 'name',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[a-zA-Z_][a-zA-Z0-9_]*$',
+							errorMessage: 'Bitte einen gültigen Attributnamen eingeben (z.B. docart, dyn_0_1619856272598)',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie das Attribut aus der Liste oder geben Sie den Namen manuell ein',
 	},
 ];

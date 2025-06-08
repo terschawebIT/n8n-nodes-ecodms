@@ -1078,15 +1078,45 @@ export async function getComboBoxOptions(
 	this: ILoadOptionsFunctions,
 ): Promise<INodePropertyOptions[]> {
 	try {
-		const fieldName = this.getCurrentNodeParameter('fieldName') as any;
-		const actualFieldName = fieldName?.value || fieldName;
-
-		console.log('=== DEBUG getComboBoxOptions ===');
-		console.log('fieldName:', fieldName);
-		console.log('actualFieldName:', actualFieldName);
+		console.log('=== getComboBoxOptions CALLED ===');
+		
+		// Debug: Analysiere verfügbare Parameter-Context
+		const allParameters = this.getNode().parameters;
+		console.log('Available node parameters:', Object.keys(allParameters || {}));
+		
+		// Versuche fieldName über verschiedene Ansätze zu ermitteln
+		let fieldName: any;
+		let actualFieldName: string = '';
+		
+		// Ansatz 1: Standard getCurrentNodeParameter
+		try {
+			fieldName = this.getCurrentNodeParameter('fieldName');
+			console.log('Method 1 - fieldName via getCurrentNodeParameter:', fieldName);
+		} catch (error) {
+			console.log('Method 1 failed:', error);
+		}
+		
+		// Ansatz 2: Über Parent-Collection
+		try {
+			const parentParam = this.getCurrentNodeParameter('dynamicCustomFields');
+			console.log('Method 2 - dynamicCustomFields context:', parentParam);
+		} catch (error) {
+			console.log('Method 2 failed:', error);
+		}
+		
+		// Extrahiere den tatsächlichen Feldnamen
+		if (typeof fieldName === 'object' && fieldName?.value) {
+			actualFieldName = fieldName.value;
+		} else if (typeof fieldName === 'string') {
+			actualFieldName = fieldName;
+		}
+		
+		console.log('Resolved actualFieldName:', actualFieldName);
 
 		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
-			console.log('Field name invalid, returning empty array');
+			console.log('Field name validation failed - not a dyn_ field');
+			console.log('actualFieldName type:', typeof actualFieldName);
+			console.log('actualFieldName.startsWith dyn_:', actualFieldName?.startsWith?.('dyn_'));
 			return [];
 		}
 
@@ -1487,4 +1517,191 @@ function getDefaultGroups(): INodePropertyOptions[] {
 			description: 'Gruppen-ID manuell eingeben',
 		},
 	];
+}
+
+/**
+ * Lädt verfügbare Klassifikationsattribute für ein spezifisches Dokument für ResourceLocator
+ */
+export async function searchClassificationAttributes(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+		
+		// Prüfe ob eine docId verfügbar ist (aus dem aktuellen Node-Kontext)
+		let docId = '';
+		try {
+			// Versuche docId aus dem aktuellen Node-Parameter zu bekommen
+			const currentNodeParameters = this.getCurrentNodeParameters();
+			const rawDocId = currentNodeParameters?.docId;
+			docId = rawDocId ? String(rawDocId) : '';
+		} catch (error) {
+			// Ignoriere Fehler beim Abrufen der Parameter
+		}
+
+		if (docId) {
+			// Wenn docId verfügbar ist, rufe dokumentspezifische Attribute ab
+			const documentInfoUrl = await getBaseUrl.call(this, `documentInfo/${docId}`);
+			
+			const documentInfo = await this.helpers.httpRequest({
+				url: documentInfoUrl,
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username,
+					password: credentials.password,
+				},
+			});
+
+			console.log('Dokumentspezifische Attribute:', JSON.stringify(documentInfo).substring(0, 200));
+
+			const options: INodePropertyOptions[] = [];
+			
+			// Auto-Option als erstes Element
+			options.push({
+				name: '-- Bitte auswählen --',
+				value: '',
+				description: 'Bitte ein Attribut auswählen',
+			});
+
+			// Extrahiere Attribute aus dem Dokument
+			if (Array.isArray(documentInfo) && documentInfo.length > 0) {
+				const classifyAttributes = documentInfo[0]?.classifyAttributes || {};
+				
+				// Standard-Attribute
+				const standardAttributes = [
+					{ key: 'docart', name: 'Dokumententyp', description: 'Art des Dokuments' },
+					{ key: 'folder', name: 'Ordner', description: 'Ablageordner' },
+					{ key: 'status', name: 'Status', description: 'Dokumentstatus' },
+					{ key: 'bemerkung', name: 'Titel/Bemerkung', description: 'Dokumenttitel oder Bemerkung' },
+					{ key: 'revision', name: 'Revision', description: 'Versionsnummer' },
+					{ key: 'cdate', name: 'Dokumentdatum', description: 'Erstellungsdatum des Dokuments' },
+					{ key: 'changeid', name: 'Bearbeiter', description: 'Letzter Bearbeiter' },
+				];
+
+				// Füge Standard-Attribute hinzu
+				for (const attr of standardAttributes) {
+					if (classifyAttributes.hasOwnProperty(attr.key)) {
+						options.push({
+							name: attr.name,
+							value: attr.key,
+							description: attr.description,
+						});
+					}
+				}
+
+				// Füge dynamische Felder hinzu
+				for (const [key, value] of Object.entries(classifyAttributes)) {
+					if (key.startsWith('dyn_')) {
+						// Versuche einen benutzerfreundlichen Namen zu finden
+						let displayName = key;
+						
+						// Hole Feldnamen aus der Custom Fields API falls verfügbar
+						try {
+							const customFieldsOptions = await getCustomFields.call(this);
+							const fieldMatch = customFieldsOptions.find(field => field.value === key);
+							if (fieldMatch) {
+								displayName = fieldMatch.name;
+							}
+						} catch (error) {
+							// Ignoriere Fehler beim Abrufen der Custom Fields
+						}
+
+						options.push({
+							name: displayName,
+							value: key,
+							description: `Dynamisches Feld: ${key}`,
+						});
+					}
+				}
+			}
+
+			// Nach Namen sortieren (außer dem ersten Element)
+			if (options.length > 1) {
+				const autoOption = options.shift();
+				options.sort((a, b) => a.name.localeCompare(b.name));
+				options.unshift(autoOption!);
+			}
+
+			console.log(`${options.length} dokumentspezifische Attribut-Optionen geladen`);
+			return options;
+		} else {
+			// Fallback: Allgemeine Klassifikationsattribute
+			const url = await getBaseUrl.call(this, 'classifyAttributes');
+			
+			const response = await this.helpers.httpRequest({
+				url,
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username,
+					password: credentials.password,
+				},
+			});
+
+			const options: INodePropertyOptions[] = [];
+			
+			// Auto-Option als erstes Element
+			options.push({
+				name: '-- Bitte auswählen --',
+				value: '',
+				description: 'Bitte ein Attribut auswählen',
+			});
+
+			if (Array.isArray(response)) {
+				for (const attr of response) {
+					options.push({
+						name: attr.name || `Attribut ${attr.id}`,
+						value: attr.name || attr.id?.toString(),
+						description: attr.description || '',
+					});
+				}
+			}
+
+			// Nach Namen sortieren (außer dem ersten Element)
+			if (options.length > 1) {
+				const autoOption = options.shift();
+				options.sort((a, b) => a.name.localeCompare(b.name));
+				options.unshift(autoOption!);
+			}
+
+			console.log(`${options.length} allgemeine Attribut-Optionen geladen`);
+			return options;
+		}
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Klassifikationsattribute:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Attribute --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+			{
+				name: 'docart',
+				value: 'docart',
+				description: 'Dokumententyp',
+			},
+			{
+				name: 'folder',
+				value: 'folder',
+				description: 'Ablageordner',
+			},
+			{
+				name: 'status',
+				value: 'status',
+				description: 'Dokumentstatus',
+			},
+			{
+				name: 'bemerkung',
+				value: 'bemerkung',
+				description: 'Titel/Bemerkung',
+			},
+		];
+	}
 }
