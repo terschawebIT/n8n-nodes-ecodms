@@ -106,7 +106,7 @@ async function handleUploadAndClassifyUserFriendly(
 
 		// 1. Dokument hochladen
 		const uploadUrl = await getBaseUrl.call(this, 'document/upload');
-		
+
 		const uploadResponse = await this.helpers.httpRequestWithAuthentication.call(this, 'ecoDmsApi', {
 			url: uploadUrl,
 			method: 'POST',
@@ -175,7 +175,7 @@ async function handleUploadAndClassifyUserFriendly(
 
 		// 3. Dokument klassifizieren
 		const classifyUrl = await getBaseUrl.call(this, 'classifyDocument');
-		
+
 		const classifyResponse = await this.helpers.httpRequest({
 			url: classifyUrl,
 			method: 'POST',
@@ -213,7 +213,11 @@ async function handleUploadAndClassifyUserFriendly(
 			},
 		};
 	} catch (error: unknown) {
-		throw createNodeError(this.getNode(), 'Fehler beim benutzerfreundlichen Upload und Klassifizierung', error);
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim benutzerfreundlichen Upload und Klassifizierung',
+			error,
+		);
 	}
 }
 

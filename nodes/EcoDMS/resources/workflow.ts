@@ -20,7 +20,8 @@ export const workflowOperations: INodeProperties = {
 		{
 			name: 'Benutzerfreundlich hochladen und klassifizieren',
 			value: 'uploadAndClassifyUserFriendly',
-			description: 'Dokument hochladen und mit strukturierten Feldern klassifizieren - VIEL EINFACHER!',
+			description:
+				'Dokument hochladen und mit strukturierten Feldern klassifizieren - VIEL EINFACHER!',
 			action: 'Benutzerfreundlich hochladen und klassifizieren',
 		},
 		{

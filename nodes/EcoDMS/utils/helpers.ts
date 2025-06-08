@@ -574,7 +574,7 @@ export async function getCustomFields(
 				const fieldInfo = value as any;
 				const displayName = fieldInfo.displayName || fieldInfo.name || key;
 				const description = fieldInfo.description || fieldInfo.hint || `Custom Field: ${key}`;
-				
+
 				options.push({
 					name: displayName,
 					value: key,
