@@ -391,42 +391,78 @@ async function handleUploadDocument(
 	const binaryData = item.binary[binaryPropertyName];
 
 	try {
-		// FormData erstellen
+		// === DEBUG INFORMATION ===
+		console.log('=== DOCUMENT UPLOAD DEBUG ===');
+		console.log('binaryPropertyName:', binaryPropertyName);
+		console.log('versionControlled:', versionControlled);
+		console.log('binaryData.mimeType:', binaryData.mimeType);
+		console.log('binaryData.fileName:', binaryData.fileName);
+		console.log('binaryData.fileSize:', binaryData.fileSize);
+		console.log('binaryData.data length:', binaryData.data?.length);
+
+		// FormData erstellen (form-data library)
 		const formData = new FormData();
 
+		// Buffer aus Base64 erstellen
+		const fileBuffer = Buffer.from(binaryData.data, 'base64');
+		console.log('fileBuffer length:', fileBuffer.length);
+
+		// Fallback für fehlende Werte
+		const mimeType = binaryData.mimeType || 'application/pdf';
+		const fileName = binaryData.fileName || 'document.pdf';
+
+		console.log('Using mimeType:', mimeType);
+		console.log('Using fileName:', fileName);
+
 		// Dokumentendaten hinzufügen
-		formData.append('file', Buffer.from(binaryData.data, 'base64'), {
-			filename: binaryData.fileName || 'document.pdf',
-			contentType: binaryData.mimeType,
+		formData.append('file', fileBuffer, {
+			filename: fileName,
+			contentType: mimeType,
 		});
 
 		// URL vorbereiten
 		const uploadUrl = await getBaseUrl.call(this, `uploadFile/${versionControlled}`);
 		console.log('Dokument-Upload URL:', uploadUrl);
 
+		// Headers preparieren - WICHTIG: Dokumentation sagt '*/*' verwenden!
+		const headers = {
+			...formData.getHeaders(),
+			Accept: '*/*',
+		};
+		console.log('Request headers:', headers);
+
 		// API-Anfrage für Upload
 		const response = await this.helpers.httpRequest({
 			url: uploadUrl,
 			method: 'POST',
-			headers: {
-				...formData.getHeaders(),
-				Accept: 'application/json',
-			},
+			headers,
 			body: formData,
-			json: true,
+			json: false, // WICHTIG: json auf false setzen für FormData
 			auth: {
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
 		});
 
+		console.log('Upload response:', response);
+
+		// Response verarbeiten
+		let responseData;
+		try {
+			responseData = typeof response === 'string' ? JSON.parse(response) : response;
+		} catch {
+			// Falls JSON-Parsing fehlschlägt, als String verwenden
+			responseData = { docId: response, success: true };
+		}
+
 		return [
 			{
-				json: response,
+				json: responseData,
 				binary: item.binary,
 			},
 		];
 	} catch (error: unknown) {
+		console.log('Upload error details:', error);
 		throw createNodeError(this.getNode(), 'Fehler beim Hochladen des Dokuments', error);
 	}
 }
