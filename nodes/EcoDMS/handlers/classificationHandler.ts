@@ -120,8 +120,11 @@ async function handleGetClassifyAttributesDetail(
 			if (attributeFilter && attributeFilter.length > 0) {
 				console.log('=== ATTRIBUT-FILTER ANGEWENDET ===');
 				console.log('Gewählte Attribute:', attributeFilter);
+				console.log('Response Type:', Array.isArray(response) ? 'Array' : 'Object');
+				console.log('Response Keys (first 5):', Object.keys(response || {}).slice(0, 5));
 
 				if (Array.isArray(response)) {
+					console.log('Filtering Array with', response.length, 'items');
 					// Debug: Zeige Struktur der ersten Attribute
 					if (response.length > 0) {
 						console.log('Beispiel-Attribut Struktur:', JSON.stringify(response[0], null, 2));
@@ -173,6 +176,56 @@ async function handleGetClassifyAttributesDetail(
 					});
 
 					console.log(`Von ${response.length} Attributen wurden ${filteredResponse.length} gefiltert`);
+				} else if (response && typeof response === 'object') {
+					console.log('Filtering Object with', Object.keys(response).length, 'keys');
+					
+					// Für Object-Response (wie bei detailInformation API)
+					const filteredObject: any = {};
+					let totalAttributes = 0;
+					let filteredAttributes = 0;
+
+					for (const [key, value] of Object.entries(response)) {
+						totalAttributes++;
+						
+						// Prüfe ob dieser Schlüssel im Filter enthalten ist
+						const matches = attributeFilter.some((filterValue) => {
+							const keyMatches = 
+								key === filterValue ||
+								(value && typeof value === 'object' && (
+									(value as any).fieldID === filterValue ||
+									(value as any).fieldName === filterValue ||
+									(value as any).name === filterValue
+								));
+							
+							if (keyMatches) {
+								console.log('✅ Attribut-Key gefunden:', {
+									filterValue,
+									objectKey: key,
+									valueType: typeof value,
+									fieldID: (value as any)?.fieldID,
+									fieldName: (value as any)?.fieldName,
+								});
+							}
+							
+							return keyMatches;
+						});
+
+						if (matches) {
+							filteredObject[key] = value;
+							filteredAttributes++;
+						} else {
+							console.log('❌ Attribut-Key nicht gefiltert:', {
+								objectKey: key,
+								valueType: typeof value,
+								fieldID: (value as any)?.fieldID,
+								fieldName: (value as any)?.fieldName,
+								searchingFor: attributeFilter,
+							});
+						}
+					}
+
+					filteredResponse = filteredObject;
+					console.log(`Von ${totalAttributes} Attributen wurden ${filteredAttributes} gefiltert`);
 				}
 			} else {
 				console.log('Kein Attribut-Filter gesetzt, alle Attribute werden zurückgegeben');
@@ -181,6 +234,7 @@ async function handleGetClassifyAttributesDetail(
 			// Falls Filter-Parameter nicht existiert oder Fehler auftritt, alle Attribute zurückgeben
 			console.log(
 				'Filter-Parameter nicht verfügbar oder Fehler beim Filtern, alle Attribute werden zurückgegeben',
+				filterError,
 			);
 		}
 
