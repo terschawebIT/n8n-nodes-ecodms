@@ -381,19 +381,6 @@ export async function getClassificationAttributes(
 
 		console.log('ClassificationAttributes-API-Antwort:', JSON.stringify(response).substring(0, 200));
 
-		if (!Array.isArray(response)) {
-			console.error(
-				`Unerwartetes Antwortformat beim Abrufen der Klassifikationsattribute: ${JSON.stringify(response).substring(0, 200)}`,
-			);
-			return [
-				{
-					name: '-- Fehler beim Laden der Klassifikationsattribute --',
-					value: '',
-					description: 'Unerwartetes Antwortformat',
-				},
-			];
-		}
-
 		// Klassifikationsattribute in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 
@@ -404,12 +391,36 @@ export async function getClassificationAttributes(
 			description: 'Bitte einen Wert auswählen',
 		});
 
-		for (const attr of response) {
-			options.push({
-				name: attr.name || `Attribut ${attr.id}`,
-				value: attr.id?.toString() || attr.name,
-				description: attr.description || '',
-			});
+		// Die API gibt ein Object zurück mit key-value Paaren (fieldName -> displayName)
+		if (response && typeof response === 'object' && !Array.isArray(response)) {
+			for (const [fieldName, displayName] of Object.entries(response)) {
+				const name = typeof displayName === 'string' ? displayName : fieldName;
+				options.push({
+					name: name,
+					value: fieldName,
+					description: `Klassifikationsattribut: ${fieldName}`,
+				});
+			}
+		} else if (Array.isArray(response)) {
+			// Fallback falls es doch ein Array ist
+			for (const attr of response) {
+				options.push({
+					name: attr.name || `Attribut ${attr.id}`,
+					value: attr.id?.toString() || attr.name,
+					description: attr.description || '',
+				});
+			}
+		} else {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Klassifikationsattribute: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Klassifikationsattribute --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
 		}
 
 		// Nach Namen sortieren (außer dem ersten Element)
