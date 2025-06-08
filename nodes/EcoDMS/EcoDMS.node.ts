@@ -33,10 +33,10 @@ import {
 	getCustomFields,
 	getDocumentTypes,
 	getFolders,
+	getGroups,
 	getStatusValues,
 	getTypeClassifications,
 	getUsers,
-	getGroups,
 } from './utils/helpers';
 
 export class EcoDMS implements INodeType {
@@ -134,7 +134,7 @@ export class EcoDMS implements INodeType {
 		],
 	};
 
-			// Methoden für dynamische Optionen in Dropdown-Menüs
+	// Methoden für dynamische Optionen in Dropdown-Menüs
 	methods = {
 		loadOptions: {
 			async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -177,9 +177,7 @@ export class EcoDMS implements INodeType {
 			): Promise<INodeListSearchResult> {
 				const options = await getDocumentTypes.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {
@@ -197,9 +195,7 @@ export class EcoDMS implements INodeType {
 			): Promise<INodeListSearchResult> {
 				const options = await getFolders.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {
@@ -217,9 +213,7 @@ export class EcoDMS implements INodeType {
 			): Promise<INodeListSearchResult> {
 				const options = await getStatusValues.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {
@@ -231,15 +225,10 @@ export class EcoDMS implements INodeType {
 				};
 			},
 
-			async searchUsers(
-				this: ILoadOptionsFunctions,
-				filter?: string,
-			): Promise<INodeListSearchResult> {
+			async searchUsers(this: ILoadOptionsFunctions, filter?: string): Promise<INodeListSearchResult> {
 				const options = await getUsers.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {
@@ -257,9 +246,7 @@ export class EcoDMS implements INodeType {
 			): Promise<INodeListSearchResult> {
 				const options = await getGroups.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {
@@ -277,9 +264,7 @@ export class EcoDMS implements INodeType {
 			): Promise<INodeListSearchResult> {
 				const options = await getCustomFields.call(this);
 				const filteredOptions = filter
-					? options.filter((option) =>
-							option.name.toLowerCase().includes(filter.toLowerCase()),
-					  )
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;
 
 				return {

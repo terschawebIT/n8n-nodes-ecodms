@@ -396,9 +396,10 @@ async function handleClassifyUserFriendly(
 					const field = dynamicField.customField as IDataObject;
 					if (field.fieldName && field.fieldValue) {
 						// ResourceLocator-Wert extrahieren
-						const fieldName = typeof field.fieldName === 'object' 
-							? (field.fieldName as any).value || field.fieldName 
-							: field.fieldName;
+						const fieldName =
+							typeof field.fieldName === 'object'
+								? (field.fieldName as any).value || field.fieldName
+								: field.fieldName;
 						classifyData[fieldName as string] = field.fieldValue;
 					}
 				}
@@ -425,11 +426,10 @@ async function handleClassifyUserFriendly(
 			for (const userAssignment of userAssignments) {
 				if (userAssignment.user && typeof userAssignment.user === 'object') {
 					const user = userAssignment.user as IDataObject;
-					const userId = typeof user.userId === 'object' 
-						? (user.userId as any).value || user.userId 
-						: user.userId;
+					const userId =
+						typeof user.userId === 'object' ? (user.userId as any).value || user.userId : user.userId;
 					const permission = user.permission || 'read';
-					
+
 					if (userId) {
 						assignedUsers.push(`${userId}:${permission}`);
 					}
@@ -444,11 +444,12 @@ async function handleClassifyUserFriendly(
 			for (const groupAssignment of groupAssignments) {
 				if (groupAssignment.group && typeof groupAssignment.group === 'object') {
 					const group = groupAssignment.group as IDataObject;
-					const groupId = typeof group.groupId === 'object' 
-						? (group.groupId as any).value || group.groupId 
-						: group.groupId;
+					const groupId =
+						typeof group.groupId === 'object'
+							? (group.groupId as any).value || group.groupId
+							: group.groupId;
 					const permission = group.permission || 'read';
-					
+
 					if (groupId) {
 						assignedGroups.push(`${groupId}:${permission}`);
 					}
@@ -465,7 +466,7 @@ async function handleClassifyUserFriendly(
 			.split(',')
 			.map((role) => role.trim())
 			.filter((role) => role);
-		
+
 		const finalReadRoles = readRoles
 			.split(',')
 			.map((role) => role.trim())

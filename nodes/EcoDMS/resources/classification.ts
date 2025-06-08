@@ -445,7 +445,8 @@ export const classificationFields: INodeProperties[] = [
 										],
 									},
 								],
-								description: 'Wählen Sie ein Custom Field aus der Liste oder geben Sie den Namen manuell ein',
+								description:
+									'Wählen Sie ein Custom Field aus der Liste oder geben Sie den Namen manuell ein',
 							},
 							{
 								displayName: 'Feldtyp',
