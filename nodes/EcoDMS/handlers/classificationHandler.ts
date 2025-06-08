@@ -397,8 +397,8 @@ async function handleClassifyUserFriendly(
 		}
 
 		// Bereite Berechtigungen vor
-		const editRoles = additionalFields.editRoles as string || 'Elite';
-		const readRoles = additionalFields.readRoles as string || '';
+		const editRoles = (additionalFields.editRoles as string) || 'Elite';
+		const readRoles = (additionalFields.readRoles as string) || '';
 
 		// API-Aufruf zur Klassifizierung
 		const response = await this.helpers.httpRequest({
@@ -411,8 +411,14 @@ async function handleClassifyUserFriendly(
 			body: {
 				docId,
 				...classifyData,
-				editRoles: editRoles.split(',').map(role => role.trim()).filter(role => role),
-				readRoles: readRoles.split(',').map(role => role.trim()).filter(role => role),
+				editRoles: editRoles
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role),
+				readRoles: readRoles
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role),
 			},
 			json: true,
 			auth: {
@@ -431,7 +437,11 @@ async function handleClassifyUserFriendly(
 			},
 		};
 	} catch (error: unknown) {
-		throw createNodeError(this.getNode(), 'Fehler bei der benutzerfreundlichen Klassifizierung', error);
+		throw createNodeError(
+			this.getNode(),
+			'Fehler bei der benutzerfreundlichen Klassifizierung',
+			error,
+		);
 	}
 }
 

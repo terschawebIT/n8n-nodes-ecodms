@@ -45,7 +45,8 @@ export const classificationOperations: INodeProperties = {
 		{
 			name: 'Benutzerfreundlich klassifizieren',
 			value: 'classifyUserFriendly',
-			description: 'Benutzerfreundliche Dokumentklassifizierung mit strukturierten Feldern und Dropdown-Menüs',
+			description:
+				'Benutzerfreundliche Dokumentklassifizierung mit strukturierten Feldern und Dropdown-Menüs',
 			action: 'Benutzerfreundlich klassifizieren',
 		},
 		{
