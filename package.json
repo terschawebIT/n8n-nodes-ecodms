@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ecodms",
-	"version": "0.2.28",
+	"version": "0.2.29",
 	"description": "ecoDMS-Integration für n8n",
 	"keywords": ["n8n-community-node-package", "n8n", "ecodms"],
 	"license": "MIT",

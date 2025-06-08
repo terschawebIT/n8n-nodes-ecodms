@@ -485,6 +485,11 @@ async function handleClassifyUserFriendly(
 			readRoles: finalReadRoles,
 		};
 
+		console.log('=== DEBUG classifyUserFriendly ===');
+		console.log('DocID:', docId, 'Type:', typeof docId);
+		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+		console.log('API URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
+
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyDocument`,
 			method: 'POST',
