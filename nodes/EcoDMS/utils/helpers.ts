@@ -786,28 +786,28 @@ async function extractDynFieldsFromAttributes(
 
 				// Nutze den korrekten fieldName aus der API
 				displayName = fieldInfo.fieldName || fieldInfo.displayName || key;
-				
+
 				// Verbessere Display-Namen für wichtige Felder um Klarheit zu schaffen
 				const improvedDisplayNames: { [key: string]: string } = {
-					'defdate': 'Wiedervorlagedatum',
-					'cdate': 'Dokumentendatum', 
-					'ctimestamp': 'Erstellungsdatum',
-					'changeid': 'Bearbeiter',
-					'docid': 'Dokument-ID',
-					'docart': 'Dokumentenart',
-					'folder': 'Ordner',
-					'mainfolder': 'Hauptordner',
-					'status': 'Status',
-					'bemerkung': 'Bemerkung',
-					'revision': 'Revision',
-					'rechte': 'Berechtigung'
+					defdate: 'Wiedervorlagedatum',
+					cdate: 'Dokumentendatum',
+					ctimestamp: 'Erstellungsdatum',
+					changeid: 'Bearbeiter',
+					docid: 'Dokument-ID',
+					docart: 'Dokumentenart',
+					folder: 'Ordner',
+					mainfolder: 'Hauptordner',
+					status: 'Status',
+					bemerkung: 'Bemerkung',
+					revision: 'Revision',
+					rechte: 'Berechtigung',
 				};
 
 				// Nutze verbesserte Namen falls verfügbar
 				if (improvedDisplayNames[fieldInfo.fieldID || key]) {
 					displayName = improvedDisplayNames[fieldInfo.fieldID || key];
 				}
-				
+
 				// Mappe ecoDMS Feldtypen zu n8n-kompatible Typen
 				switch (fieldInfo.fieldType) {
 					case 'eco_CheckBox':
