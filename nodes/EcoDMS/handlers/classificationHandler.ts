@@ -673,11 +673,11 @@ async function handleGetAttributeDetails(
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const attributeNameParam = this.getNodeParameter('attributeName', 0) as any;
-		
+
 		// ResourceLocator-Wert extrahieren
-		const attributeName = 
-			typeof attributeNameParam === 'object' 
-				? attributeNameParam.value || attributeNameParam 
+		const attributeName =
+			typeof attributeNameParam === 'object'
+				? attributeNameParam.value || attributeNameParam
 				: attributeNameParam;
 
 		console.log('=== ATTRIBUT DETAILS ABRUFEN ===');
@@ -711,8 +711,8 @@ async function handleGetAttributeDetails(
 
 		// Extrahiere Attribut-Details
 		const classifyAttributes = documentInfo?.[0]?.classifyAttributes || {};
-		
-		if (!classifyAttributes.hasOwnProperty(attributeName)) {
+
+		if (!(attributeName in classifyAttributes)) {
 			throw new NodeOperationError(
 				this.getNode(),
 				`Attribut "${attributeName}" wurde im Dokument nicht gefunden`,
@@ -720,7 +720,7 @@ async function handleGetAttributeDetails(
 		}
 
 		const attributeValue = classifyAttributes[attributeName];
-		
+
 		// Versuche zusätzliche Informationen über das Attribut zu bekommen
 		let attributeDetails: any = {
 			name: attributeName,
@@ -748,12 +748,13 @@ async function handleGetAttributeDetails(
 
 				// Suche nach dem spezifischen Feld
 				if (Array.isArray(customFieldsResponse)) {
-					const fieldDetail = customFieldsResponse.find((field: any) => 
-						field.name === attributeName || 
-						field.id === attributeName ||
-						field.fieldName === attributeName
+					const fieldDetail = customFieldsResponse.find(
+						(field: any) =>
+							field.name === attributeName ||
+							field.id === attributeName ||
+							field.fieldName === attributeName,
 					);
-					
+
 					if (fieldDetail) {
 						attributeDetails = {
 							...attributeDetails,
@@ -775,11 +776,23 @@ async function handleGetAttributeDetails(
 				docart: { displayName: 'Dokumententyp', description: 'Art des Dokuments', fieldType: 'select' },
 				folder: { displayName: 'Ordner', description: 'Ablageordner', fieldType: 'select' },
 				status: { displayName: 'Status', description: 'Dokumentstatus', fieldType: 'select' },
-				bemerkung: { displayName: 'Titel/Bemerkung', description: 'Dokumenttitel oder Bemerkung', fieldType: 'text' },
+				bemerkung: {
+					displayName: 'Titel/Bemerkung',
+					description: 'Dokumenttitel oder Bemerkung',
+					fieldType: 'text',
+				},
 				revision: { displayName: 'Revision', description: 'Versionsnummer', fieldType: 'text' },
-				cdate: { displayName: 'Dokumentdatum', description: 'Erstellungsdatum des Dokuments', fieldType: 'date' },
+				cdate: {
+					displayName: 'Dokumentdatum',
+					description: 'Erstellungsdatum des Dokuments',
+					fieldType: 'date',
+				},
 				changeid: { displayName: 'Bearbeiter', description: 'Letzter Bearbeiter', fieldType: 'text' },
-				ctimestamp: { displayName: 'Zeitstempel', description: 'Letzter Änderungszeitpunkt', fieldType: 'datetime' },
+				ctimestamp: {
+					displayName: 'Zeitstempel',
+					description: 'Letzter Änderungszeitpunkt',
+					fieldType: 'datetime',
+				},
 				rechte: { displayName: 'Rechte', description: 'Dokumentrechte', fieldType: 'text' },
 				docid: { displayName: 'Dokument-ID', description: 'Eindeutige Dokument-ID', fieldType: 'text' },
 				mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },

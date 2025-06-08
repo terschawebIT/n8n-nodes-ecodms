@@ -1079,15 +1079,15 @@ export async function getComboBoxOptions(
 ): Promise<INodePropertyOptions[]> {
 	try {
 		console.log('=== getComboBoxOptions CALLED ===');
-		
+
 		// Debug: Analysiere verfügbare Parameter-Context
 		const allParameters = this.getNode().parameters;
 		console.log('Available node parameters:', Object.keys(allParameters || {}));
-		
+
 		// Versuche fieldName über verschiedene Ansätze zu ermitteln
 		let fieldName: any;
-		let actualFieldName: string = '';
-		
+		let actualFieldName = '';
+
 		// Ansatz 1: Standard getCurrentNodeParameter
 		try {
 			fieldName = this.getCurrentNodeParameter('fieldName');
@@ -1095,7 +1095,7 @@ export async function getComboBoxOptions(
 		} catch (error) {
 			console.log('Method 1 failed:', error);
 		}
-		
+
 		// Ansatz 2: Über Parent-Collection
 		try {
 			const parentParam = this.getCurrentNodeParameter('dynamicCustomFields');
@@ -1103,14 +1103,14 @@ export async function getComboBoxOptions(
 		} catch (error) {
 			console.log('Method 2 failed:', error);
 		}
-		
+
 		// Extrahiere den tatsächlichen Feldnamen
 		if (typeof fieldName === 'object' && fieldName?.value) {
 			actualFieldName = fieldName.value;
 		} else if (typeof fieldName === 'string') {
 			actualFieldName = fieldName;
 		}
-		
+
 		console.log('Resolved actualFieldName:', actualFieldName);
 
 		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
@@ -1527,7 +1527,7 @@ export async function searchClassificationAttributes(
 ): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
-		
+
 		// Prüfe ob eine docId verfügbar ist (aus dem aktuellen Node-Kontext)
 		let docId = '';
 		try {
@@ -1542,7 +1542,7 @@ export async function searchClassificationAttributes(
 		if (docId) {
 			// Wenn docId verfügbar ist, rufe dokumentspezifische Attribute ab
 			const documentInfoUrl = await getBaseUrl.call(this, `documentInfo/${docId}`);
-			
+
 			const documentInfo = await this.helpers.httpRequest({
 				url: documentInfoUrl,
 				method: 'GET',
@@ -1559,7 +1559,7 @@ export async function searchClassificationAttributes(
 			console.log('Dokumentspezifische Attribute:', JSON.stringify(documentInfo).substring(0, 200));
 
 			const options: INodePropertyOptions[] = [];
-			
+
 			// Auto-Option als erstes Element
 			options.push({
 				name: '-- Bitte auswählen --',
@@ -1570,7 +1570,7 @@ export async function searchClassificationAttributes(
 			// Extrahiere Attribute aus dem Dokument
 			if (Array.isArray(documentInfo) && documentInfo.length > 0) {
 				const classifyAttributes = documentInfo[0]?.classifyAttributes || {};
-				
+
 				// Standard-Attribute
 				const standardAttributes = [
 					{ key: 'docart', name: 'Dokumententyp', description: 'Art des Dokuments' },
@@ -1584,7 +1584,7 @@ export async function searchClassificationAttributes(
 
 				// Füge Standard-Attribute hinzu
 				for (const attr of standardAttributes) {
-					if (classifyAttributes.hasOwnProperty(attr.key)) {
+					if (attr.key in classifyAttributes) {
 						options.push({
 							name: attr.name,
 							value: attr.key,
@@ -1598,11 +1598,11 @@ export async function searchClassificationAttributes(
 					if (key.startsWith('dyn_')) {
 						// Versuche einen benutzerfreundlichen Namen zu finden
 						let displayName = key;
-						
+
 						// Hole Feldnamen aus der Custom Fields API falls verfügbar
 						try {
 							const customFieldsOptions = await getCustomFields.call(this);
-							const fieldMatch = customFieldsOptions.find(field => field.value === key);
+							const fieldMatch = customFieldsOptions.find((field) => field.value === key);
 							if (fieldMatch) {
 								displayName = fieldMatch.name;
 							}
@@ -1628,52 +1628,51 @@ export async function searchClassificationAttributes(
 
 			console.log(`${options.length} dokumentspezifische Attribut-Optionen geladen`);
 			return options;
-		} else {
-			// Fallback: Allgemeine Klassifikationsattribute
-			const url = await getBaseUrl.call(this, 'classifyAttributes');
-			
-			const response = await this.helpers.httpRequest({
-				url,
-				method: 'GET',
-				headers: {
-					Accept: 'application/json',
-				},
-				json: true,
-				auth: {
-					username: credentials.username,
-					password: credentials.password,
-				},
-			});
-
-			const options: INodePropertyOptions[] = [];
-			
-			// Auto-Option als erstes Element
-			options.push({
-				name: '-- Bitte auswählen --',
-				value: '',
-				description: 'Bitte ein Attribut auswählen',
-			});
-
-			if (Array.isArray(response)) {
-				for (const attr of response) {
-					options.push({
-						name: attr.name || `Attribut ${attr.id}`,
-						value: attr.name || attr.id?.toString(),
-						description: attr.description || '',
-					});
-				}
-			}
-
-			// Nach Namen sortieren (außer dem ersten Element)
-			if (options.length > 1) {
-				const autoOption = options.shift();
-				options.sort((a, b) => a.name.localeCompare(b.name));
-				options.unshift(autoOption!);
-			}
-
-			console.log(`${options.length} allgemeine Attribut-Optionen geladen`);
-			return options;
 		}
+		// Fallback: Allgemeine Klassifikationsattribute
+		const url = await getBaseUrl.call(this, 'classifyAttributes');
+
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte ein Attribut auswählen',
+		});
+
+		if (Array.isArray(response)) {
+			for (const attr of response) {
+				options.push({
+					name: attr.name || `Attribut ${attr.id}`,
+					value: attr.name || attr.id?.toString(),
+					description: attr.description || '',
+				});
+			}
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} allgemeine Attribut-Optionen geladen`);
+		return options;
 	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Klassifikationsattribute:', error);
 		return [

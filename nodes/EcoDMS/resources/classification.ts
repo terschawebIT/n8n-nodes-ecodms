@@ -703,7 +703,8 @@ export const classificationFields: INodeProperties[] = [
 						type: 'regex',
 						properties: {
 							regex: '^[a-zA-Z_][a-zA-Z0-9_]*$',
-							errorMessage: 'Bitte einen gültigen Attributnamen eingeben (z.B. docart, dyn_0_1619856272598)',
+							errorMessage:
+								'Bitte einen gültigen Attributnamen eingeben (z.B. docart, dyn_0_1619856272598)',
 						},
 					},
 				],
