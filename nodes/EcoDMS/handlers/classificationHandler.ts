@@ -684,10 +684,10 @@ async function handleGetAttributeDetails(
 		console.log('DocID:', docId);
 		console.log('Attribut Name:', attributeName);
 
-		// Dokumentinformationen abrufen, um die verfügbaren Attribute zu bekommen
-		const documentInfoOptions = {
-			url: `${credentials.serverUrl as string}/api/documentInfo/${docId}`,
-			method: 'GET' as const,
+		// Erst die detaillierten Attribut-Informationen abrufen (wie bei "Detaillierte Klassifikationsattribute abrufen")
+		const detailResponse = await this.helpers.httpRequest({
+			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
+			method: 'GET',
 			headers: {
 				Accept: 'application/json',
 			},
@@ -696,126 +696,102 @@ async function handleGetAttributeDetails(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
-		};
+		});
 
-		let documentInfo: any;
-		try {
-			documentInfo = await this.helpers.request(documentInfoOptions);
-			console.log('Dokumentinformationen erhalten:', JSON.stringify(documentInfo).substring(0, 200));
-		} catch (error) {
-			throw new NodeOperationError(
-				this.getNode(),
-				`Fehler beim Abrufen der Dokumentinformationen: ${(error as Error).message}`,
-			);
-		}
+		// Dann die aktuellen Werte für das spezifische Dokument abrufen
+		const documentInfo = await this.helpers.httpRequest({
+			url: `${credentials.serverUrl as string}/api/documentInfo/${docId}`,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
 
-		// Extrahiere Attribut-Details
+		// Extrahiere die aktuellen Werte
 		const classifyAttributes = documentInfo?.[0]?.classifyAttributes || {};
+		const currentValue = classifyAttributes[attributeName];
 
-		if (!(attributeName in classifyAttributes)) {
+		if (currentValue === undefined) {
 			throw new NodeOperationError(
 				this.getNode(),
 				`Attribut "${attributeName}" wurde im Dokument nicht gefunden`,
 			);
 		}
 
-		const attributeValue = classifyAttributes[attributeName];
-
-		// Versuche zusätzliche Informationen über das Attribut zu bekommen
-		let attributeDetails: any = {
-			name: attributeName,
-			value: attributeValue,
-			type: typeof attributeValue,
-		};
-
-		// Für dynamische Felder versuche mehr Details zu bekommen
-		if (attributeName.startsWith('dyn_')) {
-			try {
-				// Versuche Custom Fields Details zu bekommen
-				const customFieldsUrl = `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`;
-				const customFieldsResponse = await this.helpers.httpRequest({
-					url: customFieldsUrl,
-					method: 'GET',
-					headers: {
-						Accept: 'application/json',
-					},
-					json: true,
-					auth: {
-						username: credentials.username as string,
-						password: credentials.password as string,
-					},
-				});
-
-				// Suche nach dem spezifischen Feld
-				if (Array.isArray(customFieldsResponse)) {
-					const fieldDetail = customFieldsResponse.find(
-						(field: any) =>
-							field.name === attributeName ||
-							field.id === attributeName ||
-							field.fieldName === attributeName,
-					);
-
-					if (fieldDetail) {
-						attributeDetails = {
-							...attributeDetails,
-							displayName: fieldDetail.displayName || fieldDetail.caption || fieldDetail.name,
-							description: fieldDetail.description || '',
-							fieldType: fieldDetail.type || fieldDetail.fieldType,
-							required: fieldDetail.required || false,
-							maxLength: fieldDetail.maxLength,
-							options: fieldDetail.options || [],
-						};
-					}
-				}
-			} catch (error) {
-				console.log('Keine zusätzlichen Custom Field Details verfügbar:', error);
-			}
-		} else {
-			// Standard-Attribute mit bekannten Details
-			const standardAttributeInfo: Record<string, any> = {
-				docart: { displayName: 'Dokumententyp', description: 'Art des Dokuments', fieldType: 'select' },
-				folder: { displayName: 'Ordner', description: 'Ablageordner', fieldType: 'select' },
-				status: { displayName: 'Status', description: 'Dokumentstatus', fieldType: 'select' },
-				bemerkung: {
-					displayName: 'Titel/Bemerkung',
-					description: 'Dokumenttitel oder Bemerkung',
-					fieldType: 'text',
-				},
-				revision: { displayName: 'Revision', description: 'Versionsnummer', fieldType: 'text' },
-				cdate: {
-					displayName: 'Dokumentdatum',
-					description: 'Erstellungsdatum des Dokuments',
-					fieldType: 'date',
-				},
-				changeid: { displayName: 'Bearbeiter', description: 'Letzter Bearbeiter', fieldType: 'text' },
-				ctimestamp: {
-					displayName: 'Zeitstempel',
-					description: 'Letzter Änderungszeitpunkt',
-					fieldType: 'datetime',
-				},
-				rechte: { displayName: 'Rechte', description: 'Dokumentrechte', fieldType: 'text' },
-				docid: { displayName: 'Dokument-ID', description: 'Eindeutige Dokument-ID', fieldType: 'text' },
-				mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },
-			};
-
-			if (standardAttributeInfo[attributeName]) {
-				attributeDetails = {
-					...attributeDetails,
-					...standardAttributeInfo[attributeName],
-				};
-			}
+		// Suche nach dem spezifischen Attribut in den Detail-Informationen
+		let attributeDetail: any = null;
+		if (Array.isArray(detailResponse)) {
+			attributeDetail = detailResponse.find(
+				(field: any) =>
+					field.name === attributeName ||
+					field.fieldName === attributeName ||
+					field.id === attributeName,
+			);
 		}
 
-		console.log('Attribut-Details:', JSON.stringify(attributeDetails, null, 2));
+		// Standard-Attribute-Informationen falls nicht in Detail-Response gefunden
+		const standardAttributeInfo: Record<string, any> = {
+			docart: { displayName: 'Dokumententyp', description: 'Art des Dokuments', fieldType: 'select' },
+			folder: { displayName: 'Ordner', description: 'Ablageordner', fieldType: 'select' },
+			status: { displayName: 'Status', description: 'Dokumentstatus', fieldType: 'select' },
+			bemerkung: {
+				displayName: 'Titel/Bemerkung',
+				description: 'Dokumenttitel oder Bemerkung',
+				fieldType: 'text',
+			},
+			revision: { displayName: 'Revision', description: 'Versionsnummer', fieldType: 'text' },
+			cdate: {
+				displayName: 'Dokumentdatum',
+				description: 'Erstellungsdatum des Dokuments',
+				fieldType: 'date',
+			},
+			changeid: { displayName: 'Bearbeiter', description: 'Letzter Bearbeiter', fieldType: 'text' },
+			ctimestamp: {
+				displayName: 'Zeitstempel',
+				description: 'Letzter Änderungszeitpunkt',
+				fieldType: 'datetime',
+			},
+			rechte: { displayName: 'Rechte', description: 'Dokumentrechte', fieldType: 'text' },
+			docid: { displayName: 'Dokument-ID', description: 'Eindeutige Dokument-ID', fieldType: 'text' },
+			mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },
+		};
+
+		// Kombiniere alle verfügbaren Informationen
+		const result: any = {
+			attributeName,
+			currentValue,
+			dataType: typeof currentValue,
+			displayName: attributeDetail?.displayName || standardAttributeInfo[attributeName]?.displayName || attributeName,
+			description: attributeDetail?.description || standardAttributeInfo[attributeName]?.description || '',
+			fieldType: attributeDetail?.type || attributeDetail?.fieldType || standardAttributeInfo[attributeName]?.fieldType || 'unknown',
+			required: attributeDetail?.required || false,
+			maxLength: attributeDetail?.maxLength,
+			options: attributeDetail?.options || [],
+		};
+
+		// Zusätzliche Metadaten falls verfügbar
+		if (attributeDetail) {
+			if (attributeDetail.id !== undefined) result.id = attributeDetail.id;
+			if (attributeDetail.caption !== undefined) result.caption = attributeDetail.caption;
+			if (attributeDetail.defaultValue !== undefined) result.defaultValue = attributeDetail.defaultValue;
+			if (attributeDetail.validation !== undefined) result.validation = attributeDetail.validation;
+			if (attributeDetail.category !== undefined) result.category = attributeDetail.category;
+		}
+
+		console.log('Attribut-Details für', attributeName, ':', JSON.stringify(result, null, 2));
 
 		return {
 			success: true,
 			message: `Details für Attribut "${attributeName}" erfolgreich abgerufen`,
 			data: {
 				docId,
-				attribute: attributeDetails,
-				allAttributes: Object.keys(classifyAttributes),
-				documentInfo: documentInfo?.[0],
+				attributeDetails: result,
+				allDetailInformation: detailResponse, // Für Debugging/Vollständigkeit
 			},
 		};
 	} catch (error: unknown) {
