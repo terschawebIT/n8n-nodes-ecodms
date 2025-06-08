@@ -389,6 +389,7 @@ async function handleClassifyUserFriendly(
 
 		// Extrahiere clDocId aus den Dokumentinformationen
 		const clDocId = documentInfo?.[0]?.clDocId || docId; // Array-Zugriff korrigiert
+		console.log('DocInfo clDocId:', documentInfo?.[0]?.clDocId);
 		console.log('Verwende clDocId:', clDocId);
 
 		const documentTypeLocator = this.getNodeParameter('documentType', 0) as any;
@@ -402,8 +403,21 @@ async function handleClassifyUserFriendly(
 		const folder = folderLocator.value || folderLocator;
 		const status = statusLocator.value || statusLocator;
 
+		// Debug: Zeige Input-Parameter
+		console.log('=== INPUT PARAMETER ===');
+		console.log('documentType:', documentType);
+		console.log('folder:', folder);
+		console.log('status:', status);
+		console.log('documentTitle:', documentTitle);
+		console.log('additionalFields:', additionalFields);
+
 		// Verwende existierende classifyAttributes als Basis und überschreibe nur gewünschte Felder
 		const existingAttributes = documentInfo?.[0]?.classifyAttributes || {};
+		console.log('=== EXISTING ATTRIBUTES ===');
+		console.log('Anzahl Felder:', Object.keys(existingAttributes).length);
+		console.log('Felder:', Object.keys(existingAttributes));
+		console.log('Vollständig:', JSON.stringify(existingAttributes, null, 2));
+
 		const classifyAttributes: IDataObject = {
 			...existingAttributes, // Alle existierenden Felder übernehmen
 			// Überschreibe nur die gewünschten Felder
@@ -412,23 +426,19 @@ async function handleClassifyUserFriendly(
 			status: status,
 			bemerkung: documentTitle,
 			docid: `${docId}#${clDocId}`, // KORREKTES Format: docId#clDocId aus API
-			changeid: credentials.username || 'n8n-ecodms',
-			rechte: 'W',
-			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+			changeid: credentials.username || 'n8n-ecodms', // API-Benutzer als changeid
+			rechte: 'W', // Write-Berechtigung
+			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Aktueller Zeitstempel
+			revision: '1.0', // Standard Revision für neue Dokumente
+			cdate: additionalFields.documentDate || '', // Dokumentdatum aus UI
 		};
 
-		// Dokumentdatum nur setzen wenn verfügbar
-		if (additionalFields.documentDate) {
-			classifyAttributes.cdate = additionalFields.documentDate;
+		// ENTFERNE documentDate aus classifyAttributes - gehört NICHT dorthin!
+		if ('documentDate' in classifyAttributes) {
+			delete classifyAttributes.documentDate;
 		}
 
 		// Füge zusätzliche Felder hinzu
-		if (additionalFields.revision) {
-			classifyAttributes.revision = additionalFields.revision;
-		} else {
-			// Für neue Dokumente verwende Standard-Revision
-			classifyAttributes.revision = '1.0';
-		}
 		if (additionalFields.keywords) {
 			classifyAttributes.keywords = additionalFields.keywords;
 		}
@@ -561,6 +571,12 @@ async function handleClassifyUserFriendly(
 				}
 				throw error;
 			});
+
+		// Debug: Anzahl Felder nach Bearbeitung
+		console.log('=== FINAL CLASSIFY ATTRIBUTES ===');
+		console.log('Anzahl Felder:', Object.keys(classifyAttributes).length);
+		console.log('Felder:', Object.keys(classifyAttributes));
+		console.log('Vollständig:', JSON.stringify(classifyAttributes, null, 2));
 
 		return {
 			success: true,
