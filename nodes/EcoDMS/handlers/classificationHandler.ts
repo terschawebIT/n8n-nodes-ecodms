@@ -2,8 +2,8 @@ import {
 	type IDataObject,
 	type IExecuteFunctions,
 	type INodeExecutionData,
+	type IRequestOptions,
 	NodeOperationError,
-	IRequestOptions,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError, getErrorMessage } from '../utils/errorHandler';
@@ -364,7 +364,7 @@ async function handleClassifyUserFriendly(
 		// Zuerst Dokumentinformationen abrufen um clDocId zu erhalten
 		const documentInfoUrl = `${credentials.serverUrl as string}/api/getDocumentInfo`;
 		console.log('Rufe Dokumentinformationen ab:', documentInfoUrl);
-		
+
 		const documentInfoOptions: IRequestOptions = {
 			method: 'POST',
 			body: { docId },
@@ -376,13 +376,16 @@ async function handleClassifyUserFriendly(
 			},
 		};
 
-		let documentInfo;
+		let documentInfo: any;
 		try {
 			documentInfo = await this.helpers.request(documentInfoOptions);
 			console.log('Dokumentinformationen erhalten:', JSON.stringify(documentInfo, null, 2));
 		} catch (error) {
 			console.error('Fehler beim Abrufen der Dokumentinformationen:', error);
-			throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumentinformationen: ${(error as Error).message}`);
+			throw new NodeOperationError(
+				this.getNode(),
+				`Fehler beim Abrufen der Dokumentinformationen: ${(error as Error).message}`,
+			);
 		}
 
 		// Extrahiere clDocId aus den Dokumentinformationen
@@ -531,31 +534,33 @@ async function handleClassifyUserFriendly(
 		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
 		console.log('API URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
 
-		const response = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/classifyDocument`,
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-			},
-			body: requestBody,
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		}).catch((error: any) => {
-			console.log('=== API ERROR DETAILS ===');
-			console.log('Status Code:', error.statusCode);
-			console.log('Response:', error.response?.body || error.message);
-			console.log('Error Details:', error);
-			
-			// Versuche dokumentInfo zu prüfen
-			if (error.statusCode === 404) {
-				console.log('HTTP 404 - möglicherweise ungültige docId oder falsche Attribute');
-			}
-			throw error;
-		});
+		const response = await this.helpers
+			.httpRequest({
+				url: `${credentials.serverUrl as string}/api/classifyDocument`,
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: requestBody,
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+			})
+			.catch((error: any) => {
+				console.log('=== API ERROR DETAILS ===');
+				console.log('Status Code:', error.statusCode);
+				console.log('Response:', error.response?.body || error.message);
+				console.log('Error Details:', error);
+
+				// Versuche dokumentInfo zu prüfen
+				if (error.statusCode === 404) {
+					console.log('HTTP 404 - möglicherweise ungültige docId oder falsche Attribute');
+				}
+				throw error;
+			});
 
 		return {
 			success: true,

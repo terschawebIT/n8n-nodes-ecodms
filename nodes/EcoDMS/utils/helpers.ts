@@ -713,7 +713,7 @@ export async function getCustomFields(
 		for (const [key, fieldData] of customFieldsMap.entries()) {
 			// Bestimme eine sinnvolle Anzeige für den Feldtyp
 			const typeDisplay = fieldData.fieldType || 'Text';
-			
+
 			options.push({
 				name: `${fieldData.displayName} (${typeDisplay})`,
 				value: key,
@@ -723,8 +723,10 @@ export async function getCustomFields(
 
 		// Wenn keine Custom Fields gefunden wurden, lade alle verfügbaren dyn_* Felder
 		if (options.length === 1) {
-			console.log('Keine Custom Fields in detailInformation gefunden, versuche allgemeine classifyAttributes');
-			
+			console.log(
+				'Keine Custom Fields in detailInformation gefunden, versuche allgemeine classifyAttributes',
+			);
+
 			try {
 				const url = await getBaseUrl.call(this, 'classifyAttributes');
 				const response = await this.helpers.httpRequest({
@@ -742,13 +744,17 @@ export async function getCustomFields(
 
 				if (response && typeof response === 'object') {
 					// Suche nach dyn_* Feldern in der gesamten Response
-					const findDynFields = (obj: any, path: string = '') => {
+					const findDynFields = (obj: any, path = '') => {
 						for (const [key, value] of Object.entries(obj)) {
 							if (key.startsWith('dyn_')) {
-								const displayName = typeof value === 'string' ? value : 
-												   (typeof value === 'object' && value && 'displayName' in value) ? (value as any).displayName : key;
+								const displayName =
+									typeof value === 'string'
+										? value
+										: typeof value === 'object' && value && 'displayName' in value
+											? (value as any).displayName
+											: key;
 								const fieldType = inferFieldType(value, null);
-								
+
 								options.push({
 									name: `${displayName} (${fieldType})`,
 									value: key,
@@ -759,7 +765,7 @@ export async function getCustomFields(
 							}
 						}
 					};
-					
+
 					findDynFields(response);
 				}
 			} catch (fallbackError) {
