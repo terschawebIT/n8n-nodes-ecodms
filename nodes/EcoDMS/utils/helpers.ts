@@ -1531,12 +1531,13 @@ export async function searchClassificationAttributes(
 		// Prüfe ob eine docId verfügbar ist (aus dem aktuellen Node-Kontext)
 		let docId = '';
 		try {
-			// Versuche docId aus dem aktuellen Node-Parameter zu bekommen
-			const currentNodeParameters = this.getCurrentNodeParameters();
-			const rawDocId = currentNodeParameters?.docId;
+			// Versuche docId direkt aus dem Node-Parameter zu bekommen
+			const rawDocId = this.getNodeParameter('docId');
 			docId = rawDocId ? String(rawDocId) : '';
+			console.log('DocID für Attribut-Auswahl gefunden:', docId);
 		} catch (error) {
 			// Ignoriere Fehler beim Abrufen der Parameter
+			console.log('Keine DocID verfügbar, verwende Fallback:', error);
 		}
 
 		if (docId) {
@@ -1700,6 +1701,96 @@ export async function searchClassificationAttributes(
 				name: 'bemerkung',
 				value: 'bemerkung',
 				description: 'Titel/Bemerkung',
+			},
+		];
+	}
+}
+
+/**
+ * Lädt allgemeine Klassifikationsattribute für ResourceLocator (dokumentenunabhängig)
+ */
+export async function searchGeneralClassificationAttributes(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Allgemeine Klassifikationsattribute abrufen
+		const url = await getBaseUrl.call(this, 'classifyAttributes');
+
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte ein Attribut auswählen',
+		});
+
+		if (Array.isArray(response)) {
+			for (const attr of response) {
+				options.push({
+					name: attr.displayName || attr.name || `Attribut ${attr.id}`,
+					value: attr.name || attr.id?.toString(),
+					description: attr.description || '',
+				});
+			}
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} allgemeine Attribut-Optionen für Details-Abfrage geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der allgemeinen Klassifikationsattribute:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Attribute --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+			{
+				name: 'docart',
+				value: 'docart',
+				description: 'Dokumententyp',
+			},
+			{
+				name: 'folder',
+				value: 'folder',
+				description: 'Ablageordner',
+			},
+			{
+				name: 'status',
+				value: 'status',
+				description: 'Dokumentstatus',
+			},
+			{
+				name: 'bemerkung',
+				value: 'bemerkung',
+				description: 'Titel/Bemerkung',
+			},
+			{
+				name: 'revision',
+				value: 'revision',
+				description: 'Revision',
 			},
 		];
 	}

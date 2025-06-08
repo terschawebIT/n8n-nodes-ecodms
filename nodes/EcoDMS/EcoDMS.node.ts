@@ -38,6 +38,7 @@ import {
 	getTypeClassifications,
 	getUsers,
 	searchClassificationAttributes,
+	searchGeneralClassificationAttributes,
 } from './utils/helpers';
 
 export class EcoDMS implements INodeType {
@@ -283,6 +284,24 @@ export class EcoDMS implements INodeType {
 				filter?: string,
 			): Promise<INodeListSearchResult> {
 				const options = await searchClassificationAttributes.call(this);
+				const filteredOptions = filter
+					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchGeneralClassificationAttributes(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await searchGeneralClassificationAttributes.call(this);
 				const filteredOptions = filter
 					? options.filter((option) => option.name.toLowerCase().includes(filter.toLowerCase()))
 					: options;

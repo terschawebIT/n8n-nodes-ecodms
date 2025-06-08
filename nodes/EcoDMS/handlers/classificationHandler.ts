@@ -664,14 +664,13 @@ async function handleLinkToDocuments(
 }
 
 /**
- * Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen
+ * Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen (dokumentenunabhängig)
  */
 async function handleGetAttributeDetails(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
-		const docId = this.getNodeParameter('docId', 0) as number;
 		const attributeNameParam = this.getNodeParameter('attributeName', 0) as any;
 
 		// ResourceLocator-Wert extrahieren
@@ -681,10 +680,9 @@ async function handleGetAttributeDetails(
 				: attributeNameParam;
 
 		console.log('=== ATTRIBUT DETAILS ABRUFEN ===');
-		console.log('DocID:', docId);
 		console.log('Attribut Name:', attributeName);
 
-		// Erst die detaillierten Attribut-Informationen abrufen (wie bei "Detaillierte Klassifikationsattribute abrufen")
+		// Detaillierte Attribut-Informationen abrufen (wie bei "Detaillierte Klassifikationsattribute abrufen")
 		const detailResponse = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
 			method: 'GET',
@@ -697,31 +695,6 @@ async function handleGetAttributeDetails(
 				password: credentials.password as string,
 			},
 		});
-
-		// Dann die aktuellen Werte für das spezifische Dokument abrufen
-		const documentInfo = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/documentInfo/${docId}`,
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-			},
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
-
-		// Extrahiere die aktuellen Werte
-		const classifyAttributes = documentInfo?.[0]?.classifyAttributes || {};
-		const currentValue = classifyAttributes[attributeName];
-
-		if (currentValue === undefined) {
-			throw new NodeOperationError(
-				this.getNode(),
-				`Attribut "${attributeName}" wurde im Dokument nicht gefunden`,
-			);
-		}
 
 		// Suche nach dem spezifischen Attribut in den Detail-Informationen
 		let attributeDetail: any = null;
@@ -761,11 +734,17 @@ async function handleGetAttributeDetails(
 			mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },
 		};
 
+		// Prüfe ob das Attribut gefunden wurde
+		if (!attributeDetail && !standardAttributeInfo[attributeName]) {
+			throw new NodeOperationError(
+				this.getNode(),
+				`Attribut "${attributeName}" wurde nicht in den verfügbaren Klassifikationsattributen gefunden`,
+			);
+		}
+
 		// Kombiniere alle verfügbaren Informationen
 		const result: any = {
 			attributeName,
-			currentValue,
-			dataType: typeof currentValue,
 			displayName:
 				attributeDetail?.displayName ||
 				standardAttributeInfo[attributeName]?.displayName ||
@@ -780,6 +759,8 @@ async function handleGetAttributeDetails(
 			required: attributeDetail?.required || false,
 			maxLength: attributeDetail?.maxLength,
 			options: attributeDetail?.options || [],
+			// Schema-spezifische Informationen
+			dataType: attributeDetail?.dataType || 'unknown',
 		};
 
 		// Zusätzliche Metadaten falls verfügbar
@@ -790,6 +771,8 @@ async function handleGetAttributeDetails(
 				result.defaultValue = attributeDetail.defaultValue;
 			if (attributeDetail.validation !== undefined) result.validation = attributeDetail.validation;
 			if (attributeDetail.category !== undefined) result.category = attributeDetail.category;
+			if (attributeDetail.editable !== undefined) result.editable = attributeDetail.editable;
+			if (attributeDetail.visible !== undefined) result.visible = attributeDetail.visible;
 		}
 
 		console.log('Attribut-Details für', attributeName, ':', JSON.stringify(result, null, 2));
@@ -798,9 +781,8 @@ async function handleGetAttributeDetails(
 			success: true,
 			message: `Details für Attribut "${attributeName}" erfolgreich abgerufen`,
 			data: {
-				docId,
 				attributeDetails: result,
-				allDetailInformation: detailResponse, // Für Debugging/Vollständigkeit
+				rawAttributeData: attributeDetail, // Rohdaten für Debugging
 			},
 		};
 	} catch (error: unknown) {

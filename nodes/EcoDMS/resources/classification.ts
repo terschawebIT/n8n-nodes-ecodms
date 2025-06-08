@@ -659,20 +659,6 @@ export const classificationFields: INodeProperties[] = [
 
 	// ===== ATTRIBUT-DETAILS ABRUFEN =====
 	{
-		displayName: 'Dokument-ID',
-		name: 'docId',
-		type: 'number',
-		default: 0,
-		required: true,
-		displayOptions: {
-			show: {
-				resource: [Resource.Classification],
-				operation: [Operation.GetAttributeDetails],
-			},
-		},
-		description: 'Die ID des Dokuments, für das Attribut-Details abgerufen werden sollen',
-	},
-	{
 		displayName: 'Attribut auswählen',
 		name: 'attributeName',
 		type: 'resourceLocator',
@@ -690,7 +676,7 @@ export const classificationFields: INodeProperties[] = [
 				name: 'list',
 				type: 'list',
 				typeOptions: {
-					searchListMethod: 'searchClassificationAttributes',
+					searchListMethod: 'searchGeneralClassificationAttributes',
 					searchable: true,
 				},
 			},
