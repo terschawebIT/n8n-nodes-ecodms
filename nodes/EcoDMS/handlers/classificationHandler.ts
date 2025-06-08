@@ -178,7 +178,7 @@ async function handleGetClassifyAttributesDetail(
 					console.log(`Von ${response.length} Attributen wurden ${filteredResponse.length} gefiltert`);
 				} else if (response && typeof response === 'object') {
 					console.log('Filtering Object with', Object.keys(response).length, 'keys');
-					
+
 					// Für Object-Response (wie bei detailInformation API)
 					const filteredObject: any = {};
 					let totalAttributes = 0;
@@ -186,17 +186,17 @@ async function handleGetClassifyAttributesDetail(
 
 					for (const [key, value] of Object.entries(response)) {
 						totalAttributes++;
-						
+
 						// Prüfe ob dieser Schlüssel im Filter enthalten ist
 						const matches = attributeFilter.some((filterValue) => {
-							const keyMatches = 
+							const keyMatches =
 								key === filterValue ||
-								(value && typeof value === 'object' && (
-									(value as any).fieldID === filterValue ||
-									(value as any).fieldName === filterValue ||
-									(value as any).name === filterValue
-								));
-							
+								(value &&
+									typeof value === 'object' &&
+									((value as any).fieldID === filterValue ||
+										(value as any).fieldName === filterValue ||
+										(value as any).name === filterValue));
+
 							if (keyMatches) {
 								console.log('✅ Attribut-Key gefunden:', {
 									filterValue,
@@ -206,7 +206,7 @@ async function handleGetClassifyAttributesDetail(
 									fieldName: (value as any)?.fieldName,
 								});
 							}
-							
+
 							return keyMatches;
 						});
 
