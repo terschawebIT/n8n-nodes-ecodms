@@ -28,6 +28,7 @@ import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
 import {
 	getClassificationAttributes,
+	getComboBoxOptions,
 	getCustomFieldType,
 	getCustomFields,
 	getDocumentTypes,
@@ -155,6 +156,10 @@ export class EcoDMS implements INodeType {
 
 			async getCustomFieldType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getCustomFieldType.call(this);
+			},
+
+			async getComboBoxOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getComboBoxOptions.call(this);
 			},
 
 			async getUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {

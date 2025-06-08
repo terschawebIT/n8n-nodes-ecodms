@@ -247,32 +247,11 @@ export const classificationFields: INodeProperties[] = [
 				description: 'Kommagetrennte Liste von Schlagwörtern',
 			},
 			{
-				displayName: 'Autor',
-				name: 'author',
-				type: 'string',
-				default: '',
-				description: 'Autor des Dokuments',
-			},
-			{
 				displayName: 'Datum',
 				name: 'documentDate',
 				type: 'dateTime',
 				default: '',
 				description: 'Datum des Dokuments',
-			},
-			{
-				displayName: 'Bearbeitungsrollen',
-				name: 'editRoles',
-				type: 'string',
-				default: 'Elite',
-				description: 'Kommagetrennte Liste von Rollen mit Bearbeitungsrechten',
-			},
-			{
-				displayName: 'Leserollen',
-				name: 'readRoles',
-				type: 'string',
-				default: '',
-				description: 'Kommagetrennte Liste von Rollen mit Leserechten',
 			},
 			{
 				displayName: 'Benutzer zuweisen',
@@ -464,7 +443,39 @@ export const classificationFields: INodeProperties[] = [
 								name: 'fieldValue',
 								type: 'string',
 								default: '',
-								description: 'Wert für das Custom Field (Format je nach Feldtyp)',
+								displayOptions: {
+									show: {
+										fieldType: ['string', 'number', 'dateTime'],
+									},
+								},
+								description: 'Wert für das Custom Field',
+							},
+							{
+								displayName: 'Boolean Wert',
+								name: 'fieldValue',
+								type: 'boolean',
+								default: false,
+								displayOptions: {
+									show: {
+										fieldType: ['boolean'],
+									},
+								},
+								description: 'Boolean Wert für das Custom Field',
+							},
+							{
+								displayName: 'Auswahl',
+								name: 'fieldValue',
+								type: 'options',
+								typeOptions: {
+									loadOptionsMethod: 'getComboBoxOptions',
+								},
+								default: '',
+								displayOptions: {
+									show: {
+										fieldType: ['options'],
+									},
+								},
+								description: 'Wählen Sie eine Option aus der Liste',
 							},
 						],
 					},

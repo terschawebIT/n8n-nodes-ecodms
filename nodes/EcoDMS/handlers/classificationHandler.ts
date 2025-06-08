@@ -459,9 +459,7 @@ async function handleClassifyUserFriendly(
 		if (additionalFields.keywords) {
 			classifyAttributes.keywords = additionalFields.keywords;
 		}
-		if (additionalFields.author) {
-			classifyAttributes.author = additionalFields.author;
-		}
+		// Autor wird automatisch von ecoDMS gesetzt
 
 		// Behandle dynamische Custom Fields
 		if (additionalFields.dynamicCustomFields && Array.isArray(additionalFields.dynamicCustomFields)) {
@@ -532,20 +530,10 @@ async function handleClassifyUserFriendly(
 			}
 		}
 
-		// Bereite Berechtigungen vor
-		const editRoles = (additionalFields.editRoles as string) || 'Elite';
-		const readRoles = (additionalFields.readRoles as string) || '';
-
-		// Bereite finale Berechtigungen vor
-		const finalEditRoles = editRoles
-			.split(',')
-			.map((role) => role.trim())
-			.filter((role) => role);
-
-		const finalReadRoles = readRoles
-			.split(',')
-			.map((role) => role.trim())
-			.filter((role) => role);
+		// Standard-Berechtigungen setzen (da Benutzer/Gruppen spezifisch zugewiesen werden)
+		// ecoDMS benötigt diese Felder, aber wir verwenden Standardwerte
+		const finalEditRoles = ['Elite']; // Standard-Bearbeitungsrolle
+		const finalReadRoles: string[] = []; // Keine allgemeinen Leserollen (nur spezifische Benutzer/Gruppen)
 
 		// API-Aufruf zur Klassifizierung (korrekte ecoDMS API-Struktur)
 		const requestBody = {

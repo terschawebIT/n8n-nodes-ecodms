@@ -900,7 +900,86 @@ export async function getCustomFieldType(
 				{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
 				{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
 				{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+				{ name: 'Options', value: 'options', description: 'Auswahl aus Liste' },
 			];
+		}
+
+		// Hole Custom Field Informationen aus dem Cache
+		const customFieldsMap = new Map();
+		
+		// Versuche mehrere Ansätze um Custom Fields zu finden
+		const endpoints = [
+			'classifyAttributes/detailInformation',
+			'search?maxHits=1',
+			'classifyAttributes',
+		];
+
+		for (const endpoint of endpoints) {
+			try {
+				const url = await getBaseUrl.call(this, endpoint);
+				const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+				const response = await this.helpers.httpRequest({
+					url,
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+					},
+					json: true,
+					auth: {
+						username: credentials.username,
+						password: credentials.password,
+					},
+				});
+
+				if (response) {
+					await extractDynFieldsFromAttributes(response, customFieldsMap);
+					if (customFieldsMap.size > 0) break;
+				}
+			} catch (error) {
+				console.log(`Endpoint ${endpoint} failed:`, error);
+			}
+		}
+		
+		const fieldInfo = customFieldsMap.get(actualFieldName);
+		if (fieldInfo) {
+			// Mappe ecoDMS-Typen zu korrekten n8n-Typen
+			let n8nType = 'string';
+			let recommendedName = 'Text';
+			
+			if (fieldInfo.fieldInfo?.originalFieldType) {
+				switch (fieldInfo.fieldInfo.originalFieldType) {
+					case 'eco_CheckBox':
+						n8nType = 'boolean';
+						recommendedName = 'Boolean';
+						break;
+					case 'eco_ComboBox':
+						n8nType = 'options';
+						recommendedName = 'Options';
+						break;
+					case 'eco_DateField':
+						n8nType = 'dateTime';
+						recommendedName = 'Date';
+						break;
+					default:
+						n8nType = 'string';
+						recommendedName = 'Text';
+						break;
+				}
+			}
+			
+			return [
+				{
+					name: `${recommendedName} (empfohlen)`,
+					value: n8nType,
+					description: `Empfohlener Typ für "${fieldInfo.displayName}"`,
+				},
+				{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
+				{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
+				{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
+				{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+				{ name: 'Options', value: 'options', description: 'Auswahl aus Liste' },
+			].filter((option, index, self) => self.findIndex(o => o.value === option.value) === index);
 		}
 
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
@@ -966,6 +1045,73 @@ export async function getCustomFieldType(
 			{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
 			{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
 		];
+	}
+}
+
+/**
+ * Lädt die verfügbaren Optionen für ComboBox Custom Fields
+ */
+export async function getComboBoxOptions(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const fieldName = this.getCurrentNodeParameter('fieldName') as any;
+		const actualFieldName = fieldName?.value || fieldName;
+
+		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
+			return [];
+		}
+
+		// Hole Custom Field Informationen
+		const customFieldsMap = new Map();
+		
+		// Versuche mehrere Ansätze um Custom Fields zu finden
+		const endpoints = [
+			'classifyAttributes/detailInformation',
+			'search?maxHits=1',
+			'classifyAttributes',
+		];
+
+		for (const endpoint of endpoints) {
+			try {
+				const url = await getBaseUrl.call(this, endpoint);
+				const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+				const response = await this.helpers.httpRequest({
+					url,
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+					},
+					json: true,
+					auth: {
+						username: credentials.username,
+						password: credentials.password,
+					},
+				});
+
+				if (response) {
+					await extractDynFieldsFromAttributes(response, customFieldsMap);
+					if (customFieldsMap.size > 0) break;
+				}
+			} catch (error) {
+				console.log(`Endpoint ${endpoint} failed:`, error);
+			}
+		}
+		
+		const fieldInfo = customFieldsMap.get(actualFieldName);
+		if (fieldInfo?.fieldInfo?.classificationContent && Array.isArray(fieldInfo.fieldInfo.classificationContent)) {
+			return fieldInfo.fieldInfo.classificationContent.map((option: any) => ({
+				name: option,
+				value: option,
+				description: `Option: ${option}`,
+			}));
+		}
+
+		return [];
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der ComboBox-Optionen:', error);
+		return [];
 	}
 }
 
