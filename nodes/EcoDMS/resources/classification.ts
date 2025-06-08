@@ -456,7 +456,8 @@ export const classificationFields: INodeProperties[] = [
 									loadOptionsMethod: 'getCustomFieldType',
 								},
 								default: 'string',
-								description: 'Typ des Custom Fields (wird automatisch erkannt basierend auf dem gewählten Feld)',
+								description:
+									'Typ des Custom Fields (wird automatisch erkannt basierend auf dem gewählten Feld)',
 							},
 							{
 								displayName: 'Wert',

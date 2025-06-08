@@ -28,8 +28,8 @@ import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
 import {
 	getClassificationAttributes,
-	getCustomFields,
 	getCustomFieldType,
+	getCustomFields,
 	getDocumentTypes,
 	getFolders,
 	getGroups,

@@ -522,21 +522,18 @@ function inferFieldType(fieldInfo: any, value: any): string {
 	// Prüfe explizite Typ-Informationen
 	if (fieldInfo && typeof fieldInfo === 'object') {
 		if (fieldInfo.type) {
-			switch (fieldInfo.type.toLowerCase()) {
+			const lowerType = fieldInfo.type.toLowerCase();
+			switch (lowerType) {
 				case 'boolean':
-				case 'bool':
 				case 'checkbox':
 					return 'Boolean';
-				case 'number':
 				case 'integer':
+				case 'number':
 				case 'decimal':
-				case 'float':
 					return 'Number';
 				case 'date':
 				case 'datetime':
 					return 'Date';
-				case 'string':
-				case 'text':
 				default:
 					return 'Text';
 			}
@@ -544,13 +541,31 @@ function inferFieldType(fieldInfo: any, value: any): string {
 
 		// Prüfe basierend auf Feldnamen/Bezeichnungen
 		const name = (fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || '').toLowerCase();
-		if (name.includes('bezahlt') || name.includes('paid') || name.includes('aktiv') || name.includes('enabled') || name.includes('ja/nein')) {
+		if (
+			name.includes('bezahlt') ||
+			name.includes('paid') ||
+			name.includes('aktiv') ||
+			name.includes('enabled') ||
+			name.includes('ja/nein')
+		) {
 			return 'Boolean';
 		}
-		if (name.includes('datum') || name.includes('date') || name.includes('zeit') || name.includes('time')) {
+		if (
+			name.includes('datum') ||
+			name.includes('date') ||
+			name.includes('zeit') ||
+			name.includes('time')
+		) {
 			return 'Date';
 		}
-		if (name.includes('nummer') || name.includes('number') || name.includes('anzahl') || name.includes('count') || name.includes('betrag') || name.includes('amount')) {
+		if (
+			name.includes('nummer') ||
+			name.includes('number') ||
+			name.includes('anzahl') ||
+			name.includes('count') ||
+			name.includes('betrag') ||
+			name.includes('amount')
+		) {
 			return 'Number';
 		}
 	}
@@ -558,10 +573,17 @@ function inferFieldType(fieldInfo: any, value: any): string {
 	// Prüfe basierend auf dem Wert
 	if (typeof value === 'string') {
 		const lowerValue = value.toLowerCase();
-		if (lowerValue === 'true' || lowerValue === 'false' || lowerValue === 'ja' || lowerValue === 'nein' || lowerValue === 'yes' || lowerValue === 'no') {
+		if (
+			lowerValue === 'true' ||
+			lowerValue === 'false' ||
+			lowerValue === 'ja' ||
+			lowerValue === 'nein' ||
+			lowerValue === 'yes' ||
+			lowerValue === 'no'
+		) {
 			return 'Boolean';
 		}
-		if (!isNaN(Number(value)) && value.trim() !== '') {
+		if (!Number.isNaN(Number(value)) && value.trim() !== '') {
 			return 'Number';
 		}
 		// Datum-Pattern prüfen
@@ -584,7 +606,10 @@ export async function getCustomFields(
 
 		// Versuche verschiedene API-Endpoints für Custom Fields
 		const endpoints = ['classifyAttributes/detailInformation', 'classifyAttributes'];
-		const customFieldsMap = new Map<string, { displayName: string; fieldType: string; fieldInfo: any }>();
+		const customFieldsMap = new Map<
+			string,
+			{ displayName: string; fieldType: string; fieldInfo: any }
+		>();
 
 		for (const endpoint of endpoints) {
 			try {
@@ -726,7 +751,7 @@ export async function getCustomFieldType(
 	try {
 		const fieldName = this.getCurrentNodeParameter('fieldName') as any;
 		const actualFieldName = fieldName?.value || fieldName;
-		
+
 		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
 			return [
 				{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
@@ -754,13 +779,17 @@ export async function getCustomFieldType(
 			},
 		});
 
-		if (response && response[actualFieldName]) {
+		if (response?.[actualFieldName]) {
 			const fieldInfo = response[actualFieldName];
 			const inferredType = inferFieldType(fieldInfo, fieldInfo.value || fieldInfo.defaultValue);
-			
+
 			// Empfohlenen Typ an erste Stelle setzen
 			const options = [
-				{ name: `${inferredType} (empfohlen)`, value: inferredType.toLowerCase(), description: `Empfohlener Typ basierend auf Feldanalyse` },
+				{
+					name: `${inferredType} (empfohlen)`,
+					value: inferredType.toLowerCase(),
+					description: 'Empfohlener Typ basierend auf Feldanalyse',
+				},
 			];
 
 			// Andere Optionen hinzufügen
