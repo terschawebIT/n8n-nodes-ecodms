@@ -40,6 +40,9 @@ export async function handleClassificationOperations(
 		case Operation.ClassifyDocument:
 			result = await handleClassifyDocument.call(this, items, credentials);
 			break;
+		case 'classifyUserFriendly':
+			result = await handleClassifyUserFriendly.call(this, items, credentials);
+			break;
 		case Operation.RemoveDocumentLink:
 			result = await handleRemoveDocumentLink.call(this, credentials);
 			break;
@@ -339,6 +342,96 @@ async function handleClassifyDocument(
 			'Fehler beim Aktualisieren der Dokumentklassifikation',
 			error,
 		);
+	}
+}
+
+/**
+ * Benutzerfreundliche Dokumentklassifizierung mit strukturierten Feldern
+ */
+async function handleClassifyUserFriendly(
+	this: IExecuteFunctions,
+	items: INodeExecutionData[],
+	credentials: IDataObject,
+): Promise<ClassificationResponse> {
+	try {
+		const docId = this.getNodeParameter('docId', 0) as number;
+		const documentType = this.getNodeParameter('documentType', 0) as string;
+		const folder = this.getNodeParameter('folder', 0) as string;
+		const status = this.getNodeParameter('status', 0) as string;
+		const documentTitle = this.getNodeParameter('documentTitle', 0) as string;
+		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
+
+		// Baue das Klassifikationsobjekt zusammen
+		const classifyData: IDataObject = {
+			docart: documentType,
+			folder: folder,
+			status: status,
+			bemerkung: documentTitle,
+		};
+
+		// Füge zusätzliche Felder hinzu
+		if (additionalFields.revision) {
+			classifyData.revision = additionalFields.revision;
+		}
+		if (additionalFields.keywords) {
+			classifyData.keywords = additionalFields.keywords;
+		}
+		if (additionalFields.author) {
+			classifyData.author = additionalFields.author;
+		}
+		if (additionalFields.documentDate) {
+			classifyData.documentDate = additionalFields.documentDate;
+		}
+
+		// Behandle benutzerdefinierte Felder
+		if (additionalFields.customFields && Array.isArray(additionalFields.customFields)) {
+			const customFields = additionalFields.customFields as IDataObject[];
+			for (const customField of customFields) {
+				if (customField.customField && typeof customField.customField === 'object') {
+					const field = customField.customField as IDataObject;
+					if (field.name && field.value) {
+						classifyData[field.name as string] = field.value;
+					}
+				}
+			}
+		}
+
+		// Bereite Berechtigungen vor
+		const editRoles = additionalFields.editRoles as string || 'Elite';
+		const readRoles = additionalFields.readRoles as string || '';
+
+		// API-Aufruf zur Klassifizierung
+		const response = await this.helpers.httpRequest({
+			url: `${credentials.serverUrl as string}/api/classifyDocument`,
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: {
+				docId,
+				...classifyData,
+				editRoles: editRoles.split(',').map(role => role.trim()).filter(role => role),
+				readRoles: readRoles.split(',').map(role => role.trim()).filter(role => role),
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+		});
+
+		return {
+			success: true,
+			message: 'Dokument erfolgreich klassifiziert',
+			data: {
+				docId,
+				classificationData: classifyData,
+				response,
+			},
+		};
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler bei der benutzerfreundlichen Klassifizierung', error);
 	}
 }
 

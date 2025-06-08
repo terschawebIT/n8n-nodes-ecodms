@@ -27,7 +27,7 @@ import { searchFields, searchOperations } from './resources/search';
 import { workflowFields, workflowOperations } from './resources/workflow';
 import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
-import { getDocumentTypes, getFolders, getStatusValues } from './utils/helpers';
+import { getClassificationAttributes, getDocumentTypes, getFolders, getStatusValues, getTypeClassifications } from './utils/helpers';
 
 export class EcoDMS implements INodeType {
 	description: INodeTypeDescription = {
@@ -137,6 +137,14 @@ export class EcoDMS implements INodeType {
 
 			async getStatusValues(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getStatusValues.call(this);
+			},
+
+			async getClassificationAttributes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getClassificationAttributes.call(this);
+			},
+
+			async getTypeClassifications(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getTypeClassifications.call(this);
 			},
 		},
 	};

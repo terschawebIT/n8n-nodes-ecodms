@@ -45,4 +45,5 @@ export const Operation = {
 	Connect: 'connect',
 	UploadAndClassify: 'uploadAndClassify',
 	SearchAndDownload: 'searchAndDownload',
+	ClassifyUserFriendly: 'classifyUserFriendly',
 } as const;

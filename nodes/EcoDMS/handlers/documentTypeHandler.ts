@@ -43,7 +43,7 @@ export async function handleDocumentTypeOperations(
 	if (operation === Operation.GetTypes && Array.isArray(result)) {
 		return result.map((item) => ({ json: item }));
 	}
-	
+
 	// Stelle sicher, dass wir immer ein Array von INodeExecutionData zurückgeben
 	return Array.isArray(result) ? result : [{ json: result }];
 }
@@ -51,10 +51,7 @@ export async function handleDocumentTypeOperations(
 /**
  * Implementiert das Abrufen der Dokumenttypen
  */
-async function handleGetTypes(
-	this: IExecuteFunctions,
-	credentials: IDataObject,
-): Promise<any> {
+async function handleGetTypes(this: IExecuteFunctions, credentials: IDataObject): Promise<any> {
 	const url = await getBaseUrl.call(this, 'types');
 
 	try {

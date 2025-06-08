@@ -350,3 +350,167 @@ export async function getStatusValues(
 		];
 	}
 }
+
+/**
+ * Lädt die verfügbaren Klassifikationsattribute für ein Dokument für Dropdown-Menüs
+ */
+export async function getClassificationAttributes(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'classifyAttributes');
+
+		console.log('ClassificationAttributes-API-URL:', url);
+
+		// API-Aufruf, um Klassifikationsattribute abzurufen
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		console.log('ClassificationAttributes-API-Antwort:', JSON.stringify(response).substring(0, 200));
+
+		if (!Array.isArray(response)) {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Klassifikationsattribute: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Klassifikationsattribute --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
+		}
+
+		// Klassifikationsattribute in das erforderliche Format konvertieren
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
+		});
+
+		for (const attr of response) {
+			options.push({
+				name: attr.name || `Attribut ${attr.id}`,
+				value: attr.id?.toString() || attr.name,
+				description: attr.description || '',
+			});
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} Klassifikationsattribut-Optionen geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Klassifikationsattribute:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Klassifikationsattribute --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+		];
+	}
+}
+
+/**
+ * Lädt verfügbare Dokumenttyp-Klassifikationen für Dropdown-Menüs
+ */
+export async function getTypeClassifications(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'typeClassifications');
+
+		console.log('TypeClassifications-API-URL:', url);
+
+		// API-Aufruf, um Dokumenttyp-Klassifikationen abzurufen
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		console.log('TypeClassifications-API-Antwort:', JSON.stringify(response).substring(0, 200));
+
+		if (!Array.isArray(response)) {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Dokumenttyp-Klassifikationen: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Dokumenttyp-Klassifikationen --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
+		}
+
+		// Dokumenttyp-Klassifikationen in das erforderliche Format konvertieren
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Wert auswählen',
+		});
+
+		for (const classification of response) {
+			options.push({
+				name: classification.name || `Klassifikation ${classification.id}`,
+				value: classification.id?.toString() || classification.name,
+				description: classification.description || '',
+			});
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} Dokumenttyp-Klassifikation-Optionen geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Dokumenttyp-Klassifikationen:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Dokumenttyp-Klassifikationen --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+		];
+	}
+}
