@@ -906,7 +906,7 @@ export async function getCustomFieldType(
 
 		// Hole Custom Field Informationen aus dem Cache
 		const customFieldsMap = new Map();
-		
+
 		// Versuche mehrere Ansätze um Custom Fields zu finden
 		const endpoints = [
 			'classifyAttributes/detailInformation',
@@ -940,13 +940,13 @@ export async function getCustomFieldType(
 				console.log(`Endpoint ${endpoint} failed:`, error);
 			}
 		}
-		
+
 		const fieldInfo = customFieldsMap.get(actualFieldName);
 		if (fieldInfo) {
 			// Mappe ecoDMS-Typen zu korrekten n8n-Typen
 			let n8nType = 'string';
 			let recommendedName = 'Text';
-			
+
 			if (fieldInfo.fieldInfo?.originalFieldType) {
 				switch (fieldInfo.fieldInfo.originalFieldType) {
 					case 'eco_CheckBox':
@@ -967,7 +967,7 @@ export async function getCustomFieldType(
 						break;
 				}
 			}
-			
+
 			return [
 				{
 					name: `${recommendedName} (empfohlen)`,
@@ -979,7 +979,7 @@ export async function getCustomFieldType(
 				{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
 				{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
 				{ name: 'Options', value: 'options', description: 'Auswahl aus Liste' },
-			].filter((option, index, self) => self.findIndex(o => o.value === option.value) === index);
+			].filter((option, index, self) => self.findIndex((o) => o.value === option.value) === index);
 		}
 
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
@@ -1064,7 +1064,7 @@ export async function getComboBoxOptions(
 
 		// Hole Custom Field Informationen
 		const customFieldsMap = new Map();
-		
+
 		// Versuche mehrere Ansätze um Custom Fields zu finden
 		const endpoints = [
 			'classifyAttributes/detailInformation',
@@ -1098,9 +1098,12 @@ export async function getComboBoxOptions(
 				console.log(`Endpoint ${endpoint} failed:`, error);
 			}
 		}
-		
+
 		const fieldInfo = customFieldsMap.get(actualFieldName);
-		if (fieldInfo?.fieldInfo?.classificationContent && Array.isArray(fieldInfo.fieldInfo.classificationContent)) {
+		if (
+			fieldInfo?.fieldInfo?.classificationContent &&
+			Array.isArray(fieldInfo.fieldInfo.classificationContent)
+		) {
 			return fieldInfo.fieldInfo.classificationContent.map((option: any) => ({
 				name: option,
 				value: option,
