@@ -122,15 +122,53 @@ async function handleGetClassifyAttributesDetail(
 				console.log('Gewählte Attribute:', attributeFilter);
 
 				if (Array.isArray(response)) {
+					// Debug: Zeige Struktur der ersten Attribute
+					if (response.length > 0) {
+						console.log('Beispiel-Attribut Struktur:', JSON.stringify(response[0], null, 2));
+					}
+
 					filteredResponse = response.filter((attr: any) => {
 						// Prüfe verschiedene mögliche Identifikatoren
-						const matches = attributeFilter.some(
-							(filterValue) =>
+						const matches = attributeFilter.some((filterValue) => {
+							const fieldMatches = 
 								attr.name === filterValue ||
 								attr.fieldName === filterValue ||
+								attr.fieldID === filterValue ||     // Möglicher Feldname in API
 								attr.id === filterValue ||
-								attr.displayName === filterValue,
-						);
+								attr.displayName === filterValue ||
+								attr.caption === filterValue ||
+								// Falls es ein Object mit nested Werten ist
+								(attr.fieldName && attr.fieldName === filterValue) ||
+								(attr.fieldID && attr.fieldID === filterValue);
+							
+							if (fieldMatches) {
+								console.log(`✅ Attribut gefunden:`, {
+									filterValue,
+									attrName: attr.name,
+									attrFieldName: attr.fieldName,
+									attrFieldID: attr.fieldID,
+									attrId: attr.id,
+								});
+							}
+							
+							return fieldMatches;
+						});
+						
+						if (!matches) {
+							// Debug: Zeige warum Attribut nicht gefiltert wurde
+							console.log(`❌ Attribut nicht gefiltert:`, {
+								availableFields: {
+									name: attr.name,
+									fieldName: attr.fieldName,
+									fieldID: attr.fieldID,
+									id: attr.id,
+									displayName: attr.displayName,
+									caption: attr.caption,
+								},
+								searchingFor: attributeFilter,
+							});
+						}
+						
 						return matches;
 					});
 
