@@ -362,12 +362,11 @@ async function handleClassifyUserFriendly(
 		console.log('DocID:', docId, 'Type:', typeof docId);
 
 		// Zuerst Dokumentinformationen abrufen um clDocId zu erhalten
-		const documentInfoUrl = `${credentials.serverUrl as string}/api/getDocumentInfo`;
+		const documentInfoUrl = `${credentials.serverUrl as string}/api/documentInfo/${docId}`;
 		console.log('Rufe Dokumentinformationen ab:', documentInfoUrl);
 
 		const documentInfoOptions: IRequestOptions = {
-			method: 'POST',
-			body: { docId },
+			method: 'GET', // documentInfo verwendet GET, nicht POST
 			json: true,
 			uri: documentInfoUrl,
 			auth: {
