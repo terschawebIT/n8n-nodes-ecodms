@@ -32,9 +32,7 @@ export async function handleClassificationOperations(
 		case Operation.GetClassifyAttributesDetail:
 			result = await handleGetClassifyAttributesDetail.call(this, credentials);
 			break;
-		case Operation.GetAttributeDetails:
-			result = await handleGetAttributeDetails.call(this, credentials);
-			break;
+
 		case Operation.CreateNewClassify:
 			result = await handleCreateNewClassify.call(this, items, credentials);
 			break;
@@ -114,9 +112,42 @@ async function handleGetClassifyAttributesDetail(
 			},
 		});
 
+		// Optional: Filter anwenden falls attributeFilter Parameter gesetzt ist
+		let filteredResponse = response;
+		try {
+			const attributeFilter = this.getNodeParameter('attributeFilter', 0) as string[];
+			
+			if (attributeFilter && attributeFilter.length > 0) {
+				console.log('=== ATTRIBUT-FILTER ANGEWENDET ===');
+				console.log('Gewählte Attribute:', attributeFilter);
+				
+				if (Array.isArray(response)) {
+					filteredResponse = response.filter((attr: any) => {
+						// Prüfe verschiedene mögliche Identifikatoren
+						const matches = attributeFilter.some(filterValue => 
+							attr.name === filterValue ||
+							attr.fieldName === filterValue ||
+							attr.id === filterValue ||
+							attr.displayName === filterValue
+						);
+						return matches;
+					});
+					
+					console.log(`Von ${response.length} Attributen wurden ${filteredResponse.length} gefiltert`);
+				}
+			} else {
+				console.log('Kein Attribut-Filter gesetzt, alle Attribute werden zurückgegeben');
+			}
+		} catch (filterError) {
+			// Falls Filter-Parameter nicht existiert oder Fehler auftritt, alle Attribute zurückgeben
+			console.log('Filter-Parameter nicht verfügbar oder Fehler beim Filtern, alle Attribute werden zurückgegeben');
+		}
+
 		return {
 			success: true,
-			data: response,
+			data: filteredResponse,
+			totalAttributesAvailable: Array.isArray(response) ? response.length : 0,
+			filteredAttributesReturned: Array.isArray(filteredResponse) ? filteredResponse.length : 0,
 		};
 	} catch (error: unknown) {
 		throw createNodeError(
@@ -663,129 +694,4 @@ async function handleLinkToDocuments(
 	}
 }
 
-/**
- * Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen (dokumentenunabhängig)
- */
-async function handleGetAttributeDetails(
-	this: IExecuteFunctions,
-	credentials: IDataObject,
-): Promise<ClassificationResponse> {
-	try {
-		const attributeNameParam = this.getNodeParameter('attributeName', 0) as any;
 
-		// ResourceLocator-Wert extrahieren
-		const attributeName =
-			typeof attributeNameParam === 'object'
-				? attributeNameParam.value || attributeNameParam
-				: attributeNameParam;
-
-		console.log('=== ATTRIBUT DETAILS ABRUFEN ===');
-		console.log('Attribut Name:', attributeName);
-
-		// Detaillierte Attribut-Informationen abrufen (wie bei "Detaillierte Klassifikationsattribute abrufen")
-		const detailResponse = await this.helpers.httpRequest({
-			url: `${credentials.serverUrl as string}/api/classifyAttributes/detailInformation`,
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-			},
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-		});
-
-		// Suche nach dem spezifischen Attribut in den Detail-Informationen
-		let attributeDetail: any = null;
-		if (Array.isArray(detailResponse)) {
-			attributeDetail = detailResponse.find(
-				(field: any) =>
-					field.name === attributeName ||
-					field.fieldName === attributeName ||
-					field.id === attributeName,
-			);
-		}
-
-		// Standard-Attribute-Informationen falls nicht in Detail-Response gefunden
-		const standardAttributeInfo: Record<string, any> = {
-			docart: { displayName: 'Dokumententyp', description: 'Art des Dokuments', fieldType: 'select' },
-			folder: { displayName: 'Ordner', description: 'Ablageordner', fieldType: 'select' },
-			status: { displayName: 'Status', description: 'Dokumentstatus', fieldType: 'select' },
-			bemerkung: {
-				displayName: 'Titel/Bemerkung',
-				description: 'Dokumenttitel oder Bemerkung',
-				fieldType: 'text',
-			},
-			revision: { displayName: 'Revision', description: 'Versionsnummer', fieldType: 'text' },
-			cdate: {
-				displayName: 'Dokumentdatum',
-				description: 'Erstellungsdatum des Dokuments',
-				fieldType: 'date',
-			},
-			changeid: { displayName: 'Bearbeiter', description: 'Letzter Bearbeiter', fieldType: 'text' },
-			ctimestamp: {
-				displayName: 'Zeitstempel',
-				description: 'Letzter Änderungszeitpunkt',
-				fieldType: 'datetime',
-			},
-			rechte: { displayName: 'Rechte', description: 'Dokumentrechte', fieldType: 'text' },
-			docid: { displayName: 'Dokument-ID', description: 'Eindeutige Dokument-ID', fieldType: 'text' },
-			mainfolder: { displayName: 'Hauptordner', description: 'Hauptordner-ID', fieldType: 'text' },
-		};
-
-		// Prüfe ob das Attribut gefunden wurde
-		if (!attributeDetail && !standardAttributeInfo[attributeName]) {
-			throw new NodeOperationError(
-				this.getNode(),
-				`Attribut "${attributeName}" wurde nicht in den verfügbaren Klassifikationsattributen gefunden`,
-			);
-		}
-
-		// Kombiniere alle verfügbaren Informationen
-		const result: any = {
-			attributeName,
-			displayName:
-				attributeDetail?.displayName ||
-				standardAttributeInfo[attributeName]?.displayName ||
-				attributeName,
-			description:
-				attributeDetail?.description || standardAttributeInfo[attributeName]?.description || '',
-			fieldType:
-				attributeDetail?.type ||
-				attributeDetail?.fieldType ||
-				standardAttributeInfo[attributeName]?.fieldType ||
-				'unknown',
-			required: attributeDetail?.required || false,
-			maxLength: attributeDetail?.maxLength,
-			options: attributeDetail?.options || [],
-			// Schema-spezifische Informationen
-			dataType: attributeDetail?.dataType || 'unknown',
-		};
-
-		// Zusätzliche Metadaten falls verfügbar
-		if (attributeDetail) {
-			if (attributeDetail.id !== undefined) result.id = attributeDetail.id;
-			if (attributeDetail.caption !== undefined) result.caption = attributeDetail.caption;
-			if (attributeDetail.defaultValue !== undefined)
-				result.defaultValue = attributeDetail.defaultValue;
-			if (attributeDetail.validation !== undefined) result.validation = attributeDetail.validation;
-			if (attributeDetail.category !== undefined) result.category = attributeDetail.category;
-			if (attributeDetail.editable !== undefined) result.editable = attributeDetail.editable;
-			if (attributeDetail.visible !== undefined) result.visible = attributeDetail.visible;
-		}
-
-		console.log('Attribut-Details für', attributeName, ':', JSON.stringify(result, null, 2));
-
-		return {
-			success: true,
-			message: `Details für Attribut "${attributeName}" erfolgreich abgerufen`,
-			data: {
-				attributeDetails: result,
-				rawAttributeData: attributeDetail, // Rohdaten für Debugging
-			},
-		};
-	} catch (error: unknown) {
-		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Attribut-Details', error);
-	}
-}

@@ -23,12 +23,7 @@ export const classificationOperations: INodeProperties = {
 			description: 'Detaillierte Klassifikationsattribute für ein Dokument abrufen',
 			action: 'Detaillierte Klassifikationsattribute abrufen',
 		},
-		{
-			name: 'Attribut-Details abrufen',
-			value: Operation.GetAttributeDetails,
-			description: 'Detaillierte Informationen zu einem spezifischen Klassifikationsattribut abrufen',
-			action: 'Attribut-Details abrufen',
-		},
+
 		{
 			name: 'Neue Klassifikation erstellen',
 			value: Operation.CreateNewClassify,
@@ -657,45 +652,25 @@ export const classificationFields: INodeProperties[] = [
 		description: 'Die Klassifikationsfelder im JSON-Format',
 	},
 
-	// ===== ATTRIBUT-DETAILS ABRUFEN =====
+	// ===== DETAILLIERTE KLASSIFIKATIONSATTRIBUTE ABRUFEN =====
 	{
-		displayName: 'Attribut auswählen',
-		name: 'attributeName',
-		type: 'resourceLocator',
-		default: { mode: 'list', value: '' },
-		required: true,
+		displayName: 'Attribut-Filter (Optional)',
+		name: 'attributeFilter',
+		type: 'multiOptions',
+		typeOptions: {
+			loadOptionsMethod: 'getClassificationAttributes',
+		},
+		default: [],
 		displayOptions: {
 			show: {
 				resource: [Resource.Classification],
-				operation: [Operation.GetAttributeDetails],
+				operation: [Operation.GetClassifyAttributesDetail],
 			},
 		},
-		modes: [
-			{
-				displayName: 'Aus Liste wählen',
-				name: 'list',
-				type: 'list',
-				typeOptions: {
-					searchListMethod: 'searchGeneralClassificationAttributes',
-					searchable: true,
-				},
-			},
-			{
-				displayName: 'Name eingeben',
-				name: 'name',
-				type: 'string',
-				validation: [
-					{
-						type: 'regex',
-						properties: {
-							regex: '^[a-zA-Z_][a-zA-Z0-9_]*$',
-							errorMessage:
-								'Bitte einen gültigen Attributnamen eingeben (z.B. docart, dyn_0_1619856272598)',
-						},
-					},
-				],
-			},
-		],
-		description: 'Wählen Sie das Attribut aus der Liste oder geben Sie den Namen manuell ein',
+		description: 'Wenn ausgewählt, werden nur diese spezifischen Attribute zurückgegeben. Leer lassen für alle Attribute.',
 	},
+
+
 ];
+
+

@@ -32,7 +32,6 @@ export const Operation = {
 	GetDocumentVersion: 'getDocumentVersion',
 	GetClassifyAttributes: 'getClassifyAttributes',
 	GetClassifyAttributesDetail: 'getClassifyAttributesDetail',
-	GetAttributeDetails: 'getAttributeDetails',
 	Search: 'search',
 	AdvancedSearch: 'advancedSearch',
 	GetInfo: 'getInfo',
