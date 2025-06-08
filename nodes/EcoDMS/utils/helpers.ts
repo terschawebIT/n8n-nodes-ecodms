@@ -1715,8 +1715,11 @@ export async function searchGeneralClassificationAttributes(
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Allgemeine Klassifikationsattribute abrufen
-		const url = await getBaseUrl.call(this, 'classifyAttributes');
+		// Verwende die detailInformation API (wie "Detaillierte Klassifikationsattribute abrufen")
+		const url = `${credentials.serverUrl}/api/classifyAttributes/detailInformation`;
+
+		console.log('=== GENERAL CLASSIFICATION ATTRIBUTES ===');
+		console.log('API URL:', url);
 
 		const response = await this.helpers.httpRequest({
 			url,
@@ -1731,6 +1734,8 @@ export async function searchGeneralClassificationAttributes(
 			},
 		});
 
+		console.log('Raw API Response:', JSON.stringify(response).substring(0, 500));
+
 		const options: INodePropertyOptions[] = [];
 
 		// Auto-Option als erstes Element
@@ -1740,14 +1745,40 @@ export async function searchGeneralClassificationAttributes(
 			description: 'Bitte ein Attribut auswählen',
 		});
 
+		// Standard-Attribute hinzufügen
+		const standardAttributes = [
+			{ name: 'docart', displayName: 'Dokumententyp', description: 'Art des Dokuments' },
+			{ name: 'folder', displayName: 'Ordner', description: 'Ablageordner' },
+			{ name: 'status', displayName: 'Status', description: 'Dokumentstatus' },
+			{ name: 'bemerkung', displayName: 'Titel/Bemerkung', description: 'Dokumenttitel oder Bemerkung' },
+			{ name: 'revision', displayName: 'Revision', description: 'Versionsnummer' },
+			{ name: 'cdate', displayName: 'Dokumentdatum', description: 'Erstellungsdatum des Dokuments' },
+			{ name: 'changeid', displayName: 'Bearbeiter', description: 'Letzter Bearbeiter' },
+		];
+
+		for (const attr of standardAttributes) {
+			options.push({
+				name: attr.displayName,
+				value: attr.name,
+				description: attr.description,
+			});
+		}
+
+		// Dynamische Attribute aus der API-Antwort hinzufügen
 		if (Array.isArray(response)) {
+			console.log('Processing', response.length, 'attributes from API');
 			for (const attr of response) {
-				options.push({
-					name: attr.displayName || attr.name || `Attribut ${attr.id}`,
-					value: attr.name || attr.id?.toString(),
-					description: attr.description || '',
-				});
+				// Vermeide Duplikate mit Standard-Attributen
+				if (!standardAttributes.some(std => std.name === attr.name)) {
+					options.push({
+						name: attr.displayName || attr.caption || attr.name || `Attribut ${attr.id}`,
+						value: attr.name || attr.fieldName || attr.id?.toString(),
+						description: attr.description || `Dynamisches Feld: ${attr.name || attr.id}`,
+					});
+				}
 			}
+		} else {
+			console.log('API response is not an array:', typeof response);
 		}
 
 		// Nach Namen sortieren (außer dem ersten Element)
@@ -1758,6 +1789,7 @@ export async function searchGeneralClassificationAttributes(
 		}
 
 		console.log(`${options.length} allgemeine Attribut-Optionen für Details-Abfrage geladen`);
+		console.log('Final options:', options.map(opt => ({ name: opt.name, value: opt.value })));
 		return options;
 	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der allgemeinen Klassifikationsattribute:', error);
