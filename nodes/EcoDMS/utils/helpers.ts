@@ -824,7 +824,7 @@ async function extractDynFieldsFromAttributes(
 					case 'eco_DateField':
 						fieldType = 'Date';
 						break;
-					default:
+					default: {
 						// Erweiterte Typ-Inferenz basierend auf displayName für TextField
 						const lowerDisplayName = displayName.toLowerCase();
 						if (
@@ -836,10 +836,7 @@ async function extractDynFieldsFromAttributes(
 							lowerDisplayName.includes('wert')
 						) {
 							fieldType = 'Number';
-						} else if (
-							lowerDisplayName.includes('datum') ||
-							lowerDisplayName.includes('date')
-						) {
+						} else if (lowerDisplayName.includes('datum') || lowerDisplayName.includes('date')) {
 							fieldType = 'Date';
 						} else if (
 							lowerDisplayName.includes('aktiv') ||
@@ -852,6 +849,7 @@ async function extractDynFieldsFromAttributes(
 							fieldType = 'Text';
 						}
 						break;
+					}
 				}
 
 				customFieldsMap.set(key, {
@@ -1132,7 +1130,7 @@ export async function getComboBoxOptions(
 		const fieldInfo = customFieldsMap.get(actualFieldName);
 		console.log('fieldInfo found:', fieldInfo);
 		console.log('classificationContent:', fieldInfo?.fieldInfo?.classificationContent);
-		
+
 		if (
 			fieldInfo?.fieldInfo?.classificationContent &&
 			Array.isArray(fieldInfo.fieldInfo.classificationContent)
