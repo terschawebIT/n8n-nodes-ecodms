@@ -418,8 +418,25 @@ async function handleClassifyUserFriendly(
 		console.log('Felder:', Object.keys(existingAttributes));
 		console.log('Vollständig:', JSON.stringify(existingAttributes, null, 2));
 
+		// Filtere leere dyn_* Felder heraus - diese sollen nur gesendet werden wenn explizit konfiguriert
+		const filteredExistingAttributes: IDataObject = {};
+		for (const [key, value] of Object.entries(existingAttributes)) {
+			// Behalte alle nicht-dyn Felder
+			if (!key.startsWith('dyn_')) {
+				filteredExistingAttributes[key] = value as string;
+			}
+			// Behalte nur dyn_* Felder die nicht leer sind
+			else if (value && value !== '') {
+				filteredExistingAttributes[key] = value as string;
+			}
+		}
+
+		console.log('=== FILTERED ATTRIBUTES (ohne leere dyn_* Felder) ===');
+		console.log('Anzahl Felder:', Object.keys(filteredExistingAttributes).length);
+		console.log('Felder:', Object.keys(filteredExistingAttributes));
+
 		const classifyAttributes: IDataObject = {
-			...existingAttributes, // Alle existierenden Felder übernehmen
+			...filteredExistingAttributes, // Gefilterte existierende Felder übernehmen
 			// Überschreibe nur die gewünschten Felder
 			docart: documentType,
 			folder: folder,
@@ -435,7 +452,7 @@ async function handleClassifyUserFriendly(
 
 		// ENTFERNE documentDate aus classifyAttributes - gehört NICHT dorthin!
 		if ('documentDate' in classifyAttributes) {
-			delete classifyAttributes.documentDate;
+			classifyAttributes.documentDate = undefined;
 		}
 
 		// Füge zusätzliche Felder hinzu
