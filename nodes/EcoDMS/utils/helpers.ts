@@ -516,7 +516,7 @@ export async function getTypeClassifications(
 }
 
 /**
- * Lädt verfügbare Custom Fields (dyn_*) aus den detaillierten Klassifikationsattributen
+ * Lädt verfügbare Custom Fields (dyn_*) aus den Klassifikationsattributen
  */
 export async function getCustomFields(
 	this: ILoadOptionsFunctions,
@@ -524,35 +524,90 @@ export async function getCustomFields(
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Verwende den detaillierten Klassifikationsattribute-Endpoint
-		const url = await getBaseUrl.call(this, 'classifyAttributes/detailInformation');
+		// Versuche verschiedene API-Endpoints für Custom Fields
+		const endpoints = ['classifyAttributes/detailInformation', 'classifyAttributes'];
+		let customFieldsMap = new Map<string, string>();
 
-		console.log('CustomFields-API-URL:', url);
+		for (const endpoint of endpoints) {
+			try {
+				const url = await getBaseUrl.call(this, endpoint);
+				console.log(`Trying CustomFields-API-URL: ${url}`);
 
-		// API-Aufruf, um detaillierte Klassifikationsattribute abzurufen
-		const response = await this.helpers.httpRequest({
-			url,
-			method: 'GET',
-			headers: {
-				Accept: 'application/json',
-			},
-			json: true,
-			auth: {
-				username: credentials.username,
-				password: credentials.password,
-			},
-		});
+				const response = await this.helpers.httpRequest({
+					url,
+					method: 'GET',
+					headers: {
+						Accept: 'application/json',
+					},
+					json: true,
+					auth: {
+						username: credentials.username,
+						password: credentials.password,
+					},
+				});
 
-		console.log('CustomFields-API-Antwort:', JSON.stringify(response).substring(0, 200));
+				console.log(`CustomFields Response from ${endpoint}:`, JSON.stringify(response).substring(0, 400));
 
-		if (!response || typeof response !== 'object') {
-			console.warn(
-				'Keine gültige Antwort von classifyAttributes/detailInformation API, verwende Standard-Beispiele',
-			);
-			return getDefaultCustomFields();
+				if (response && typeof response === 'object') {
+					// Verarbeite die Antwort basierend auf dem Endpoint
+					if (endpoint === 'classifyAttributes/detailInformation') {
+						// Detaillierte Informationen verarbeiten
+						for (const [key, value] of Object.entries(response)) {
+							if (key.startsWith('dyn_')) {
+								if (typeof value === 'object' && value !== null) {
+									const fieldInfo = value as any;
+									const displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
+									if (displayName) {
+										customFieldsMap.set(key, displayName);
+									}
+								} else if (typeof value === 'string' && value.trim()) {
+									customFieldsMap.set(key, value);
+								}
+							}
+						}
+					} else if (endpoint === 'classifyAttributes') {
+						// Einfache Klassifikationsattribute verarbeiten
+						if (Array.isArray(response)) {
+							for (const item of response) {
+								if (item && typeof item === 'object') {
+									const key = item.name || item.id || item.key;
+									const displayName = item.displayName || item.label || item.caption || item.description;
+									if (key && key.startsWith('dyn_') && displayName) {
+										customFieldsMap.set(key, displayName);
+									}
+								}
+							}
+						} else {
+							// Object-Format verarbeiten
+							for (const [key, value] of Object.entries(response)) {
+								if (key.startsWith('dyn_')) {
+									if (typeof value === 'string' && value.trim()) {
+										customFieldsMap.set(key, value);
+									} else if (typeof value === 'object' && value !== null) {
+										const fieldInfo = value as any;
+										const displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
+										if (displayName) {
+											customFieldsMap.set(key, displayName);
+										}
+									}
+								}
+							}
+						}
+					}
+
+					// Wenn wir Custom Fields gefunden haben, beende die Schleife
+					if (customFieldsMap.size > 0) {
+						console.log(`Found ${customFieldsMap.size} custom fields from ${endpoint}`);
+						break;
+					}
+				}
+			} catch (endpointError) {
+				console.log(`Endpoint ${endpoint} failed:`, endpointError);
+				continue;
+			}
 		}
 
-		// Custom Fields aus der Antwort extrahieren
+		// Custom Fields in das erforderliche Format konvertieren
 		const options: INodePropertyOptions[] = [];
 
 		// Auto-Option als erstes Element
@@ -562,45 +617,18 @@ export async function getCustomFields(
 			description: 'Bitte ein Custom Field auswählen',
 		});
 
-		// Durchsuche alle Eigenschaften der Antwort nach Custom Fields (dyn_*)
-		for (const [key, value] of Object.entries(response)) {
-			if (key.startsWith('dyn_')) {
-				let displayName = key;
-				let description = `Custom Field: ${key}`;
-
-				// Extrahiere Details aus der detaillierten Antwort
-				if (typeof value === 'object' && value !== null) {
-					const fieldInfo = value as any;
-					displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || key;
-					description =
-						fieldInfo.description || fieldInfo.hint || fieldInfo.tooltip || `${displayName} (${key})`;
-
-					// Zusätzliche Informationen hinzufügen wenn verfügbar
-					if (fieldInfo.type) {
-						description += ` - Typ: ${fieldInfo.type}`;
-					}
-					if (fieldInfo.required) {
-						description += ' - Pflichtfeld';
-					}
-				} else if (typeof value === 'string') {
-					// Fallback: Verwende den String-Wert als Anzeigename
-					displayName = value;
-					description = `${displayName} (${key})`;
-				}
-
-				options.push({
-					name: displayName,
-					value: key,
-					description: description,
-				});
-			}
+		// Gefundene Custom Fields hinzufügen
+		for (const [key, displayName] of customFieldsMap.entries()) {
+			options.push({
+				name: displayName,
+				value: key,
+				description: `${displayName} (${key})`,
+			});
 		}
 
 		// Wenn keine Custom Fields gefunden wurden, zeige Standard-Beispiele
 		if (options.length === 1) {
-			console.log(
-				'Keine Custom Fields (dyn_*) in der detaillierten API-Antwort gefunden, verwende Standard-Beispiele',
-			);
+			console.log('Keine Custom Fields (dyn_*) in den API-Antworten gefunden, verwende Standard-Beispiele');
 			return getDefaultCustomFields();
 		}
 
@@ -611,15 +639,10 @@ export async function getCustomFields(
 			options.unshift(autoOption!);
 		}
 
-		console.log(
-			`${options.length} Custom Field-Optionen aus detaillierten Klassifikationsattributen geladen`,
-		);
+		console.log(`${options.length} Custom Field-Optionen geladen`);
 		return options;
 	} catch (error: unknown) {
-		console.error(
-			'Fehler beim Abrufen der Custom Fields aus detaillierten Klassifikationsattributen:',
-			error,
-		);
+		console.error('Fehler beim Abrufen der Custom Fields:', error);
 		console.log('Verwende Standard-Custom-Fields als Fallback');
 		return getDefaultCustomFields();
 	}

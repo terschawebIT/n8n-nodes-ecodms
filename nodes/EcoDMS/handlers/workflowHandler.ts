@@ -112,20 +112,25 @@ async function handleUploadAndClassifyUserFriendly(
 		// 1. Dokument hochladen
 		const uploadUrl = await getBaseUrl.call(this, 'document/upload');
 
-		const uploadResponse = await this.helpers.httpRequestWithAuthentication.call(this, 'ecoDmsApi', {
+		// FormData für File-Upload erstellen  
+		const FormData = require('form-data');
+		const form = new FormData();
+		form.append('file', binaryData.data, {
+			filename: binaryData.fileName || 'document.pdf',
+			contentType: binaryData.mimeType || 'application/pdf',
+		});
+
+		const uploadResponse = await this.helpers.httpRequest({
 			url: uploadUrl,
 			method: 'POST',
 			headers: {
 				Accept: 'application/json',
+				...form.getHeaders(),
 			},
-			body: {
-				file: {
-					value: binaryData.data,
-					options: {
-						filename: binaryData.fileName || 'document.pdf',
-						contentType: binaryData.mimeType || 'application/pdf',
-					},
-				},
+			body: form,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
 			},
 			json: true,
 		});
