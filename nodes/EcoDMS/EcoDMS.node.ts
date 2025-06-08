@@ -295,8 +295,6 @@ export class EcoDMS implements INodeType {
 					})),
 				};
 			},
-
-
 		},
 	};
 

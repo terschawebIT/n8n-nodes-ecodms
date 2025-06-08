@@ -116,23 +116,24 @@ async function handleGetClassifyAttributesDetail(
 		let filteredResponse = response;
 		try {
 			const attributeFilter = this.getNodeParameter('attributeFilter', 0) as string[];
-			
+
 			if (attributeFilter && attributeFilter.length > 0) {
 				console.log('=== ATTRIBUT-FILTER ANGEWENDET ===');
 				console.log('Gewählte Attribute:', attributeFilter);
-				
+
 				if (Array.isArray(response)) {
 					filteredResponse = response.filter((attr: any) => {
 						// Prüfe verschiedene mögliche Identifikatoren
-						const matches = attributeFilter.some(filterValue => 
-							attr.name === filterValue ||
-							attr.fieldName === filterValue ||
-							attr.id === filterValue ||
-							attr.displayName === filterValue
+						const matches = attributeFilter.some(
+							(filterValue) =>
+								attr.name === filterValue ||
+								attr.fieldName === filterValue ||
+								attr.id === filterValue ||
+								attr.displayName === filterValue,
 						);
 						return matches;
 					});
-					
+
 					console.log(`Von ${response.length} Attributen wurden ${filteredResponse.length} gefiltert`);
 				}
 			} else {
@@ -140,7 +141,9 @@ async function handleGetClassifyAttributesDetail(
 			}
 		} catch (filterError) {
 			// Falls Filter-Parameter nicht existiert oder Fehler auftritt, alle Attribute zurückgeben
-			console.log('Filter-Parameter nicht verfügbar oder Fehler beim Filtern, alle Attribute werden zurückgegeben');
+			console.log(
+				'Filter-Parameter nicht verfügbar oder Fehler beim Filtern, alle Attribute werden zurückgegeben',
+			);
 		}
 
 		return {
@@ -693,5 +696,3 @@ async function handleLinkToDocuments(
 		throw createNodeError(this.getNode(), 'Fehler beim Hinzufügen der Dokumentverknüpfungen', error);
 	}
 }
-
-

@@ -667,10 +667,7 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.GetClassifyAttributesDetail],
 			},
 		},
-		description: 'Wenn ausgewählt, werden nur diese spezifischen Attribute zurückgegeben. Leer lassen für alle Attribute.',
+		description:
+			'Wenn ausgewählt, werden nur diese spezifischen Attribute zurückgegeben. Leer lassen für alle Attribute.',
 	},
-
-
 ];
-
-
