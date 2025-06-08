@@ -388,7 +388,7 @@ async function handleClassifyUserFriendly(
 		}
 
 		// Extrahiere clDocId aus den Dokumentinformationen
-		const clDocId = documentInfo?.data?.[0]?.clDocId || docId;
+		const clDocId = documentInfo?.[0]?.clDocId || docId; // Array-Zugriff korrigiert
 		console.log('Verwende clDocId:', clDocId);
 
 		const documentTypeLocator = this.getNodeParameter('documentType', 0) as any;
@@ -402,21 +402,25 @@ async function handleClassifyUserFriendly(
 		const folder = folderLocator.value || folderLocator;
 		const status = statusLocator.value || statusLocator;
 
-		// Baue das Klassifikationsobjekt zusammen (korrekte ecoDMS API-Struktur)
+		// Verwende existierende classifyAttributes als Basis und überschreibe nur gewünschte Felder
+		const existingAttributes = documentInfo?.[0]?.classifyAttributes || {};
 		const classifyAttributes: IDataObject = {
+			...existingAttributes, // Alle existierenden Felder übernehmen
+			// Überschreibe nur die gewünschten Felder
 			docart: documentType,
 			folder: folder,
 			status: status,
 			bemerkung: documentTitle,
-			cdate: additionalFields.documentDate || '', // Dokumentdatum (nicht Erstellungszeit!)
-			// Pflichtfelder basierend auf funktionierendem Beispiel
-			docid: `${docId}#${clDocId}`, // KORREKTES Format: docId#clDocId
-			changeid: credentials.username || 'n8n-ecodms', // API-Benutzer als changeid
-			rechte: 'W', // Write-Berechtigung
-			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Aktueller Zeitstempel
-			mainfolder: '0', // Standard Hauptordner
-			defdate: '', // Leeres Datum-Feld
+			docid: `${docId}#${clDocId}`, // KORREKTES Format: docId#clDocId aus API
+			changeid: credentials.username || 'n8n-ecodms',
+			rechte: 'W',
+			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
 		};
+
+		// Dokumentdatum nur setzen wenn verfügbar
+		if (additionalFields.documentDate) {
+			classifyAttributes.cdate = additionalFields.documentDate;
+		}
 
 		// Füge zusätzliche Felder hinzu
 		if (additionalFields.revision) {
@@ -430,9 +434,6 @@ async function handleClassifyUserFriendly(
 		}
 		if (additionalFields.author) {
 			classifyAttributes.author = additionalFields.author;
-		}
-		if (additionalFields.documentDate) {
-			classifyAttributes.documentDate = additionalFields.documentDate;
 		}
 
 		// Behandle dynamische Custom Fields
