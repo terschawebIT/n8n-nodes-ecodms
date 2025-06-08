@@ -2,6 +2,7 @@ import {
 	type IExecuteFunctions,
 	type ILoadOptionsFunctions,
 	type INodeExecutionData,
+	type INodeListSearchResult,
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
@@ -34,6 +35,8 @@ import {
 	getFolders,
 	getStatusValues,
 	getTypeClassifications,
+	getUsers,
+	getGroups,
 } from './utils/helpers';
 
 export class EcoDMS implements INodeType {
@@ -131,7 +134,7 @@ export class EcoDMS implements INodeType {
 		],
 	};
 
-	// Methoden für dynamische Optionen in Dropdown-Menüs
+			// Methoden für dynamische Optionen in Dropdown-Menüs
 	methods = {
 		loadOptions: {
 			async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -156,6 +159,136 @@ export class EcoDMS implements INodeType {
 
 			async getCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getCustomFields.call(this);
+			},
+
+			async getUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getUsers.call(this);
+			},
+
+			async getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getGroups.call(this);
+			},
+		},
+
+		listSearch: {
+			async searchDocumentTypes(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getDocumentTypes.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchFolders(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getFolders.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchStatusValues(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getStatusValues.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchUsers(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getUsers.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchGroups(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getGroups.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
+			},
+
+			async searchCustomFields(
+				this: ILoadOptionsFunctions,
+				filter?: string,
+			): Promise<INodeListSearchResult> {
+				const options = await getCustomFields.call(this);
+				const filteredOptions = filter
+					? options.filter((option) =>
+							option.name.toLowerCase().includes(filter.toLowerCase()),
+					  )
+					: options;
+
+				return {
+					results: filteredOptions.map((option) => ({
+						name: option.name,
+						value: option.value,
+						url: '',
+					})),
+				};
 			},
 		},
 	};

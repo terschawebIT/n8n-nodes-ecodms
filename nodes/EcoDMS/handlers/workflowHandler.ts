@@ -89,11 +89,16 @@ async function handleUploadAndClassifyUserFriendly(
 ): Promise<WorkflowResponse> {
 	try {
 		const binaryPropertyName = this.getNodeParameter('binaryProperty', 0) as string;
-		const documentType = this.getNodeParameter('documentType', 0) as string;
-		const folder = this.getNodeParameter('folder', 0) as string;
-		const status = this.getNodeParameter('status', 0) as string;
+		const documentTypeLocator = this.getNodeParameter('documentType', 0) as any;
+		const folderLocator = this.getNodeParameter('folder', 0) as any;
+		const statusLocator = this.getNodeParameter('status', 0) as any;
 		const documentTitle = this.getNodeParameter('documentTitle', 0) as string;
 		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
+
+		// Resource Locator Values extrahieren
+		const documentType = documentTypeLocator.value || documentTypeLocator;
+		const folder = folderLocator.value || folderLocator;
+		const status = statusLocator.value || statusLocator;
 
 		// Binäre Daten aus dem ersten Item holen
 		const binaryData = items[0].binary?.[binaryPropertyName];

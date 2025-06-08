@@ -603,3 +603,169 @@ export async function getCustomFields(
 		];
 	}
 }
+
+/**
+ * Lädt verfügbare Benutzer aus ecoDMS für Dropdown-Menüs
+ */
+export async function getUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'users');
+
+		console.log('Users-API-URL:', url);
+
+		// API-Aufruf, um Benutzer abzurufen
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		console.log('Users-API-Antwort:', JSON.stringify(response).substring(0, 200));
+
+		if (!Array.isArray(response)) {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Benutzer: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Benutzer --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
+		}
+
+		// Benutzer in das erforderliche Format konvertieren
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Benutzer auswählen',
+		});
+
+		for (const user of response) {
+			const name = user.displayName || user.username || user.name || `Benutzer ${user.id}`;
+			const description = user.email ? `${user.email}` : user.description || '';
+
+			options.push({
+				name: name,
+				value: user.id?.toString() || user.username,
+				description: description,
+			});
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} Benutzer-Optionen geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Benutzer:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Benutzer --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+		];
+	}
+}
+
+/**
+ * Lädt verfügbare Gruppen aus ecoDMS für Dropdown-Menüs
+ */
+export async function getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+	try {
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Konstruiere die korrekte URL über die Hilfsfunktion
+		const url = await getBaseUrl.call(this, 'groups');
+
+		console.log('Groups-API-URL:', url);
+
+		// API-Aufruf, um Gruppen abzurufen
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		console.log('Groups-API-Antwort:', JSON.stringify(response).substring(0, 200));
+
+		if (!Array.isArray(response)) {
+			console.error(
+				`Unerwartetes Antwortformat beim Abrufen der Gruppen: ${JSON.stringify(response).substring(0, 200)}`,
+			);
+			return [
+				{
+					name: '-- Fehler beim Laden der Gruppen --',
+					value: '',
+					description: 'Unerwartetes Antwortformat',
+				},
+			];
+		}
+
+		// Gruppen in das erforderliche Format konvertieren
+		const options: INodePropertyOptions[] = [];
+
+		// Auto-Option als erstes Element
+		options.push({
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte eine Gruppe auswählen',
+		});
+
+		for (const group of response) {
+			const name = group.displayName || group.name || `Gruppe ${group.id}`;
+			const description = group.description || `Gruppe-ID: ${group.id}`;
+
+			options.push({
+				name: name,
+				value: group.id?.toString() || group.name,
+				description: description,
+			});
+		}
+
+		// Nach Namen sortieren (außer dem ersten Element)
+		if (options.length > 1) {
+			const autoOption = options.shift();
+			options.sort((a, b) => a.name.localeCompare(b.name));
+			options.unshift(autoOption!);
+		}
+
+		console.log(`${options.length} Gruppen-Optionen geladen`);
+		return options;
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Gruppen:', error);
+		return [
+			{
+				name: '-- Fehler beim Laden der Gruppen --',
+				value: '',
+				description: `Fehler: ${getErrorMessage(error)}`,
+			},
+		];
+	}
+}

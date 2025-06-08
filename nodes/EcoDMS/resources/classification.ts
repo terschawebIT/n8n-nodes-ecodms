@@ -104,7 +104,8 @@ export const classificationFields: INodeProperties[] = [
 				name: 'list',
 				type: 'list',
 				typeOptions: {
-					searchListMethod: 'getDocumentTypes',
+					searchListMethod: 'searchDocumentTypes',
+					searchable: true,
 				},
 			},
 			{
@@ -142,7 +143,8 @@ export const classificationFields: INodeProperties[] = [
 				name: 'list',
 				type: 'list',
 				typeOptions: {
-					searchListMethod: 'getFolders',
+					searchListMethod: 'searchFolders',
+					searchable: true,
 				},
 			},
 			{
@@ -180,7 +182,8 @@ export const classificationFields: INodeProperties[] = [
 				name: 'list',
 				type: 'list',
 				typeOptions: {
-					searchListMethod: 'getStatusValues',
+					searchListMethod: 'searchStatusValues',
+					searchable: true,
 				},
 			},
 			{
@@ -272,6 +275,132 @@ export const classificationFields: INodeProperties[] = [
 				description: 'Kommagetrennte Liste von Rollen mit Leserechten',
 			},
 			{
+				displayName: 'Benutzer zuweisen',
+				name: 'assignedUsers',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Benutzer',
+						name: 'user',
+						values: [
+							{
+								displayName: 'Benutzer',
+								name: 'userId',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								required: true,
+								modes: [
+									{
+										displayName: 'Aus Liste wählen',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'searchUsers',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'ID eingeben',
+										name: 'id',
+										type: 'string',
+										validation: [
+											{
+												type: 'regex',
+												properties: {
+													regex: '^[0-9]+$',
+													errorMessage: 'Bitte eine gültige Benutzer-ID eingeben',
+												},
+											},
+										],
+									},
+								],
+								description: 'Wählen Sie einen Benutzer aus der Liste oder geben Sie die ID ein',
+							},
+							{
+								displayName: 'Berechtigung',
+								name: 'permission',
+								type: 'options',
+								options: [
+									{ name: 'Lesen', value: 'read' },
+									{ name: 'Bearbeiten', value: 'edit' },
+									{ name: 'Vollzugriff', value: 'full' },
+								],
+								default: 'read',
+								description: 'Berechtigung für den Benutzer',
+							},
+						],
+					},
+				],
+				description: 'Benutzer mit spezifischen Berechtigungen zuweisen',
+			},
+			{
+				displayName: 'Gruppen zuweisen',
+				name: 'assignedGroups',
+				type: 'fixedCollection',
+				typeOptions: {
+					multipleValues: true,
+				},
+				default: {},
+				options: [
+					{
+						displayName: 'Gruppe',
+						name: 'group',
+						values: [
+							{
+								displayName: 'Gruppe',
+								name: 'groupId',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								required: true,
+								modes: [
+									{
+										displayName: 'Aus Liste wählen',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'searchGroups',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'ID eingeben',
+										name: 'id',
+										type: 'string',
+										validation: [
+											{
+												type: 'regex',
+												properties: {
+													regex: '^[0-9]+$',
+													errorMessage: 'Bitte eine gültige Gruppen-ID eingeben',
+												},
+											},
+										],
+									},
+								],
+								description: 'Wählen Sie eine Gruppe aus der Liste oder geben Sie die ID ein',
+							},
+							{
+								displayName: 'Berechtigung',
+								name: 'permission',
+								type: 'options',
+								options: [
+									{ name: 'Lesen', value: 'read' },
+									{ name: 'Bearbeiten', value: 'edit' },
+									{ name: 'Vollzugriff', value: 'full' },
+								],
+								default: 'read',
+								description: 'Berechtigung für die Gruppe',
+							},
+						],
+					},
+				],
+				description: 'Gruppen mit spezifischen Berechtigungen zuweisen',
+			},
+			{
 				displayName: 'Dynamische Custom Fields',
 				name: 'dynamicCustomFields',
 				type: 'fixedCollection',
@@ -287,19 +416,57 @@ export const classificationFields: INodeProperties[] = [
 							{
 								displayName: 'Feldname',
 								name: 'fieldName',
+								type: 'resourceLocator',
+								default: { mode: 'list', value: '' },
+								required: true,
+								modes: [
+									{
+										displayName: 'Aus Liste wählen',
+										name: 'list',
+										type: 'list',
+										typeOptions: {
+											searchListMethod: 'searchCustomFields',
+											searchable: true,
+										},
+									},
+									{
+										displayName: 'Feldname eingeben',
+										name: 'manual',
+										type: 'string',
+										placeholder: 'z.B. dyn_0_1619856272598',
+										validation: [
+											{
+												type: 'regex',
+												properties: {
+													regex: '^dyn_.*$',
+													errorMessage: 'Custom Field Namen müssen mit "dyn_" beginnen',
+												},
+											},
+										],
+									},
+								],
+								description: 'Wählen Sie ein Custom Field aus der Liste oder geben Sie den Namen manuell ein',
+							},
+							{
+								displayName: 'Feldtyp',
+								name: 'fieldType',
 								type: 'options',
-								typeOptions: {
-									loadOptionsMethod: 'getCustomFields',
-								},
-								default: '',
-								description: 'Verfügbare Custom Fields aus der ecoDMS-Instanz',
+								options: [
+									{ name: 'Text', value: 'text' },
+									{ name: 'Zahl', value: 'number' },
+									{ name: 'Datum', value: 'date' },
+									{ name: 'Boolean', value: 'boolean' },
+									{ name: 'Dropdown', value: 'dropdown' },
+								],
+								default: 'text',
+								description: 'Typ des Custom Fields',
 							},
 							{
 								displayName: 'Wert',
 								name: 'fieldValue',
 								type: 'string',
 								default: '',
-								description: 'Wert für das Custom Field',
+								description: 'Wert für das Custom Field (Format je nach Feldtyp)',
 							},
 						],
 					},

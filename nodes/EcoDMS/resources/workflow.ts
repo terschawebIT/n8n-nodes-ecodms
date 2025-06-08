@@ -116,11 +116,8 @@ export const workflowFields: INodeProperties[] = [
 	{
 		displayName: 'Dokumententyp',
 		name: 'documentType',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getDocumentTypes',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -128,16 +125,38 @@ export const workflowFields: INodeProperties[] = [
 				operation: ['uploadAndClassifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Dokumententyp aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchDocumentTypes',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9]+$',
+							errorMessage: 'Bitte eine gültige Dokumententyp-ID eingeben',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Dokumententyp aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Ablageordner',
 		name: 'folder',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getFolders',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -145,16 +164,38 @@ export const workflowFields: INodeProperties[] = [
 				operation: ['uploadAndClassifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Ablageordner aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchFolders',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9.]+$',
+							errorMessage: 'Bitte eine gültige Ordner-ID eingeben (z.B. 1.4)',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Ablageordner aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Status',
 		name: 'status',
-		type: 'options',
-		typeOptions: {
-			loadOptionsMethod: 'getStatusValues',
-		},
-		default: '',
+		type: 'resourceLocator',
+		default: { mode: 'list', value: '' },
 		required: true,
 		displayOptions: {
 			show: {
@@ -162,7 +203,32 @@ export const workflowFields: INodeProperties[] = [
 				operation: ['uploadAndClassifyUserFriendly'],
 			},
 		},
-		description: 'Wählen Sie den Dokumentstatus aus',
+		modes: [
+			{
+				displayName: 'Aus Liste wählen',
+				name: 'list',
+				type: 'list',
+				typeOptions: {
+					searchListMethod: 'searchStatusValues',
+					searchable: true,
+				},
+			},
+			{
+				displayName: 'ID eingeben',
+				name: 'id',
+				type: 'string',
+				validation: [
+					{
+						type: 'regex',
+						properties: {
+							regex: '^[0-9]+$',
+							errorMessage: 'Bitte eine gültige Status-ID eingeben',
+						},
+					},
+				],
+			},
+		],
+		description: 'Wählen Sie den Dokumentstatus aus der Liste oder geben Sie die ID ein',
 	},
 	{
 		displayName: 'Titel/Bemerkung',

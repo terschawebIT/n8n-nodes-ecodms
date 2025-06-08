@@ -395,7 +395,11 @@ async function handleClassifyUserFriendly(
 				if (dynamicField.customField && typeof dynamicField.customField === 'object') {
 					const field = dynamicField.customField as IDataObject;
 					if (field.fieldName && field.fieldValue) {
-						classifyData[field.fieldName as string] = field.fieldValue;
+						// ResourceLocator-Wert extrahieren
+						const fieldName = typeof field.fieldName === 'object' 
+							? (field.fieldName as any).value || field.fieldName 
+							: field.fieldName;
+						classifyData[fieldName as string] = field.fieldValue;
 					}
 				}
 			}
@@ -414,9 +418,66 @@ async function handleClassifyUserFriendly(
 			}
 		}
 
+		// Behandle zugewiesene Benutzer
+		const assignedUsers: string[] = [];
+		if (additionalFields.assignedUsers && Array.isArray(additionalFields.assignedUsers)) {
+			const userAssignments = additionalFields.assignedUsers as IDataObject[];
+			for (const userAssignment of userAssignments) {
+				if (userAssignment.user && typeof userAssignment.user === 'object') {
+					const user = userAssignment.user as IDataObject;
+					const userId = typeof user.userId === 'object' 
+						? (user.userId as any).value || user.userId 
+						: user.userId;
+					const permission = user.permission || 'read';
+					
+					if (userId) {
+						assignedUsers.push(`${userId}:${permission}`);
+					}
+				}
+			}
+		}
+
+		// Behandle zugewiesene Gruppen
+		const assignedGroups: string[] = [];
+		if (additionalFields.assignedGroups && Array.isArray(additionalFields.assignedGroups)) {
+			const groupAssignments = additionalFields.assignedGroups as IDataObject[];
+			for (const groupAssignment of groupAssignments) {
+				if (groupAssignment.group && typeof groupAssignment.group === 'object') {
+					const group = groupAssignment.group as IDataObject;
+					const groupId = typeof group.groupId === 'object' 
+						? (group.groupId as any).value || group.groupId 
+						: group.groupId;
+					const permission = group.permission || 'read';
+					
+					if (groupId) {
+						assignedGroups.push(`${groupId}:${permission}`);
+					}
+				}
+			}
+		}
+
 		// Bereite Berechtigungen vor
 		const editRoles = (additionalFields.editRoles as string) || 'Elite';
 		const readRoles = (additionalFields.readRoles as string) || '';
+
+		// Bereite finale Berechtigungen vor
+		const finalEditRoles = editRoles
+			.split(',')
+			.map((role) => role.trim())
+			.filter((role) => role);
+		
+		const finalReadRoles = readRoles
+			.split(',')
+			.map((role) => role.trim())
+			.filter((role) => role);
+
+		// Füge Benutzer- und Gruppenzuweisungen zu den Berechtigungen hinzu
+		if (assignedUsers.length > 0) {
+			classifyData.assignedUsers = assignedUsers;
+		}
+		if (assignedGroups.length > 0) {
+			classifyData.assignedGroups = assignedGroups;
+		}
 
 		// API-Aufruf zur Klassifizierung
 		const response = await this.helpers.httpRequest({
@@ -429,14 +490,8 @@ async function handleClassifyUserFriendly(
 			body: {
 				docId,
 				...classifyData,
-				editRoles: editRoles
-					.split(',')
-					.map((role) => role.trim())
-					.filter((role) => role),
-				readRoles: readRoles
-					.split(',')
-					.map((role) => role.trim())
-					.filter((role) => role),
+				editRoles: finalEditRoles,
+				readRoles: finalReadRoles,
 			},
 			json: true,
 			auth: {
@@ -451,6 +506,10 @@ async function handleClassifyUserFriendly(
 			data: {
 				docId,
 				classificationData: classifyData,
+				assignedUsers: assignedUsers.length > 0 ? assignedUsers : undefined,
+				assignedGroups: assignedGroups.length > 0 ? assignedGroups : undefined,
+				editRoles: finalEditRoles,
+				readRoles: finalReadRoles,
 				response,
 			},
 		};
