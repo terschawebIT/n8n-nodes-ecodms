@@ -161,9 +161,26 @@ async function handleUploadAndClassifyUserFriendly(
 			classifyData.documentDate = additionalFields.documentDate;
 		}
 
-		// Benutzerdefinierte Felder behandeln
-		if (additionalFields.customFields && Array.isArray(additionalFields.customFields)) {
-			const customFields = additionalFields.customFields as IDataObject[];
+		// Dynamische Custom Fields behandeln
+		if (additionalFields.dynamicCustomFields && Array.isArray(additionalFields.dynamicCustomFields)) {
+			const dynamicFields = additionalFields.dynamicCustomFields as IDataObject[];
+			for (const dynamicField of dynamicFields) {
+				if (dynamicField.customField && typeof dynamicField.customField === 'object') {
+					const field = dynamicField.customField as IDataObject;
+					const fieldNameObj = field.fieldName as any;
+					const fieldName = fieldNameObj?.value || fieldNameObj;
+					const fieldValue = field.fieldValue as string;
+
+					if (fieldName && fieldValue) {
+						classifyData[fieldName] = fieldValue;
+					}
+				}
+			}
+		}
+
+		// Manuelle Custom Fields behandeln
+		if (additionalFields.manualCustomFields && Array.isArray(additionalFields.manualCustomFields)) {
+			const customFields = additionalFields.manualCustomFields as IDataObject[];
 			for (const customField of customFields) {
 				if (customField.customField && typeof customField.customField === 'object') {
 					const field = customField.customField as IDataObject;
@@ -174,9 +191,57 @@ async function handleUploadAndClassifyUserFriendly(
 			}
 		}
 
+		// Benutzer und Gruppen-Zuweisungen verarbeiten
+		const userPermissions: IDataObject[] = [];
+		const groupPermissions: IDataObject[] = [];
+
+		if (additionalFields.assignedUsers && Array.isArray(additionalFields.assignedUsers)) {
+			const assignedUsers = additionalFields.assignedUsers as IDataObject[];
+			for (const userAssignment of assignedUsers) {
+				if (userAssignment.user && typeof userAssignment.user === 'object') {
+					const user = userAssignment.user as IDataObject;
+					const userIdObj = user.userId as any;
+					const userId = userIdObj?.value || userIdObj;
+					const permission = user.permission as string;
+
+					if (userId && permission) {
+						userPermissions.push({
+							userId,
+							permission,
+						});
+					}
+				}
+			}
+		}
+
+		if (additionalFields.assignedGroups && Array.isArray(additionalFields.assignedGroups)) {
+			const assignedGroups = additionalFields.assignedGroups as IDataObject[];
+			for (const groupAssignment of assignedGroups) {
+				if (groupAssignment.group && typeof groupAssignment.group === 'object') {
+					const group = groupAssignment.group as IDataObject;
+					const groupIdObj = group.groupId as any;
+					const groupId = groupIdObj?.value || groupIdObj;
+					const permission = group.permission as string;
+
+					if (groupId && permission) {
+						groupPermissions.push({
+							groupId,
+							permission,
+						});
+					}
+				}
+			}
+		}
+
 		// Berechtigungen vorbereiten
 		const editRoles = (additionalFields.editRoles as string) || 'Elite';
 		const readRoles = (additionalFields.readRoles as string) || '';
+
+		// Erweiterte Berechtigungen hinzufügen falls vorhanden
+		if (userPermissions.length > 0 || groupPermissions.length > 0) {
+			classifyData.userPermissions = userPermissions;
+			classifyData.groupPermissions = groupPermissions;
+		}
 
 		// 3. Dokument klassifizieren
 		const classifyUrl = await getBaseUrl.call(this, 'classifyDocument');

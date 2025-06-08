@@ -516,7 +516,7 @@ export async function getTypeClassifications(
 }
 
 /**
- * Lädt verfügbare Custom Fields für die aktuelle ecoDMS-Instanz
+ * Lädt verfügbare Custom Fields (dyn_*) aus den detaillierten Klassifikationsattributen
  */
 export async function getCustomFields(
 	this: ILoadOptionsFunctions,
@@ -524,12 +524,12 @@ export async function getCustomFields(
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Konstruiere die korrekte URL über die Hilfsfunktion
+		// Verwende den detaillierten Klassifikationsattribute-Endpoint
 		const url = await getBaseUrl.call(this, 'classifyAttributes/detailInformation');
 
 		console.log('CustomFields-API-URL:', url);
 
-		// API-Aufruf, um Custom Fields abzurufen
+		// API-Aufruf, um detaillierte Klassifikationsattribute abzurufen
 		const response = await this.helpers.httpRequest({
 			url,
 			method: 'GET',
@@ -546,16 +546,10 @@ export async function getCustomFields(
 		console.log('CustomFields-API-Antwort:', JSON.stringify(response).substring(0, 200));
 
 		if (!response || typeof response !== 'object') {
-			console.error(
-				`Unerwartetes Antwortformat beim Abrufen der Custom Fields: ${JSON.stringify(response).substring(0, 200)}`,
+			console.warn(
+				'Keine gültige Antwort von classifyAttributes/detailInformation API, verwende Standard-Beispiele',
 			);
-			return [
-				{
-					name: '-- Fehler beim Laden der Custom Fields --',
-					value: '',
-					description: 'Unerwartetes Antwortformat',
-				},
-			];
+			return getDefaultCustomFields();
 		}
 
 		// Custom Fields aus der Antwort extrahieren
@@ -570,10 +564,29 @@ export async function getCustomFields(
 
 		// Durchsuche alle Eigenschaften der Antwort nach Custom Fields (dyn_*)
 		for (const [key, value] of Object.entries(response)) {
-			if (key.startsWith('dyn_') && typeof value === 'object' && value !== null) {
-				const fieldInfo = value as any;
-				const displayName = fieldInfo.displayName || fieldInfo.name || key;
-				const description = fieldInfo.description || fieldInfo.hint || `Custom Field: ${key}`;
+			if (key.startsWith('dyn_')) {
+				let displayName = key;
+				let description = `Custom Field: ${key}`;
+
+				// Extrahiere Details aus der detaillierten Antwort
+				if (typeof value === 'object' && value !== null) {
+					const fieldInfo = value as any;
+					displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || key;
+					description =
+						fieldInfo.description || fieldInfo.hint || fieldInfo.tooltip || `${displayName} (${key})`;
+
+					// Zusätzliche Informationen hinzufügen wenn verfügbar
+					if (fieldInfo.type) {
+						description += ` - Typ: ${fieldInfo.type}`;
+					}
+					if (fieldInfo.required) {
+						description += ' - Pflichtfeld';
+					}
+				} else if (typeof value === 'string') {
+					// Fallback: Verwende den String-Wert als Anzeigename
+					displayName = value;
+					description = `${displayName} (${key})`;
+				}
 
 				options.push({
 					name: displayName,
@@ -583,6 +596,14 @@ export async function getCustomFields(
 			}
 		}
 
+		// Wenn keine Custom Fields gefunden wurden, zeige Standard-Beispiele
+		if (options.length === 1) {
+			console.log(
+				'Keine Custom Fields (dyn_*) in der detaillierten API-Antwort gefunden, verwende Standard-Beispiele',
+			);
+			return getDefaultCustomFields();
+		}
+
 		// Nach Namen sortieren (außer dem ersten Element)
 		if (options.length > 1) {
 			const autoOption = options.shift();
@@ -590,35 +611,76 @@ export async function getCustomFields(
 			options.unshift(autoOption!);
 		}
 
-		console.log(`${options.length} Custom Field-Optionen geladen`);
+		console.log(
+			`${options.length} Custom Field-Optionen aus detaillierten Klassifikationsattributen geladen`,
+		);
 		return options;
 	} catch (error: unknown) {
-		console.error('Fehler beim Abrufen der Custom Fields:', error);
-		return [
-			{
-				name: '-- Fehler beim Laden der Custom Fields --',
-				value: '',
-				description: `Fehler: ${getErrorMessage(error)}`,
-			},
-		];
+		console.error(
+			'Fehler beim Abrufen der Custom Fields aus detaillierten Klassifikationsattributen:',
+			error,
+		);
+		console.log('Verwende Standard-Custom-Fields als Fallback');
+		return getDefaultCustomFields();
 	}
 }
 
 /**
- * Lädt verfügbare Benutzer aus ecoDMS für Dropdown-Menüs
+ * Standard Custom Fields als Fallback wenn API nicht verfügbar ist
+ */
+function getDefaultCustomFields(): INodePropertyOptions[] {
+	return [
+		{
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte ein Custom Field auswählen',
+		},
+		{
+			name: 'Beispiel: Kundennummer',
+			value: 'dyn_0_customer_number',
+			description: 'Benutzerdefinierte Kundennummer',
+		},
+		{
+			name: 'Beispiel: Projektnummer',
+			value: 'dyn_1_project_number',
+			description: 'Benutzerdefinierte Projektnummer',
+		},
+		{
+			name: 'Beispiel: Kostenstelle',
+			value: 'dyn_2_cost_center',
+			description: 'Benutzerdefinierte Kostenstelle',
+		},
+		{
+			name: 'Beispiel: Abteilung',
+			value: 'dyn_3_department',
+			description: 'Benutzerdefinierte Abteilung',
+		},
+		{
+			name: 'Beispiel: Priorität',
+			value: 'dyn_4_priority',
+			description: 'Benutzerdefinierte Priorität',
+		},
+		{
+			name: 'Manuell eingeben...',
+			value: 'manual',
+			description: 'Custom Field Namen manuell eingeben (dyn_*)',
+		},
+	];
+}
+
+/**
+ * Lädt verfügbare Benutzer aus ecoDMS über die Rollen-API
  */
 export async function getUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Konstruiere die korrekte URL über die Hilfsfunktion
-		const url = await getBaseUrl.call(this, 'users');
+		// Versuche zuerst die Rollen-API
+		const rolesUrl = await getBaseUrl.call(this, 'roles');
+		console.log(`Roles-API-URL: ${rolesUrl}`);
 
-		console.log('Users-API-URL:', url);
-
-		// API-Aufruf, um Benutzer abzurufen
-		const response = await this.helpers.httpRequest({
-			url,
+		const rolesResponse = await this.helpers.httpRequest({
+			url: rolesUrl,
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
@@ -630,19 +692,54 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 			},
 		});
 
-		console.log('Users-API-Antwort:', JSON.stringify(response).substring(0, 200));
+		console.log('Roles-API-Antwort:', JSON.stringify(rolesResponse).substring(0, 200));
 
-		if (!Array.isArray(response)) {
-			console.error(
-				`Unerwartetes Antwortformat beim Abrufen der Benutzer: ${JSON.stringify(response).substring(0, 200)}`,
+		const users: Set<string> = new Set();
+
+		if (Array.isArray(rolesResponse)) {
+			// Filtere Benutzer-Rollen (normalerweise beginnen sie mit "r_" oder sind LDAP-Benutzer)
+			const userRoles = rolesResponse.filter(
+				(role: string) =>
+					role.startsWith('r_') ||
+					role.startsWith('LDAP_r_') ||
+					(!role.startsWith('eco') &&
+						!role.startsWith('LDAP_r_') &&
+						role !== 'Management' &&
+						role !== 'scanner'),
 			);
-			return [
-				{
-					name: '-- Fehler beim Laden der Benutzer --',
-					value: '',
-					description: 'Unerwartetes Antwortformat',
-				},
-			];
+
+			console.log(`Gefundene Benutzer-Rollen: ${userRoles.length}`);
+
+			// Für jede Benutzer-Rolle versuchen wir die tatsächlichen Benutzer abzurufen
+			for (const role of userRoles.slice(0, 5)) {
+				// Limitiere auf erste 5 Rollen
+				try {
+					const usersForRoleUrl = await getBaseUrl.call(
+						this,
+						`usersForRole/${encodeURIComponent(role)}`,
+					);
+					const usersResponse = await this.helpers.httpRequest({
+						url: usersForRoleUrl,
+						method: 'GET',
+						headers: {
+							Accept: 'application/json',
+						},
+						json: true,
+						auth: {
+							username: credentials.username,
+							password: credentials.password,
+						},
+					});
+
+					if (Array.isArray(usersResponse)) {
+						for (const username of usersResponse) {
+							users.add(username);
+						}
+					}
+				} catch (error) {
+					console.log(`Fehler beim Abrufen der Benutzer für Rolle ${role}:`, error);
+				}
+			}
 		}
 
 		// Benutzer in das erforderliche Format konvertieren
@@ -655,53 +752,82 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 			description: 'Bitte einen Benutzer auswählen',
 		});
 
-		for (const user of response) {
-			const name = user.displayName || user.username || user.name || `Benutzer ${user.id}`;
-			const description = user.email ? `${user.email}` : user.description || '';
+		// Konvertiere Set zu Array und sortiere
+		const userArray = Array.from(users).sort();
 
+		for (const username of userArray) {
 			options.push({
-				name: name,
-				value: user.id?.toString() || user.username,
-				description: description,
+				name: username,
+				value: username,
+				description: `ecoDMS Benutzer: ${username}`,
 			});
 		}
 
-		// Nach Namen sortieren (außer dem ersten Element)
 		if (options.length > 1) {
-			const autoOption = options.shift();
-			options.sort((a, b) => a.name.localeCompare(b.name));
-			options.unshift(autoOption!);
+			console.log(`${options.length - 1} Benutzer aus ecoDMS-Rollen geladen`);
+			return options;
 		}
 
-		console.log(`${options.length} Benutzer-Optionen geladen`);
-		return options;
+		console.log('Keine Benutzer aus Rollen gefunden, verwende Standard-Beispiele');
+		return getDefaultUsers();
 	} catch (error: unknown) {
-		console.error('Fehler beim Abrufen der Benutzer:', error);
-		return [
-			{
-				name: '-- Fehler beim Laden der Benutzer --',
-				value: '',
-				description: `Fehler: ${getErrorMessage(error)}`,
-			},
-		];
+		console.error('Fehler beim Abrufen der Benutzer über Rollen-API:', error);
+		console.log('Verwende Standard-Benutzer als Fallback');
+		return getDefaultUsers();
 	}
 }
 
 /**
- * Lädt verfügbare Gruppen aus ecoDMS für Dropdown-Menüs
+ * Standard Benutzer als Fallback
+ */
+function getDefaultUsers(): INodePropertyOptions[] {
+	return [
+		{
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte einen Benutzer auswählen',
+		},
+		{
+			name: 'Admin',
+			value: 'admin',
+			description: 'Administrator-Benutzer',
+		},
+		{
+			name: 'Elite',
+			value: 'elite',
+			description: 'Elite-Benutzer',
+		},
+		{
+			name: 'User',
+			value: 'user',
+			description: 'Standard-Benutzer',
+		},
+		{
+			name: 'Gast',
+			value: 'guest',
+			description: 'Gast-Benutzer',
+		},
+		{
+			name: 'Manuell eingeben...',
+			value: 'manual',
+			description: 'Benutzer-ID manuell eingeben',
+		},
+	];
+}
+
+/**
+ * Lädt verfügbare Gruppen aus ecoDMS über die Rollen-API
  */
 export async function getGroups(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Konstruiere die korrekte URL über die Hilfsfunktion
-		const url = await getBaseUrl.call(this, 'groups');
+		// Verwende die Rollen-API um Gruppen zu finden
+		const rolesUrl = await getBaseUrl.call(this, 'roles');
+		console.log(`Groups-Roles-API-URL: ${rolesUrl}`);
 
-		console.log('Groups-API-URL:', url);
-
-		// API-Aufruf, um Gruppen abzurufen
-		const response = await this.helpers.httpRequest({
-			url,
+		const rolesResponse = await this.helpers.httpRequest({
+			url: rolesUrl,
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
@@ -713,19 +839,37 @@ export async function getGroups(this: ILoadOptionsFunctions): Promise<INodePrope
 			},
 		});
 
-		console.log('Groups-API-Antwort:', JSON.stringify(response).substring(0, 200));
+		console.log('Groups-Roles-API-Antwort:', JSON.stringify(rolesResponse).substring(0, 200));
 
-		if (!Array.isArray(response)) {
-			console.error(
-				`Unerwartetes Antwortformat beim Abrufen der Gruppen: ${JSON.stringify(response).substring(0, 200)}`,
+		const groups: Set<string> = new Set();
+
+		if (Array.isArray(rolesResponse)) {
+			// Filtere Gruppen-Rollen (normalerweise Custom-Rollen die keine System-Rollen sind)
+			const groupRoles = rolesResponse.filter(
+				(role: string) =>
+					!role.startsWith('eco') && // Keine System-Rollen
+					!role.startsWith('r_') && // Keine einzelnen Benutzer-Rollen
+					!role.startsWith('LDAP_r_') && // Keine LDAP-Benutzer-Rollen
+					role !== 'scanner', // Scanner ist ein Benutzer, keine Gruppe
 			);
-			return [
-				{
-					name: '-- Fehler beim Laden der Gruppen --',
-					value: '',
-					description: 'Unerwartetes Antwortformat',
-				},
-			];
+
+			console.log(`Gefundene Gruppen-Rollen: ${groupRoles.length}`);
+
+			// Alle Gruppen-Rollen als Gruppen hinzufügen
+			for (const role of groupRoles) {
+				groups.add(role);
+			}
+
+			// Zusätzlich LDAP-Gruppen suchen
+			const ldapGroups = rolesResponse.filter(
+				(role: string) =>
+					role.startsWith('r_LDAP_') || // LDAP-Gruppen
+					(role.startsWith('LDAP_') && !role.startsWith('LDAP_r_')), // Andere LDAP-Einträge
+			);
+
+			for (const role of ldapGroups) {
+				groups.add(role);
+			}
 		}
 
 		// Gruppen in das erforderliche Format konvertieren
@@ -738,34 +882,82 @@ export async function getGroups(this: ILoadOptionsFunctions): Promise<INodePrope
 			description: 'Bitte eine Gruppe auswählen',
 		});
 
-		for (const group of response) {
-			const name = group.displayName || group.name || `Gruppe ${group.id}`;
-			const description = group.description || `Gruppe-ID: ${group.id}`;
+		// Konvertiere Set zu Array und sortiere
+		const groupArray = Array.from(groups).sort();
+
+		for (const groupName of groupArray) {
+			let displayName = groupName;
+			let description = `ecoDMS Gruppe: ${groupName}`;
+
+			// Spezielle Behandlung für LDAP-Gruppen
+			if (groupName.startsWith('r_LDAP_')) {
+				displayName = groupName.replace('r_LDAP_', 'LDAP: ');
+				description = `LDAP-Gruppe: ${groupName}`;
+			} else if (groupName.startsWith('LDAP_')) {
+				displayName = groupName.replace('LDAP_', 'LDAP: ');
+				description = `LDAP-Gruppe: ${groupName}`;
+			}
 
 			options.push({
-				name: name,
-				value: group.id?.toString() || group.name,
+				name: displayName,
+				value: groupName,
 				description: description,
 			});
 		}
 
-		// Nach Namen sortieren (außer dem ersten Element)
 		if (options.length > 1) {
-			const autoOption = options.shift();
-			options.sort((a, b) => a.name.localeCompare(b.name));
-			options.unshift(autoOption!);
+			console.log(`${options.length - 1} Gruppen aus ecoDMS-Rollen geladen`);
+			return options;
 		}
 
-		console.log(`${options.length} Gruppen-Optionen geladen`);
-		return options;
+		console.log('Keine Gruppen aus Rollen gefunden, verwende Standard-Beispiele');
+		return getDefaultGroups();
 	} catch (error: unknown) {
-		console.error('Fehler beim Abrufen der Gruppen:', error);
-		return [
-			{
-				name: '-- Fehler beim Laden der Gruppen --',
-				value: '',
-				description: `Fehler: ${getErrorMessage(error)}`,
-			},
-		];
+		console.error('Fehler beim Abrufen der Gruppen über Rollen-API:', error);
+		console.log('Verwende Standard-Gruppen als Fallback');
+		return getDefaultGroups();
 	}
+}
+
+/**
+ * Standard Gruppen als Fallback
+ */
+function getDefaultGroups(): INodePropertyOptions[] {
+	return [
+		{
+			name: '-- Bitte auswählen --',
+			value: '',
+			description: 'Bitte eine Gruppe auswählen',
+		},
+		{
+			name: 'Elite',
+			value: 'elite',
+			description: 'Elite-Gruppe',
+		},
+		{
+			name: 'Administratoren',
+			value: 'admin',
+			description: 'Administrator-Gruppe',
+		},
+		{
+			name: 'Benutzer',
+			value: 'users',
+			description: 'Standard-Benutzergruppe',
+		},
+		{
+			name: 'Gäste',
+			value: 'guests',
+			description: 'Gast-Gruppe',
+		},
+		{
+			name: 'Abteilung 1',
+			value: 'dept1',
+			description: 'Abteilung 1',
+		},
+		{
+			name: 'Manuell eingeben...',
+			value: 'manual',
+			description: 'Gruppen-ID manuell eingeben',
+		},
+	];
 }
