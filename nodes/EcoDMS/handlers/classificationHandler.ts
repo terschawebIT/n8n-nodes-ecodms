@@ -130,19 +130,19 @@ async function handleGetClassifyAttributesDetail(
 					filteredResponse = response.filter((attr: any) => {
 						// Prüfe verschiedene mögliche Identifikatoren
 						const matches = attributeFilter.some((filterValue) => {
-							const fieldMatches = 
+							const fieldMatches =
 								attr.name === filterValue ||
 								attr.fieldName === filterValue ||
-								attr.fieldID === filterValue ||     // Möglicher Feldname in API
+								attr.fieldID === filterValue || // Möglicher Feldname in API
 								attr.id === filterValue ||
 								attr.displayName === filterValue ||
 								attr.caption === filterValue ||
 								// Falls es ein Object mit nested Werten ist
 								(attr.fieldName && attr.fieldName === filterValue) ||
 								(attr.fieldID && attr.fieldID === filterValue);
-							
+
 							if (fieldMatches) {
-								console.log(`✅ Attribut gefunden:`, {
+								console.log('✅ Attribut gefunden:', {
 									filterValue,
 									attrName: attr.name,
 									attrFieldName: attr.fieldName,
@@ -150,13 +150,13 @@ async function handleGetClassifyAttributesDetail(
 									attrId: attr.id,
 								});
 							}
-							
+
 							return fieldMatches;
 						});
-						
+
 						if (!matches) {
 							// Debug: Zeige warum Attribut nicht gefiltert wurde
-							console.log(`❌ Attribut nicht gefiltert:`, {
+							console.log('❌ Attribut nicht gefiltert:', {
 								availableFields: {
 									name: attr.name,
 									fieldName: attr.fieldName,
@@ -168,7 +168,7 @@ async function handleGetClassifyAttributesDetail(
 								searchingFor: attributeFilter,
 							});
 						}
-						
+
 						return matches;
 					});
 
