@@ -766,9 +766,17 @@ async function handleGetAttributeDetails(
 			attributeName,
 			currentValue,
 			dataType: typeof currentValue,
-			displayName: attributeDetail?.displayName || standardAttributeInfo[attributeName]?.displayName || attributeName,
-			description: attributeDetail?.description || standardAttributeInfo[attributeName]?.description || '',
-			fieldType: attributeDetail?.type || attributeDetail?.fieldType || standardAttributeInfo[attributeName]?.fieldType || 'unknown',
+			displayName:
+				attributeDetail?.displayName ||
+				standardAttributeInfo[attributeName]?.displayName ||
+				attributeName,
+			description:
+				attributeDetail?.description || standardAttributeInfo[attributeName]?.description || '',
+			fieldType:
+				attributeDetail?.type ||
+				attributeDetail?.fieldType ||
+				standardAttributeInfo[attributeName]?.fieldType ||
+				'unknown',
 			required: attributeDetail?.required || false,
 			maxLength: attributeDetail?.maxLength,
 			options: attributeDetail?.options || [],
@@ -778,7 +786,8 @@ async function handleGetAttributeDetails(
 		if (attributeDetail) {
 			if (attributeDetail.id !== undefined) result.id = attributeDetail.id;
 			if (attributeDetail.caption !== undefined) result.caption = attributeDetail.caption;
-			if (attributeDetail.defaultValue !== undefined) result.defaultValue = attributeDetail.defaultValue;
+			if (attributeDetail.defaultValue !== undefined)
+				result.defaultValue = attributeDetail.defaultValue;
 			if (attributeDetail.validation !== undefined) result.validation = attributeDetail.validation;
 			if (attributeDetail.category !== undefined) result.category = attributeDetail.category;
 		}
