@@ -604,13 +604,15 @@ export async function getCustomFields(
 	try {
 		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
 
-		// Versuche verschiedene API-Endpoints für Custom Fields
-		const endpoints = ['classifyAttributes/detailInformation', 'classifyAttributes'];
+		// Versuche zuerst aus documentInfo eines existierenden Dokuments Custom Fields zu extrahieren
 		const customFieldsMap = new Map<
 			string,
 			{ displayName: string; fieldType: string; fieldInfo: any }
 		>();
 
+		// Versuche mehrere Ansätze um Custom Fields zu finden
+		const endpoints = ['classifyAttributes/detailInformation', 'search?maxHits=1', 'classifyAttributes'];
+		
 		for (const endpoint of endpoints) {
 			try {
 				const url = await getBaseUrl.call(this, endpoint);
@@ -631,61 +633,32 @@ export async function getCustomFields(
 
 				console.log(
 					`CustomFields Response from ${endpoint}:`,
-					JSON.stringify(response).substring(0, 400),
+					JSON.stringify(response).substring(0, 500),
 				);
 
 				if (response && typeof response === 'object') {
-					// Verarbeite die Antwort basierend auf dem Endpoint
+					// Verarbeite die Antwort je nach Endpoint
 					if (endpoint === 'classifyAttributes/detailInformation') {
-						// Detaillierte Informationen verarbeiten
-						for (const [key, value] of Object.entries(response)) {
-							if (key.startsWith('dyn_')) {
-								if (typeof value === 'object' && value !== null) {
-									const fieldInfo = value as any;
-									const displayName =
-										fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
-									if (displayName) {
-										const fieldType = inferFieldType(fieldInfo, null);
-										customFieldsMap.set(key, { displayName, fieldType, fieldInfo });
-									}
-								} else if (typeof value === 'string' && value.trim()) {
-									const fieldType = inferFieldType(null, value);
-									customFieldsMap.set(key, { displayName: value, fieldType, fieldInfo: null });
-								}
+						// Detaillierte Informationen haben das Format: [{ success: true, data: { ... } }]
+						if (Array.isArray(response) && response.length > 0 && response[0].success && response[0].data) {
+							console.log('Processing detailInformation response with success/data structure');
+							await extractDynFieldsFromAttributes(response[0].data, customFieldsMap);
+						} else if (typeof response === 'object') {
+							// Direkte Datenstruktur
+							console.log('Processing detailInformation response as direct object');
+							await extractDynFieldsFromAttributes(response, customFieldsMap);
+						}
+					} else if (endpoint === 'search?maxHits=1') {
+						// Aus Suchergebnissen extrahieren - oft haben diese vollständige Feldstrukturen
+						if (Array.isArray(response) && response.length > 0) {
+							const searchResult = response[0];
+							if (searchResult && searchResult.classifyAttributes) {
+								await extractDynFieldsFromAttributes(searchResult.classifyAttributes, customFieldsMap);
 							}
 						}
-					} else if (endpoint === 'classifyAttributes') {
-						// Einfache Klassifikationsattribute verarbeiten
-						if (Array.isArray(response)) {
-							for (const item of response) {
-								if (item && typeof item === 'object') {
-									const key = item.name || item.id || item.key;
-									const displayName = item.displayName || item.label || item.caption || item.description;
-									if (key?.startsWith('dyn_') && displayName) {
-										const fieldType = inferFieldType(item, item.value || item.defaultValue);
-										customFieldsMap.set(key, { displayName, fieldType, fieldInfo: item });
-									}
-								}
-							}
-						} else {
-							// Object-Format verarbeiten
-							for (const [key, value] of Object.entries(response)) {
-								if (key.startsWith('dyn_')) {
-									if (typeof value === 'string' && value.trim()) {
-										const fieldType = inferFieldType(null, value);
-										customFieldsMap.set(key, { displayName: value, fieldType, fieldInfo: null });
-									} else if (typeof value === 'object' && value !== null) {
-										const fieldInfo = value as any;
-										const displayName =
-											fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
-										if (displayName) {
-											const fieldType = inferFieldType(fieldInfo, fieldInfo.value || fieldInfo.defaultValue);
-											customFieldsMap.set(key, { displayName, fieldType, fieldInfo });
-										}
-									}
-								}
-							}
-						}
+					} else {
+						// Standard classifyAttributes
+						await extractDynFieldsFromAttributes(response, customFieldsMap);
 					}
 
 					// Wenn wir Custom Fields gefunden haben, beende die Schleife
@@ -696,6 +669,46 @@ export async function getCustomFields(
 				}
 			} catch (endpointError) {
 				console.log(`Endpoint ${endpoint} failed:`, endpointError);
+			}
+		}
+
+		// Falls noch keine gefunden, versuche documentInfo von einem beliebigen Dokument
+		if (customFieldsMap.size === 0) {
+			try {
+				// Versuche documentInfo von Dokument ID 1 bis 10 zu holen
+				for (let docId = 1; docId <= 10; docId++) {
+					try {
+						const docInfoUrl = await getBaseUrl.call(this, `documentInfo/${docId}`);
+						const docInfoResponse = await this.helpers.httpRequest({
+							url: docInfoUrl,
+							method: 'GET',
+							headers: {
+								Accept: 'application/json',
+							},
+							json: true,
+							auth: {
+								username: credentials.username,
+								password: credentials.password,
+							},
+						});
+
+						if (Array.isArray(docInfoResponse) && docInfoResponse.length > 0) {
+							const docInfo = docInfoResponse[0];
+							if (docInfo && docInfo.classifyAttributes) {
+								await extractDynFieldsFromAttributes(docInfo.classifyAttributes, customFieldsMap);
+								
+								if (customFieldsMap.size > 0) {
+									console.log(`Found ${customFieldsMap.size} custom fields from documentInfo/${docId}`);
+									break;
+								}
+							}
+						}
+					} catch (docError) {
+						// Ignore einzelne Dokument-Fehler
+					}
+				}
+			} catch (error) {
+				console.log('DocumentInfo Fallback fehlgeschlagen:', error);
 			}
 		}
 
@@ -711,7 +724,6 @@ export async function getCustomFields(
 
 		// Gefundene Custom Fields hinzufügen - ALLE Typen anzeigen
 		for (const [key, fieldData] of customFieldsMap.entries()) {
-			// Bestimme eine sinnvolle Anzeige für den Feldtyp
 			const typeDisplay = fieldData.fieldType || 'Text';
 
 			options.push({
@@ -719,58 +731,6 @@ export async function getCustomFields(
 				value: key,
 				description: `${fieldData.displayName} - Typ: ${typeDisplay} (${key})`,
 			});
-		}
-
-		// Wenn keine Custom Fields gefunden wurden, lade alle verfügbaren dyn_* Felder
-		if (options.length === 1) {
-			console.log(
-				'Keine Custom Fields in detailInformation gefunden, versuche allgemeine classifyAttributes',
-			);
-
-			try {
-				const url = await getBaseUrl.call(this, 'classifyAttributes');
-				const response = await this.helpers.httpRequest({
-					url,
-					method: 'GET',
-					headers: {
-						Accept: 'application/json',
-					},
-					json: true,
-					auth: {
-						username: credentials.username,
-						password: credentials.password,
-					},
-				});
-
-				if (response && typeof response === 'object') {
-					// Suche nach dyn_* Feldern in der gesamten Response
-					const findDynFields = (obj: any, path = '') => {
-						for (const [key, value] of Object.entries(obj)) {
-							if (key.startsWith('dyn_')) {
-								const displayName =
-									typeof value === 'string'
-										? value
-										: typeof value === 'object' && value && 'displayName' in value
-											? (value as any).displayName
-											: key;
-								const fieldType = inferFieldType(value, null);
-
-								options.push({
-									name: `${displayName} (${fieldType})`,
-									value: key,
-									description: `${displayName} - Typ: ${fieldType} (${key})`,
-								});
-							} else if (typeof value === 'object' && value !== null) {
-								findDynFields(value, path + key + '.');
-							}
-						}
-					};
-
-					findDynFields(response);
-				}
-			} catch (fallbackError) {
-				console.log('Fallback classifyAttributes auch fehlgeschlagen:', fallbackError);
-			}
 		}
 
 		// Wenn immer noch keine Custom Fields gefunden wurden, zeige Standard-Beispiele
@@ -786,12 +746,102 @@ export async function getCustomFields(
 			options.unshift(autoOption!);
 		}
 
-		console.log(`${options.length} Custom Field-Optionen mit Feldtypen geladen`);
+		console.log(`${options.length} Custom Field-Optionen mit korrekten Feldtypen geladen`);
 		return options;
 	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Custom Fields:', error);
 		console.log('Verwende Standard-Custom-Fields als Fallback');
 		return getDefaultCustomFields();
+	}
+}
+
+/**
+ * Hilfsfunktion um dyn_* Felder aus classifyAttributes zu extrahieren
+ */
+async function extractDynFieldsFromAttributes(
+	attributes: any, 
+	customFieldsMap: Map<string, { displayName: string; fieldType: string; fieldInfo: any }>
+): Promise<void> {
+	if (!attributes || typeof attributes !== 'object') {
+		return;
+	}
+
+	for (const [key, value] of Object.entries(attributes)) {
+		if (key.startsWith('dyn_')) {
+			let fieldType = 'Text';
+			let displayName = key;
+
+			// Prüfe ob es die detaillierte API-Struktur ist
+			if (value && typeof value === 'object' && 'fieldType' in value) {
+				const fieldInfo = value as any;
+				
+				// Nutze den korrekten fieldName aus der API
+				displayName = fieldInfo.fieldName || fieldInfo.displayName || key;
+				
+				// Mappe ecoDMS Feldtypen zu n8n-kompatible Typen
+				switch (fieldInfo.fieldType) {
+					case 'eco_CheckBox':
+						fieldType = 'Boolean';
+						break;
+					case 'eco_ComboBox':
+						// ComboBox mit verfügbaren Optionen
+						if (fieldInfo.classificationContent && Array.isArray(fieldInfo.classificationContent)) {
+							fieldType = `ComboBox (${fieldInfo.classificationContent.length} Optionen)`;
+						} else {
+							fieldType = 'ComboBox';
+						}
+						break;
+					case 'eco_DateField':
+						fieldType = 'Date';
+						break;
+					case 'eco_TextField':
+					default:
+						fieldType = 'Text';
+						break;
+				}
+
+				customFieldsMap.set(key, { 
+					displayName: displayName,
+					fieldType, 
+					fieldInfo: {
+						key,
+						originalFieldType: fieldInfo.fieldType,
+						classificationContent: fieldInfo.classificationContent,
+						fieldID: fieldInfo.fieldID,
+						fieldName: fieldInfo.fieldName
+					}
+				});
+			} else {
+				// Fallback für einfache Wert-Strukturen
+				// Versuche Typ aus dem Feldnamen zu ermitteln  
+				const lowerKey = key.toLowerCase();
+				if (lowerKey.includes('datum') || lowerKey.includes('date')) {
+					fieldType = 'Date';
+					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
+				} else if (lowerKey.includes('betrag') || lowerKey.includes('amount') || lowerKey.includes('nummer') || lowerKey.includes('number')) {
+					fieldType = 'Number';
+					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
+				} else if (lowerKey.includes('aktiv') || lowerKey.includes('bezahlt') || lowerKey.includes('paid') || lowerKey.includes('enabled')) {
+					fieldType = 'Boolean';
+					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
+				} else {
+					// Versuche Typ aus dem Wert zu ermitteln
+					fieldType = inferFieldType(null, value);
+					displayName = key.replace(/dyn_\d+_/, '').replace(/_/g, ' ');
+				}
+
+				// Fallback für leere displayNames
+				if (!displayName || displayName.trim() === '') {
+					displayName = key;
+				}
+
+				customFieldsMap.set(key, { 
+					displayName: displayName,
+					fieldType, 
+					fieldInfo: { key, value, originalValue: value }
+				});
+			}
+		}
 	}
 }
 
