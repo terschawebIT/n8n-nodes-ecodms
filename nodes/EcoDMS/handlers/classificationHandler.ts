@@ -582,26 +582,29 @@ async function handleClassifyUserFriendly(
 		// Behandle dynamische Custom Fields
 		if (additionalFields.dynamicCustomFields) {
 			let dynamicFields: any[] = [];
-			
+
 			// Handle beide Strukturen: Array und Object mit customField Array
 			if (Array.isArray(additionalFields.dynamicCustomFields)) {
 				dynamicFields = additionalFields.dynamicCustomFields;
-			} else if (typeof additionalFields.dynamicCustomFields === 'object' && 
-					   (additionalFields.dynamicCustomFields as any).customField && 
-					   Array.isArray((additionalFields.dynamicCustomFields as any).customField)) {
+			} else if (
+				typeof additionalFields.dynamicCustomFields === 'object' &&
+				(additionalFields.dynamicCustomFields as any).customField &&
+				Array.isArray((additionalFields.dynamicCustomFields as any).customField)
+			) {
 				dynamicFields = (additionalFields.dynamicCustomFields as any).customField;
 			}
-			
+
 			console.log('=== DYNAMIC FIELDS DEBUG ===');
 			console.log('dynamicFields length:', dynamicFields.length);
 			console.log('dynamicFields:', JSON.stringify(dynamicFields, null, 2));
-			
+
 			for (const dynamicField of dynamicFields) {
 				// Prüfe direkte Struktur
 				if (dynamicField.fieldName && dynamicField.fieldValue) {
-					const fieldName = typeof dynamicField.fieldName === 'object'
-						? (dynamicField.fieldName as any).value || dynamicField.fieldName
-						: dynamicField.fieldName;
+					const fieldName =
+						typeof dynamicField.fieldName === 'object'
+							? (dynamicField.fieldName as any).value || dynamicField.fieldName
+							: dynamicField.fieldName;
 					console.log(`Setting direct field: ${fieldName} = ${dynamicField.fieldValue}`);
 					classifyAttributes[fieldName as string] = dynamicField.fieldValue;
 				}
@@ -609,9 +612,10 @@ async function handleClassifyUserFriendly(
 				else if (dynamicField.customField && typeof dynamicField.customField === 'object') {
 					const field = dynamicField.customField as IDataObject;
 					if (field.fieldName && field.fieldValue) {
-						const fieldName = typeof field.fieldName === 'object'
-							? (field.fieldName as any).value || field.fieldName
-							: field.fieldName;
+						const fieldName =
+							typeof field.fieldName === 'object'
+								? (field.fieldName as any).value || field.fieldName
+								: field.fieldName;
 						console.log(`Setting nested field: ${fieldName} = ${field.fieldValue}`);
 						classifyAttributes[fieldName as string] = field.fieldValue;
 					}
