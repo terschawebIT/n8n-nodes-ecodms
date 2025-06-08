@@ -516,7 +516,65 @@ export async function getTypeClassifications(
 }
 
 /**
- * Lädt verfügbare Custom Fields (dyn_*) aus den Klassifikationsattributen
+ * Feldtyp aus dem ecoDMS-Wert ableiten
+ */
+function inferFieldType(fieldInfo: any, value: any): string {
+	// Prüfe explizite Typ-Informationen
+	if (fieldInfo && typeof fieldInfo === 'object') {
+		if (fieldInfo.type) {
+			switch (fieldInfo.type.toLowerCase()) {
+				case 'boolean':
+				case 'bool':
+				case 'checkbox':
+					return 'Boolean';
+				case 'number':
+				case 'integer':
+				case 'decimal':
+				case 'float':
+					return 'Number';
+				case 'date':
+				case 'datetime':
+					return 'Date';
+				case 'string':
+				case 'text':
+				default:
+					return 'Text';
+			}
+		}
+
+		// Prüfe basierend auf Feldnamen/Bezeichnungen
+		const name = (fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || '').toLowerCase();
+		if (name.includes('bezahlt') || name.includes('paid') || name.includes('aktiv') || name.includes('enabled') || name.includes('ja/nein')) {
+			return 'Boolean';
+		}
+		if (name.includes('datum') || name.includes('date') || name.includes('zeit') || name.includes('time')) {
+			return 'Date';
+		}
+		if (name.includes('nummer') || name.includes('number') || name.includes('anzahl') || name.includes('count') || name.includes('betrag') || name.includes('amount')) {
+			return 'Number';
+		}
+	}
+
+	// Prüfe basierend auf dem Wert
+	if (typeof value === 'string') {
+		const lowerValue = value.toLowerCase();
+		if (lowerValue === 'true' || lowerValue === 'false' || lowerValue === 'ja' || lowerValue === 'nein' || lowerValue === 'yes' || lowerValue === 'no') {
+			return 'Boolean';
+		}
+		if (!isNaN(Number(value)) && value.trim() !== '') {
+			return 'Number';
+		}
+		// Datum-Pattern prüfen
+		if (/^\d{4}-\d{2}-\d{2}/.test(value) || /^\d{2}[.\/]\d{2}[.\/]\d{4}/.test(value)) {
+			return 'Date';
+		}
+	}
+
+	return 'Text'; // Standard-Fallback
+}
+
+/**
+ * Lädt verfügbare Custom Fields (dyn_*) aus den Klassifikationsattributen mit Feldtyp-Informationen
  */
 export async function getCustomFields(
 	this: ILoadOptionsFunctions,
@@ -526,7 +584,7 @@ export async function getCustomFields(
 
 		// Versuche verschiedene API-Endpoints für Custom Fields
 		const endpoints = ['classifyAttributes/detailInformation', 'classifyAttributes'];
-		let customFieldsMap = new Map<string, string>();
+		const customFieldsMap = new Map<string, { displayName: string; fieldType: string; fieldInfo: any }>();
 
 		for (const endpoint of endpoints) {
 			try {
@@ -546,7 +604,10 @@ export async function getCustomFields(
 					},
 				});
 
-				console.log(`CustomFields Response from ${endpoint}:`, JSON.stringify(response).substring(0, 400));
+				console.log(
+					`CustomFields Response from ${endpoint}:`,
+					JSON.stringify(response).substring(0, 400),
+				);
 
 				if (response && typeof response === 'object') {
 					// Verarbeite die Antwort basierend auf dem Endpoint
@@ -556,12 +617,15 @@ export async function getCustomFields(
 							if (key.startsWith('dyn_')) {
 								if (typeof value === 'object' && value !== null) {
 									const fieldInfo = value as any;
-									const displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
+									const displayName =
+										fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
 									if (displayName) {
-										customFieldsMap.set(key, displayName);
+										const fieldType = inferFieldType(fieldInfo, null);
+										customFieldsMap.set(key, { displayName, fieldType, fieldInfo });
 									}
 								} else if (typeof value === 'string' && value.trim()) {
-									customFieldsMap.set(key, value);
+									const fieldType = inferFieldType(null, value);
+									customFieldsMap.set(key, { displayName: value, fieldType, fieldInfo: null });
 								}
 							}
 						}
@@ -572,8 +636,9 @@ export async function getCustomFields(
 								if (item && typeof item === 'object') {
 									const key = item.name || item.id || item.key;
 									const displayName = item.displayName || item.label || item.caption || item.description;
-									if (key && key.startsWith('dyn_') && displayName) {
-										customFieldsMap.set(key, displayName);
+									if (key?.startsWith('dyn_') && displayName) {
+										const fieldType = inferFieldType(item, item.value || item.defaultValue);
+										customFieldsMap.set(key, { displayName, fieldType, fieldInfo: item });
 									}
 								}
 							}
@@ -582,12 +647,15 @@ export async function getCustomFields(
 							for (const [key, value] of Object.entries(response)) {
 								if (key.startsWith('dyn_')) {
 									if (typeof value === 'string' && value.trim()) {
-										customFieldsMap.set(key, value);
+										const fieldType = inferFieldType(null, value);
+										customFieldsMap.set(key, { displayName: value, fieldType, fieldInfo: null });
 									} else if (typeof value === 'object' && value !== null) {
 										const fieldInfo = value as any;
-										const displayName = fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
+										const displayName =
+											fieldInfo.displayName || fieldInfo.name || fieldInfo.caption || fieldInfo.label;
 										if (displayName) {
-											customFieldsMap.set(key, displayName);
+											const fieldType = inferFieldType(fieldInfo, fieldInfo.value || fieldInfo.defaultValue);
+											customFieldsMap.set(key, { displayName, fieldType, fieldInfo });
 										}
 									}
 								}
@@ -603,7 +671,6 @@ export async function getCustomFields(
 				}
 			} catch (endpointError) {
 				console.log(`Endpoint ${endpoint} failed:`, endpointError);
-				continue;
 			}
 		}
 
@@ -618,17 +685,19 @@ export async function getCustomFields(
 		});
 
 		// Gefundene Custom Fields hinzufügen
-		for (const [key, displayName] of customFieldsMap.entries()) {
+		for (const [key, fieldData] of customFieldsMap.entries()) {
 			options.push({
-				name: displayName,
+				name: `${fieldData.displayName} (${fieldData.fieldType})`,
 				value: key,
-				description: `${displayName} (${key})`,
+				description: `${fieldData.displayName} - Typ: ${fieldData.fieldType} (${key})`,
 			});
 		}
 
 		// Wenn keine Custom Fields gefunden wurden, zeige Standard-Beispiele
 		if (options.length === 1) {
-			console.log('Keine Custom Fields (dyn_*) in den API-Antworten gefunden, verwende Standard-Beispiele');
+			console.log(
+				'Keine Custom Fields (dyn_*) in den API-Antworten gefunden, verwende Standard-Beispiele',
+			);
 			return getDefaultCustomFields();
 		}
 
@@ -639,12 +708,93 @@ export async function getCustomFields(
 			options.unshift(autoOption!);
 		}
 
-		console.log(`${options.length} Custom Field-Optionen geladen`);
+		console.log(`${options.length} Custom Field-Optionen mit Feldtypen geladen`);
 		return options;
 	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der Custom Fields:', error);
 		console.log('Verwende Standard-Custom-Fields als Fallback');
 		return getDefaultCustomFields();
+	}
+}
+
+/**
+ * Lädt Feldtyp-Informationen für ein spezifisches Custom Field
+ */
+export async function getCustomFieldType(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	try {
+		const fieldName = this.getCurrentNodeParameter('fieldName') as any;
+		const actualFieldName = fieldName?.value || fieldName;
+		
+		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
+			return [
+				{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
+				{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
+				{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
+				{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+			];
+		}
+
+		const credentials = (await this.getCredentials('ecoDmsApi')) as unknown as EcoDmsApiCredentials;
+
+		// Versuche detaillierte Informationen für das spezifische Feld zu bekommen
+		const detailUrl = await getBaseUrl.call(this, 'classifyAttributes/detailInformation');
+
+		const response = await this.helpers.httpRequest({
+			url: detailUrl,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username,
+				password: credentials.password,
+			},
+		});
+
+		if (response && response[actualFieldName]) {
+			const fieldInfo = response[actualFieldName];
+			const inferredType = inferFieldType(fieldInfo, fieldInfo.value || fieldInfo.defaultValue);
+			
+			// Empfohlenen Typ an erste Stelle setzen
+			const options = [
+				{ name: `${inferredType} (empfohlen)`, value: inferredType.toLowerCase(), description: `Empfohlener Typ basierend auf Feldanalyse` },
+			];
+
+			// Andere Optionen hinzufügen
+			const allTypes = [
+				{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
+				{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
+				{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
+				{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+			];
+
+			for (const type of allTypes) {
+				if (type.value !== inferredType.toLowerCase()) {
+					options.push(type);
+				}
+			}
+
+			return options;
+		}
+
+		// Fallback wenn keine spezifischen Informationen verfügbar sind
+		return [
+			{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
+			{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
+			{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
+			{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+		];
+	} catch (error: unknown) {
+		console.error('Fehler beim Abrufen der Feldtyp-Informationen:', error);
+		return [
+			{ name: 'Text', value: 'string', description: 'Standard Text-Feld' },
+			{ name: 'Number', value: 'number', description: 'Numerisches Feld' },
+			{ name: 'Boolean', value: 'boolean', description: 'Ja/Nein-Feld' },
+			{ name: 'Date', value: 'dateTime', description: 'Datum/Zeit-Feld' },
+		];
 	}
 }
 

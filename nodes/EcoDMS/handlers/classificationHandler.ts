@@ -366,26 +366,30 @@ async function handleClassifyUserFriendly(
 		const folder = folderLocator.value || folderLocator;
 		const status = statusLocator.value || statusLocator;
 
-		// Baue das Klassifikationsobjekt zusammen
-		const classifyData: IDataObject = {
+		// Baue das Klassifikationsobjekt zusammen (korrekte ecoDMS API-Struktur)
+		const classifyAttributes: IDataObject = {
 			docart: documentType,
 			folder: folder,
 			status: status,
 			bemerkung: documentTitle,
+			cdate: '', // Aktuelles Datum wird automatisch gesetzt
 		};
 
 		// Füge zusätzliche Felder hinzu
 		if (additionalFields.revision) {
-			classifyData.revision = additionalFields.revision;
+			classifyAttributes.revision = additionalFields.revision;
+		} else {
+			// Für neue Dokumente verwende Standard-Revision
+			classifyAttributes.revision = '1.1';
 		}
 		if (additionalFields.keywords) {
-			classifyData.keywords = additionalFields.keywords;
+			classifyAttributes.keywords = additionalFields.keywords;
 		}
 		if (additionalFields.author) {
-			classifyData.author = additionalFields.author;
+			classifyAttributes.author = additionalFields.author;
 		}
 		if (additionalFields.documentDate) {
-			classifyData.documentDate = additionalFields.documentDate;
+			classifyAttributes.documentDate = additionalFields.documentDate;
 		}
 
 		// Behandle dynamische Custom Fields
@@ -400,7 +404,7 @@ async function handleClassifyUserFriendly(
 							typeof field.fieldName === 'object'
 								? (field.fieldName as any).value || field.fieldName
 								: field.fieldName;
-						classifyData[fieldName as string] = field.fieldValue;
+						classifyAttributes[fieldName as string] = field.fieldValue;
 					}
 				}
 			}
@@ -413,7 +417,7 @@ async function handleClassifyUserFriendly(
 				if (manualField.customField && typeof manualField.customField === 'object') {
 					const field = manualField.customField as IDataObject;
 					if (field.name && field.value) {
-						classifyData[field.name as string] = field.value;
+						classifyAttributes[field.name as string] = field.value;
 					}
 				}
 			}
@@ -472,15 +476,15 @@ async function handleClassifyUserFriendly(
 			.map((role) => role.trim())
 			.filter((role) => role);
 
-		// Füge Benutzer- und Gruppenzuweisungen zu den Berechtigungen hinzu
-		if (assignedUsers.length > 0) {
-			classifyData.assignedUsers = assignedUsers;
-		}
-		if (assignedGroups.length > 0) {
-			classifyData.assignedGroups = assignedGroups;
-		}
+		// API-Aufruf zur Klassifizierung (korrekte ecoDMS API-Struktur)
+		const requestBody = {
+			docId,
+			clDocId: docId, // Für neue Dokumente ist clDocId = docId
+			classifyAttributes,
+			editRoles: finalEditRoles,
+			readRoles: finalReadRoles,
+		};
 
-		// API-Aufruf zur Klassifizierung
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyDocument`,
 			method: 'POST',
@@ -488,12 +492,7 @@ async function handleClassifyUserFriendly(
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				docId,
-				...classifyData,
-				editRoles: finalEditRoles,
-				readRoles: finalReadRoles,
-			},
+			body: requestBody,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -506,7 +505,7 @@ async function handleClassifyUserFriendly(
 			message: 'Dokument erfolgreich klassifiziert',
 			data: {
 				docId,
-				classificationData: classifyData,
+				classifyAttributes,
 				assignedUsers: assignedUsers.length > 0 ? assignedUsers : undefined,
 				assignedGroups: assignedGroups.length > 0 ? assignedGroups : undefined,
 				editRoles: finalEditRoles,

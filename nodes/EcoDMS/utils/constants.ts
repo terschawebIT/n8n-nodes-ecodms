@@ -1,13 +1,11 @@
 export const Resource = {
 	Archive: 'archive',
 	Document: 'document',
-	Classification: 'classification',
 	DocumentType: 'documentType',
-	Search: 'search',
-	Thumbnail: 'thumbnail',
-	License: 'license',
 	Folder: 'folder',
-	Workflow: 'workflow',
+	Classification: 'classification',
+	Search: 'search',
+	License: 'license',
 } as const;
 
 export const Operation = {

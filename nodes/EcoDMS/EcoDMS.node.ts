@@ -17,7 +17,6 @@ import { handleDocumentTypeOperations } from './handlers/documentTypeHandler';
 import { handleFolderOperations } from './handlers/folderHandler';
 import { handleLicenseOperations } from './handlers/licenseHandler';
 import { handleSearchOperations } from './handlers/searchHandler';
-import { handleWorkflowOperations } from './handlers/workflowHandler';
 import { archiveFields, archiveOperations } from './resources/archive';
 import { classificationFields, classificationOperations } from './resources/classification';
 import { documentFields, documentOperations } from './resources/document';
@@ -25,12 +24,12 @@ import { documentTypeFields, documentTypeOperations } from './resources/document
 import { folderFields, folderOperations } from './resources/folder';
 import { licenseFields, licenseOperations } from './resources/license';
 import { searchFields, searchOperations } from './resources/search';
-import { workflowFields, workflowOperations } from './resources/workflow';
 import { Resource } from './utils/constants';
 import { createNodeError } from './utils/errorHandler';
 import {
 	getClassificationAttributes,
 	getCustomFields,
+	getCustomFieldType,
 	getDocumentTypes,
 	getFolders,
 	getGroups,
@@ -102,11 +101,6 @@ export class EcoDMS implements INodeType {
 						value: Resource.License,
 						description: 'Lizenzinformationen abrufen',
 					},
-					{
-						name: 'Workflow',
-						value: Resource.Workflow,
-						description: 'Kombinierte Operationen für vereinfachte Workflows',
-					},
 				],
 				default: Resource.Document,
 				required: true,
@@ -120,7 +114,6 @@ export class EcoDMS implements INodeType {
 			searchOperations,
 			folderOperations,
 			licenseOperations,
-			workflowOperations,
 
 			// Parameter für die Ressourcentypen
 			...documentFields,
@@ -130,7 +123,6 @@ export class EcoDMS implements INodeType {
 			...searchFields,
 			...folderFields,
 			...licenseFields,
-			...workflowFields,
 		],
 	};
 
@@ -159,6 +151,10 @@ export class EcoDMS implements INodeType {
 
 			async getCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getCustomFields.call(this);
+			},
+
+			async getCustomFieldType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getCustomFieldType.call(this);
 			},
 
 			async getUsers(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
@@ -313,9 +309,6 @@ export class EcoDMS implements INodeType {
 					break;
 				case Resource.License:
 					responseData = await handleLicenseOperations.call(this, items, operation, credentials);
-					break;
-				case Resource.Workflow:
-					responseData = await handleWorkflowOperations.call(this, items, operation, credentials);
 					break;
 				case Resource.DocumentType:
 					responseData = await handleDocumentTypeOperations.call(this, items, operation, credentials);

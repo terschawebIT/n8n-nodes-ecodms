@@ -452,15 +452,11 @@ export const classificationFields: INodeProperties[] = [
 								displayName: 'Feldtyp',
 								name: 'fieldType',
 								type: 'options',
-								options: [
-									{ name: 'Text', value: 'text' },
-									{ name: 'Zahl', value: 'number' },
-									{ name: 'Datum', value: 'date' },
-									{ name: 'Boolean', value: 'boolean' },
-									{ name: 'Dropdown', value: 'dropdown' },
-								],
-								default: 'text',
-								description: 'Typ des Custom Fields',
+								typeOptions: {
+									loadOptionsMethod: 'getCustomFieldType',
+								},
+								default: 'string',
+								description: 'Typ des Custom Fields (wird automatisch erkannt basierend auf dem gewählten Feld)',
 							},
 							{
 								displayName: 'Wert',
