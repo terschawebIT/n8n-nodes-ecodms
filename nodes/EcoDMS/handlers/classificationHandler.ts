@@ -3,6 +3,7 @@ import {
 	type IExecuteFunctions,
 	type INodeExecutionData,
 	NodeOperationError,
+	IRequestOptions,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError, getErrorMessage } from '../utils/errorHandler';
@@ -355,11 +356,44 @@ async function handleClassifyUserFriendly(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
+
+		// Debug-Ausgaben
+		console.log('=== BENUTZERFREUNDLICHE KLASSIFIZIERUNG GESTARTET ===');
+		console.log('DocID:', docId, 'Type:', typeof docId);
+
+		// Zuerst Dokumentinformationen abrufen um clDocId zu erhalten
+		const documentInfoUrl = `${credentials.serverUrl as string}/api/getDocumentInfo`;
+		console.log('Rufe Dokumentinformationen ab:', documentInfoUrl);
+		
+		const documentInfoOptions: IRequestOptions = {
+			method: 'POST',
+			body: { docId },
+			json: true,
+			uri: documentInfoUrl,
+			auth: {
+				user: credentials.username as string,
+				pass: credentials.password as string,
+			},
+		};
+
+		let documentInfo;
+		try {
+			documentInfo = await this.helpers.request(documentInfoOptions);
+			console.log('Dokumentinformationen erhalten:', JSON.stringify(documentInfo, null, 2));
+		} catch (error) {
+			console.error('Fehler beim Abrufen der Dokumentinformationen:', error);
+			throw new NodeOperationError(this.getNode(), `Fehler beim Abrufen der Dokumentinformationen: ${(error as Error).message}`);
+		}
+
+		// Extrahiere clDocId aus den Dokumentinformationen
+		const clDocId = documentInfo?.data?.[0]?.clDocId || docId;
+		console.log('Verwende clDocId:', clDocId);
+
 		const documentTypeLocator = this.getNodeParameter('documentType', 0) as any;
 		const folderLocator = this.getNodeParameter('folder', 0) as any;
 		const statusLocator = this.getNodeParameter('status', 0) as any;
 		const documentTitle = this.getNodeParameter('documentTitle', 0) as string;
-		const additionalFields = this.getNodeParameter('additionalFields', 0, {}) as IDataObject;
+		const additionalFields = this.getNodeParameter('additionalFields', 0) as IDataObject;
 
 		// Resource Locator Values extrahieren
 		const documentType = documentTypeLocator.value || documentTypeLocator;
@@ -372,9 +406,9 @@ async function handleClassifyUserFriendly(
 			folder: folder,
 			status: status,
 			bemerkung: documentTitle,
-			cdate: '', // Aktuelles Datum wird automatisch gesetzt
+			cdate: additionalFields.documentDate || '', // Dokumentdatum (nicht Erstellungszeit!)
 			// Pflichtfelder basierend auf funktionierendem Beispiel
-			docid: `${docId}#${docId}`, // docId#clDocId Format
+			docid: `${docId}#${clDocId}`, // KORREKTES Format: docId#clDocId
 			changeid: credentials.username || 'n8n-ecodms', // API-Benutzer als changeid
 			rechte: 'W', // Write-Berechtigung
 			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Aktueller Zeitstempel
@@ -486,7 +520,7 @@ async function handleClassifyUserFriendly(
 		// API-Aufruf zur Klassifizierung (korrekte ecoDMS API-Struktur)
 		const requestBody = {
 			docId,
-			clDocId: docId, // Für neue Dokumente ist clDocId = docId
+			clDocId: clDocId,
 			classifyAttributes,
 			editRoles: finalEditRoles,
 			readRoles: finalReadRoles,
