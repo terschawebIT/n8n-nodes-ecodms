@@ -2,11 +2,7 @@
 	"name": "n8n-nodes-ecodms",
 	"version": "0.2.23",
 	"description": "ecoDMS-Integration für n8n",
-	"keywords": [
-		"n8n-community-node-package",
-		"n8n",
-		"ecodms"
-	],
+	"keywords": ["n8n-community-node-package", "n8n", "ecodms"],
 	"license": "MIT",
 	"homepage": "https://github.com/terschawebIT/n8n-nodes-ecodms",
 	"author": {
@@ -37,17 +33,11 @@
 		"patch": "npm version patch && npm run build && git add . && git commit -m 'chore: version bump' && git push && npm publish",
 		"package": "npm run build && npm pack"
 	},
-	"files": [
-		"dist"
-	],
+	"files": ["dist"],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
-		"credentials": [
-			"dist/credentials/EcoDmsApi.credentials.js"
-		],
-		"nodes": [
-			"dist/nodes/EcoDMS/EcoDMS.node.js"
-		]
+		"credentials": ["dist/credentials/EcoDmsApi.credentials.js"],
+		"nodes": ["dist/nodes/EcoDMS/EcoDMS.node.js"]
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
