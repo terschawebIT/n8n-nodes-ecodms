@@ -825,7 +825,32 @@ async function extractDynFieldsFromAttributes(
 						fieldType = 'Date';
 						break;
 					default:
-						fieldType = 'Text';
+						// Erweiterte Typ-Inferenz basierend auf displayName für TextField
+						const lowerDisplayName = displayName.toLowerCase();
+						if (
+							lowerDisplayName.includes('betrag') ||
+							lowerDisplayName.includes('amount') ||
+							lowerDisplayName.includes('preis') ||
+							lowerDisplayName.includes('kosten') ||
+							lowerDisplayName.includes('summe') ||
+							lowerDisplayName.includes('wert')
+						) {
+							fieldType = 'Number';
+						} else if (
+							lowerDisplayName.includes('datum') ||
+							lowerDisplayName.includes('date')
+						) {
+							fieldType = 'Date';
+						} else if (
+							lowerDisplayName.includes('aktiv') ||
+							lowerDisplayName.includes('bezahlt') ||
+							lowerDisplayName.includes('paid') ||
+							lowerDisplayName.includes('enabled')
+						) {
+							fieldType = 'Boolean';
+						} else {
+							fieldType = 'Text';
+						}
 						break;
 				}
 
@@ -1058,7 +1083,12 @@ export async function getComboBoxOptions(
 		const fieldName = this.getCurrentNodeParameter('fieldName') as any;
 		const actualFieldName = fieldName?.value || fieldName;
 
+		console.log('=== DEBUG getComboBoxOptions ===');
+		console.log('fieldName:', fieldName);
+		console.log('actualFieldName:', actualFieldName);
+
 		if (!actualFieldName || !actualFieldName.startsWith('dyn_')) {
+			console.log('Field name invalid, returning empty array');
 			return [];
 		}
 
@@ -1100,17 +1130,23 @@ export async function getComboBoxOptions(
 		}
 
 		const fieldInfo = customFieldsMap.get(actualFieldName);
+		console.log('fieldInfo found:', fieldInfo);
+		console.log('classificationContent:', fieldInfo?.fieldInfo?.classificationContent);
+		
 		if (
 			fieldInfo?.fieldInfo?.classificationContent &&
 			Array.isArray(fieldInfo.fieldInfo.classificationContent)
 		) {
-			return fieldInfo.fieldInfo.classificationContent.map((option: any) => ({
+			const options = fieldInfo.fieldInfo.classificationContent.map((option: any) => ({
 				name: option,
 				value: option,
 				description: `Option: ${option}`,
 			}));
+			console.log('Returning options:', options);
+			return options;
 		}
 
+		console.log('No classification content found, returning empty array');
 		return [];
 	} catch (error: unknown) {
 		console.error('Fehler beim Abrufen der ComboBox-Optionen:', error);
