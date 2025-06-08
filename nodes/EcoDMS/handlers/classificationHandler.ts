@@ -373,6 +373,13 @@ async function handleClassifyUserFriendly(
 			status: status,
 			bemerkung: documentTitle,
 			cdate: '', // Aktuelles Datum wird automatisch gesetzt
+			// Pflichtfelder basierend auf funktionierendem Beispiel
+			docid: `${docId}#${docId}`, // docId#clDocId Format
+			changeid: credentials.username || 'n8n-ecodms', // API-Benutzer als changeid
+			rechte: 'W', // Write-Berechtigung
+			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Aktueller Zeitstempel
+			mainfolder: '0', // Standard Hauptordner
+			defdate: '', // Leeres Datum-Feld
 		};
 
 		// Füge zusätzliche Felder hinzu
@@ -380,7 +387,7 @@ async function handleClassifyUserFriendly(
 			classifyAttributes.revision = additionalFields.revision;
 		} else {
 			// Für neue Dokumente verwende Standard-Revision
-			classifyAttributes.revision = '1.1';
+			classifyAttributes.revision = '1.0';
 		}
 		if (additionalFields.keywords) {
 			classifyAttributes.keywords = additionalFields.keywords;
@@ -503,6 +510,17 @@ async function handleClassifyUserFriendly(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+		}).catch((error: any) => {
+			console.log('=== API ERROR DETAILS ===');
+			console.log('Status Code:', error.statusCode);
+			console.log('Response:', error.response?.body || error.message);
+			console.log('Error Details:', error);
+			
+			// Versuche dokumentInfo zu prüfen
+			if (error.statusCode === 404) {
+				console.log('HTTP 404 - möglicherweise ungültige docId oder falsche Attribute');
+			}
+			throw error;
 		});
 
 		return {
