@@ -556,10 +556,12 @@ async function handleClassifyUserFriendly(
 
 		// Behandle documentDate korrekt: nur gültige Datumsformate oder leer lassen
 		let documentDate = '';
-		if (additionalFields.documentDate && 
-			additionalFields.documentDate !== 'Not specified' && 
+		if (
+			additionalFields.documentDate &&
+			additionalFields.documentDate !== 'Not specified' &&
 			typeof additionalFields.documentDate === 'string' &&
-			additionalFields.documentDate.trim() !== '') {
+			additionalFields.documentDate.trim() !== ''
+		) {
 			// Prüfe ob es ein gültiges Datum im Format YYYY-MM-DD ist
 			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 			if (dateRegex.test(additionalFields.documentDate as string)) {
@@ -721,10 +723,10 @@ async function handleClassifyUserFriendly(
 		if (finalEditRoles.length === 0 && finalReadRoles.length === 0) {
 			const existingEditRoles = documentInfo?.[0]?.editRoles || [];
 			const existingReadRoles = documentInfo?.[0]?.readRoles || [];
-			
+
 			finalEditRoles.push(...existingEditRoles);
 			finalReadRoles.push(...existingReadRoles);
-			
+
 			// Falls immer noch keine Edit-Rollen vorhanden sind, Fallback auf Benutzer-Rolle
 			if (finalEditRoles.length === 0) {
 				finalEditRoles.push(`r_${credentials.username}`);
