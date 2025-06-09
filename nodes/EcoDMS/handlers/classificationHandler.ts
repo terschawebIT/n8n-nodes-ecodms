@@ -534,7 +534,8 @@ async function handleClassifyUserFriendly(
 
 		// Debug: Zeige Input-Parameter
 		console.log('=== INPUT PARAMETER ===');
-		console.log('documentType:', documentType);
+		console.log('documentTypeLocator:', documentTypeLocator);
+		console.log('documentType extracted:', documentType);
 		console.log('folder:', folder);
 		console.log('status:', status);
 		console.log('documentTitle:', documentTitle);
@@ -553,6 +554,25 @@ async function handleClassifyUserFriendly(
 		console.log('Anzahl Felder:', Object.keys(existingAttributes).length);
 		console.log('Felder:', Object.keys(existingAttributes));
 
+		// Behandle documentDate korrekt: nur gültige Datumsformate oder leer lassen
+		let documentDate = '';
+		if (additionalFields.documentDate && 
+			additionalFields.documentDate !== 'Not specified' && 
+			typeof additionalFields.documentDate === 'string' &&
+			additionalFields.documentDate.trim() !== '') {
+			// Prüfe ob es ein gültiges Datum im Format YYYY-MM-DD ist
+			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+			if (dateRegex.test(additionalFields.documentDate as string)) {
+				documentDate = additionalFields.documentDate as string;
+			}
+		}
+
+		console.log('=== EXTRACTED VALUES DEBUG ===');
+		console.log('documentType type:', typeof documentType, 'value:', documentType);
+		console.log('folder type:', typeof folder, 'value:', folder);
+		console.log('status type:', typeof status, 'value:', status);
+		console.log('documentDate type:', typeof documentDate, 'value:', documentDate);
+
 		const classifyAttributes: IDataObject = {
 			...existingAttributes, // ALLE existierenden Felder übernehmen (auch leere dyn_* Felder)
 			// Überschreibe nur die gewünschten Felder
@@ -565,7 +585,7 @@ async function handleClassifyUserFriendly(
 			rechte: 'W', // Write-Berechtigung
 			ctimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19), // Aktueller Zeitstempel
 			revision: '1.0', // Standard Revision für neue Dokumente
-			cdate: additionalFields.documentDate || '', // Dokumentdatum aus UI
+			cdate: documentDate, // Dokumentdatum nur wenn gültig, sonst leer
 		};
 
 		// ENTFERNE documentDate aus classifyAttributes - gehört NICHT dorthin!
@@ -674,10 +694,42 @@ async function handleClassifyUserFriendly(
 			}
 		}
 
-		// Standard-Berechtigungen setzen (da Benutzer/Gruppen spezifisch zugewiesen werden)
-		// ecoDMS benötigt diese Felder, aber wir verwenden Standardwerte
-		const finalEditRoles = ['Elite']; // Standard-Bearbeitungsrolle
-		const finalReadRoles: string[] = []; // Keine allgemeinen Leserollen (nur spezifische Benutzer/Gruppen)
+		// Verwalte Berechtigungen basierend auf UI-Eingaben
+		const finalEditRoles: string[] = [];
+		const finalReadRoles: string[] = [];
+
+		// Verarbeite zugewiesene Benutzer und Gruppen
+		for (const userAssignment of assignedUsers) {
+			const [userId, permission] = userAssignment.split(':');
+			if (permission === 'edit' || permission === 'full') {
+				finalEditRoles.push(userId);
+			} else {
+				finalReadRoles.push(userId);
+			}
+		}
+
+		for (const groupAssignment of assignedGroups) {
+			const [groupId, permission] = groupAssignment.split(':');
+			if (permission === 'edit' || permission === 'full') {
+				finalEditRoles.push(groupId);
+			} else {
+				finalReadRoles.push(groupId);
+			}
+		}
+
+		// Falls keine spezifischen Rollen zugewiesen wurden, verwende die existierenden Dokumentrollen
+		if (finalEditRoles.length === 0 && finalReadRoles.length === 0) {
+			const existingEditRoles = documentInfo?.[0]?.editRoles || [];
+			const existingReadRoles = documentInfo?.[0]?.readRoles || [];
+			
+			finalEditRoles.push(...existingEditRoles);
+			finalReadRoles.push(...existingReadRoles);
+			
+			// Falls immer noch keine Edit-Rollen vorhanden sind, Fallback auf Benutzer-Rolle
+			if (finalEditRoles.length === 0) {
+				finalEditRoles.push(`r_${credentials.username}`);
+			}
+		}
 
 		// API-Aufruf zur Klassifizierung (korrekte ecoDMS API-Struktur)
 		const requestBody = {
