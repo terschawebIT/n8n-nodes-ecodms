@@ -1,7 +1,7 @@
 # Dependency directories
 node_modules/
 dist/
-
+. cursorrules
 # IDE directories
 .idea/
 .vscode/
@@ -34,7 +34,25 @@ combined.log
 .env.*
 !.env.example
 
-# Test coverage
+# Secrets and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa
+id_dsa
+*.pub
+*.gpg
+*.asc
+
+# Tooling caches
+.npm/
+.yarn/
+.pnpm-store/
+.cache/
 coverage/
 
 # Temporary files
@@ -48,6 +66,10 @@ coverage/
 
 # Package files
 *.tgz
+
+# Local test data
+*.local.*
+secrets.*
 
 # Environment variables
 .env 
