@@ -29,8 +29,8 @@ import { createNodeError } from './utils/errorHandler';
 import {
 	getClassificationAttributes,
 	getComboBoxOptions,
-	getCustomFieldType,
 	getCustomFields,
+	getCustomFieldType,
 	getDocumentTypes,
 	getFolders,
 	getGroups,

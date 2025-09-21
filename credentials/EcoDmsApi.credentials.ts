@@ -2,8 +2,8 @@ import type {
 	IAuthenticateGeneric,
 	ICredentialTestRequest,
 	ICredentialType,
-	INodeProperties,
 	Icon,
+	INodeProperties,
 } from 'n8n-workflow';
 
 export class EcoDmsApi implements ICredentialType {

@@ -19,7 +19,7 @@ interface ArchiveResponse extends IDataObject {
  */
 export async function handleArchiveOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {

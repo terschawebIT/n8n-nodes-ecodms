@@ -19,7 +19,7 @@ interface ClassificationResponse extends IDataObject {
  */
 export async function handleClassificationOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
@@ -34,16 +34,16 @@ export async function handleClassificationOperations(
 			break;
 
 		case Operation.CreateNewClassify:
-			result = await handleCreateNewClassify.call(this, items, credentials);
+				result = await handleCreateNewClassify.call(this, _items, credentials);
 			break;
 		case Operation.ClassifyInboxDocument:
-			result = await handleClassifyInboxDocument.call(this, items, credentials);
+				result = await handleClassifyInboxDocument.call(this, _items, credentials);
 			break;
 		case Operation.ClassifyDocument:
-			result = await handleClassifyDocument.call(this, items, credentials);
+				result = await handleClassifyDocument.call(this, _items, credentials);
 			break;
 		case 'classifyUserFriendly':
-			result = await handleClassifyUserFriendly.call(this, items, credentials);
+				result = await handleClassifyUserFriendly.call(this, _items, credentials);
 			break;
 		case Operation.RemoveDocumentLink:
 			result = await handleRemoveDocumentLink.call(this, credentials);
@@ -258,7 +258,7 @@ async function handleGetClassifyAttributesDetail(
  */
 async function handleCreateNewClassify(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
@@ -304,7 +304,7 @@ async function handleCreateNewClassify(
  */
 async function handleClassifyInboxDocument(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
@@ -350,12 +350,16 @@ async function handleClassifyInboxDocument(
  */
 async function handleClassifyDocument(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
 		const fields = this.getNodeParameter('fields', 0) as string;
+
+		// Lese die Berechtigungsfelder aus den UI-Parametern
+		const editRolesParam = this.getNodeParameter('editRoles', 0, '') as string;
+		const readRolesParam = this.getNodeParameter('readRoles', 0, '') as string;
 
 		let fieldsData: IDataObject;
 		try {
@@ -368,6 +372,40 @@ async function handleClassifyDocument(
 			);
 		}
 
+		// Verarbeite die Berechtigungsfelder
+		const editRoles: string[] = editRolesParam
+			? editRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+		const readRoles: string[] = readRolesParam
+			? readRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+
+		// Erstelle Request Body mit Berechtigungen
+		const requestBody: IDataObject = {
+			docId,
+			...fieldsData,
+		};
+
+		// Füge Berechtigungen hinzu, falls vorhanden
+		if (editRoles.length > 0) {
+			requestBody.editRoles = editRoles;
+		}
+		if (readRoles.length > 0) {
+			requestBody.readRoles = readRoles;
+		}
+
+		console.log('=== CLASSIFY DOCUMENT DEBUG ===');
+		console.log('DocID:', docId);
+		console.log('Edit Roles:', editRoles);
+		console.log('Read Roles:', readRoles);
+		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+
 		// Versuche verschiedene API-Endpunkte
 		try {
 			// Primärer API-Endpunkt
@@ -378,10 +416,7 @@ async function handleClassifyDocument(
 					Accept: 'application/json',
 					'Content-Type': 'application/json',
 				},
-				body: {
-					docId,
-					...fieldsData,
-				},
+				body: requestBody,
 				json: true,
 				auth: {
 					username: credentials.username as string,
@@ -406,9 +441,8 @@ async function handleClassifyDocument(
 						'Content-Type': 'application/json',
 					},
 					body: {
-						docId,
+						...requestBody,
 						useIds: true,
-						...fieldsData,
 					},
 					json: true,
 					auth: {
@@ -433,10 +467,7 @@ async function handleClassifyDocument(
 							Accept: 'application/json',
 							'Content-Type': 'application/json',
 						},
-						body: {
-							docId,
-							...fieldsData,
-						},
+						body: requestBody,
 						json: true,
 						auth: {
 							username: credentials.username as string,
@@ -480,7 +511,7 @@ async function handleClassifyDocument(
  */
 async function handleClassifyUserFriendly(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<ClassificationResponse> {
 	try {
@@ -679,21 +710,40 @@ async function handleClassifyUserFriendly(
 		// Behandle zugewiesene Gruppen
 		const assignedGroups: string[] = [];
 		if (additionalFields.assignedGroups && Array.isArray(additionalFields.assignedGroups)) {
+			console.log('=== GROUPS DEBUG ===');
+			console.log('assignedGroups raw:', JSON.stringify(additionalFields.assignedGroups, null, 2));
+
 			const groupAssignments = additionalFields.assignedGroups as IDataObject[];
 			for (const groupAssignment of groupAssignments) {
+				console.log('Processing groupAssignment:', JSON.stringify(groupAssignment, null, 2));
+
 				if (groupAssignment.group && typeof groupAssignment.group === 'object') {
 					const group = groupAssignment.group as IDataObject;
+					console.log('Group object:', JSON.stringify(group, null, 2));
+
 					const groupId =
 						typeof group.groupId === 'object'
 							? (group.groupId as any).value || group.groupId
 							: group.groupId;
 					const permission = group.permission || 'read';
 
+					console.log('Extracted groupId:', groupId, 'permission:', permission);
+
 					if (groupId) {
 						assignedGroups.push(`${groupId}:${permission}`);
+						console.log('Added to assignedGroups:', `${groupId}:${permission}`);
+					} else {
+						console.log('❌ GroupId is empty, skipping');
 					}
+				} else {
+					console.log('❌ No group object found in groupAssignment');
 				}
 			}
+
+			console.log('Final assignedGroups array:', assignedGroups);
+		} else {
+			console.log('=== NO GROUPS ASSIGNED ===');
+			console.log('additionalFields.assignedGroups:', additionalFields.assignedGroups);
 		}
 
 		// Verwalte Berechtigungen basierend auf UI-Eingaben
@@ -712,10 +762,16 @@ async function handleClassifyUserFriendly(
 
 		for (const groupAssignment of assignedGroups) {
 			const [groupId, permission] = groupAssignment.split(':');
+			console.log('=== PROCESSING GROUP ASSIGNMENT ===');
+			console.log('Raw groupAssignment:', groupAssignment);
+			console.log('Split groupId:', groupId, 'permission:', permission);
+
 			if (permission === 'edit' || permission === 'full') {
 				finalEditRoles.push(groupId);
+				console.log('✅ Added to finalEditRoles:', groupId);
 			} else {
 				finalReadRoles.push(groupId);
+				console.log('✅ Added to finalReadRoles:', groupId);
 			}
 		}
 
@@ -744,6 +800,11 @@ async function handleClassifyUserFriendly(
 
 		console.log('=== DEBUG classifyUserFriendly ===');
 		console.log('DocID:', docId, 'Type:', typeof docId);
+		console.log('=== FINAL ROLES DEBUG ===');
+		console.log('finalEditRoles:', finalEditRoles);
+		console.log('finalReadRoles:', finalReadRoles);
+		console.log('assignedGroups (processed):', assignedGroups);
+		console.log('assignedUsers (processed):', assignedUsers);
 		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
 		console.log('API URL:', `${credentials.serverUrl as string}/api/classifyDocument`);
 

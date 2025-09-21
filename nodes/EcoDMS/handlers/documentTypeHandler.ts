@@ -19,7 +19,7 @@ interface DocumentTypeResponse extends IDataObject {
  */
 export async function handleDocumentTypeOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {

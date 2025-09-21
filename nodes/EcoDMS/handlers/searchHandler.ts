@@ -20,7 +20,7 @@ interface SearchResponse extends IDataObject {
  */
 export async function handleSearchOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
@@ -34,7 +34,7 @@ export async function handleSearchOperations(
 			result = await handleAdvancedSearch.call(this, credentials);
 			break;
 		case Operation.SearchAndDownload:
-			result = await handleSearchAndDownload.call(this, items, credentials);
+			result = await handleSearchAndDownload.call(this, _items, credentials);
 			break;
 		default:
 			throw new NodeOperationError(
@@ -113,7 +113,7 @@ async function handleAdvancedSearch(
 	credentials: IDataObject,
 ): Promise<SearchResponse> {
 	const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
-	const additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
+	const _additionalOptions = this.getNodeParameter('additionalOptions', 0, {}) as IDataObject;
 
 	try {
 		// Verwende die korrekte ecoDMS API URL
@@ -163,7 +163,7 @@ async function handleAdvancedSearch(
  */
 async function handleSearchAndDownload(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
 	const searchTerm = this.getNodeParameter('searchText', 0) as string;

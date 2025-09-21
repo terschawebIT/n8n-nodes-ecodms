@@ -19,7 +19,7 @@ interface LicenseResponse extends IDataObject {
  */
 export async function handleLicenseOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {

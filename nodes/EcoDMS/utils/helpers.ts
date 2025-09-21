@@ -598,7 +598,7 @@ function inferFieldType(fieldInfo: any, value: any): string {
 			return 'Number';
 		}
 		// Datum-Pattern prüfen
-		if (/^\d{4}-\d{2}-\d{2}/.test(value) || /^\d{2}[.\/]\d{2}[.\/]\d{4}/.test(value)) {
+		if (/^\d{4}-\d{2}-\d{2}/.test(value) || /^\d{2}[./]\d{2}[./]\d{4}/.test(value)) {
 			return 'Date';
 		}
 	}
@@ -723,7 +723,7 @@ export async function getCustomFields(
 								}
 							}
 						}
-					} catch (docError) {
+					} catch (_docError) {
 						// Ignore einzelne Dokument-Fehler
 					}
 				}
@@ -1606,7 +1606,7 @@ export async function searchClassificationAttributes(
 				}
 
 				// Füge dynamische Felder hinzu
-				for (const [key, value] of Object.entries(classifyAttributes)) {
+				for (const [key, _value] of Object.entries(classifyAttributes)) {
 					if (key.startsWith('dyn_')) {
 						// Versuche einen benutzerfreundlichen Namen zu finden
 						let displayName = key;
@@ -1618,7 +1618,7 @@ export async function searchClassificationAttributes(
 							if (fieldMatch) {
 								displayName = fieldMatch.name;
 							}
-						} catch (error) {
+						} catch (_error) {
 							// Ignoriere Fehler beim Abrufen der Custom Fields
 						}
 

@@ -20,7 +20,7 @@ interface DocumentResponse extends IDataObject {
  */
 export async function handleDocumentOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
@@ -36,19 +36,19 @@ export async function handleDocumentOperations(
 			result = [{ json: info }];
 			break;
 		case Operation.GetDocumentWithClassification:
-			result = await handleGetDocumentWithClassification.call(this, items, credentials);
+			result = await handleGetDocumentWithClassification.call(this, _items, credentials);
 			break;
 		case Operation.GetDocumentVersion:
-			result = await handleGetDocumentVersion.call(this, items, credentials);
+			result = await handleGetDocumentVersion.call(this, _items, credentials);
 			break;
 		case Operation.Upload:
-			result = await handleUploadDocument.call(this, items, credentials);
+			result = await handleUploadDocument.call(this, _items, credentials);
 			break;
 		case Operation.AddVersion:
-			result = await handleAddDocumentVersion.call(this, items, credentials);
+			result = await handleAddDocumentVersion.call(this, _items, credentials);
 			break;
 		case Operation.UploadFile:
-			result = await handleUploadFile.call(this, items, credentials);
+			result = await handleUploadFile.call(this, _items, credentials);
 			break;
 		default:
 			throw new NodeOperationError(
@@ -196,7 +196,7 @@ async function handleGetDocument(
  */
 async function handleGetDocumentWithClassification(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
 	const docId = this.getNodeParameter('docId', 0) as string;
@@ -268,7 +268,7 @@ async function handleGetDocumentWithClassification(
  */
 async function handleGetDocumentVersion(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
 	const docId = this.getNodeParameter('docId', 0) as string;

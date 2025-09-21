@@ -19,7 +19,7 @@ interface FolderResponse extends IDataObject {
  */
 export async function handleFolderOperations(
 	this: IExecuteFunctions,
-	items: INodeExecutionData[],
+	_items: INodeExecutionData[],
 	operation: string,
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {

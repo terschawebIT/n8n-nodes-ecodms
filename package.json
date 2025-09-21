@@ -2,7 +2,11 @@
 	"name": "n8n-nodes-ecodms",
 	"version": "0.2.47",
 	"description": "ecoDMS-Integration für n8n",
-	"keywords": ["n8n-community-node-package", "n8n", "ecodms"],
+	"keywords": [
+		"n8n-community-node-package",
+		"n8n",
+		"ecodms"
+	],
 	"license": "MIT",
 	"homepage": "https://github.com/terschawebIT/n8n-nodes-ecodms",
 	"author": {
@@ -33,23 +37,30 @@
 		"patch": "npm version patch && npm run build && git add . && git commit -m 'chore: version bump' && git push && npm publish",
 		"package": "npm run build && npm pack"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
-		"credentials": ["dist/credentials/EcoDmsApi.credentials.js"],
-		"nodes": ["dist/nodes/EcoDMS/EcoDMS.node.js"]
+		"credentials": [
+			"dist/credentials/EcoDmsApi.credentials.js"
+		],
+		"nodes": [
+			"dist/nodes/EcoDMS/EcoDMS.node.js"
+		]
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"@types/node": "^20.10.6",
+		"@biomejs/biome": "^2.2.4",
+		"@types/node": "^24.5.2",
 		"gulp": "^5.0.1",
 		"n8n-workflow": "*",
-		"typescript": "^5.3.3"
+		"typescript": "^5.9.2"
 	},
 	"dependencies": {
 		"form-data": "^4.0.4"
 	},
 	"overrides": {
-		"form-data": "^4.0.4"
+		"form-data": "^4.0.4",
+		"axios": ">=1.12.2"
 	}
 }
