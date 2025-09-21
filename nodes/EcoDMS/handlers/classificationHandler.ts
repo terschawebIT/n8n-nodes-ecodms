@@ -34,16 +34,16 @@ export async function handleClassificationOperations(
 			break;
 
 		case Operation.CreateNewClassify:
-				result = await handleCreateNewClassify.call(this, _items, credentials);
+			result = await handleCreateNewClassify.call(this, _items, credentials);
 			break;
 		case Operation.ClassifyInboxDocument:
-				result = await handleClassifyInboxDocument.call(this, _items, credentials);
+			result = await handleClassifyInboxDocument.call(this, _items, credentials);
 			break;
 		case Operation.ClassifyDocument:
-				result = await handleClassifyDocument.call(this, _items, credentials);
+			result = await handleClassifyDocument.call(this, _items, credentials);
 			break;
 		case 'classifyUserFriendly':
-				result = await handleClassifyUserFriendly.call(this, _items, credentials);
+			result = await handleClassifyUserFriendly.call(this, _items, credentials);
 			break;
 		case Operation.RemoveDocumentLink:
 			result = await handleRemoveDocumentLink.call(this, credentials);
