@@ -141,6 +141,7 @@ export async function getFolders(this: ILoadOptionsFunctions): Promise<INodeProp
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('Folders-API-Antwort:', JSON.stringify(response).substring(0, 200));
@@ -223,6 +224,7 @@ export async function getDocumentTypes(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('DocumentTypes-API-Antwort:', JSON.stringify(response).substring(0, 200));
@@ -305,6 +307,7 @@ export async function getStatusValues(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('Status-API-Antwort:', JSON.stringify(response).substring(0, 200));
@@ -387,6 +390,7 @@ export async function getClassificationAttributes(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('ClassificationAttributes-API-Antwort:', JSON.stringify(response).substring(0, 200));
@@ -480,6 +484,7 @@ export async function getTypeClassifications(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('TypeClassifications-API-Antwort:', JSON.stringify(response).substring(0, 200));
@@ -654,6 +659,7 @@ export async function getCustomFields(
 						username: credentials.username,
 						password: credentials.password,
 					},
+					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 				});
 
 				console.log(
@@ -720,6 +726,7 @@ export async function getCustomFields(
 								username: credentials.username,
 								password: credentials.password,
 							},
+							skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 						});
 
 						if (Array.isArray(docInfoResponse) && docInfoResponse.length > 0) {
@@ -974,6 +981,7 @@ export async function getCustomFieldType(
 						username: credentials.username,
 						password: credentials.password,
 					},
+					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 				});
 
 				if (response) {
@@ -1042,6 +1050,7 @@ export async function getCustomFieldType(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		if (response?.[actualFieldName]) {
@@ -1167,6 +1176,7 @@ export async function getComboBoxOptions(
 						username: credentials.username,
 						password: credentials.password,
 					},
+					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 				});
 
 				if (response) {
@@ -1268,6 +1278,7 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('Roles-API-Antwort:', JSON.stringify(rolesResponse).substring(0, 200));
@@ -1307,6 +1318,7 @@ export async function getUsers(this: ILoadOptionsFunctions): Promise<INodeProper
 							username: credentials.username,
 							password: credentials.password,
 						},
+						skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 					});
 
 					if (Array.isArray(usersResponse)) {
@@ -1415,6 +1427,7 @@ export async function getGroups(this: ILoadOptionsFunctions): Promise<INodePrope
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('Groups-Roles-API-Antwort:', JSON.stringify(rolesResponse).substring(0, 200));
@@ -1576,6 +1589,7 @@ export async function searchClassificationAttributes(
 					username: credentials.username,
 					password: credentials.password,
 				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 			});
 
 			console.log('Dokumentspezifische Attribute:', JSON.stringify(documentInfo).substring(0, 200));
@@ -1665,6 +1679,7 @@ export async function searchClassificationAttributes(
 				username: credentials.username,
 				password: credentials.password,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		const options: INodePropertyOptions[] = [];
