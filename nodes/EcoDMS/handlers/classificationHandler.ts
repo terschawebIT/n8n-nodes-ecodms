@@ -7,6 +7,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError, getErrorMessage } from '../utils/errorHandler';
+import { shouldSkipSslValidation } from '../utils/helpers';
 
 interface ClassificationResponse extends IDataObject {
 	success?: boolean;
@@ -80,6 +81,7 @@ async function handleGetClassifyAttributes(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -110,6 +112,7 @@ async function handleGetClassifyAttributesDetail(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// Optional: Filter anwenden falls attributeFilter Parameter gesetzt ist
@@ -288,6 +291,7 @@ async function handleCreateNewClassify(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -334,6 +338,7 @@ async function handleClassifyInboxDocument(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -422,6 +427,7 @@ async function handleClassifyDocument(
 					username: credentials.username as string,
 					password: credentials.password as string,
 				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 			});
 
 			return {
@@ -449,6 +455,7 @@ async function handleClassifyDocument(
 						username: credentials.username as string,
 						password: credentials.password as string,
 					},
+					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 				});
 
 				return {
@@ -473,6 +480,7 @@ async function handleClassifyDocument(
 							username: credentials.username as string,
 							password: credentials.password as string,
 						},
+						skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 					});
 
 					return {
@@ -884,6 +892,7 @@ async function handleRemoveDocumentLink(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -919,6 +928,7 @@ async function handleLinkToDocuments(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {

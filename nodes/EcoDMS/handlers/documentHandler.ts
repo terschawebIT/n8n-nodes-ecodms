@@ -7,7 +7,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError, getErrorMessage } from '../utils/errorHandler';
-import { getBaseUrl } from '../utils/helpers';
+import { getBaseUrl, shouldSkipSslValidation } from '../utils/helpers';
 
 interface DocumentResponse extends IDataObject {
 	success?: boolean;
@@ -85,6 +85,7 @@ async function handleDocumentInfo(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -123,6 +124,7 @@ async function handleGetDocument(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// Metadaten des Dokuments abrufen
@@ -142,6 +144,7 @@ async function handleGetDocument(
 					username: credentials.username as string,
 					password: credentials.password as string,
 				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 			});
 		} catch (error: unknown) {
 			console.error(`Fehler beim Abrufen der Dokumentinformationen: ${getErrorMessage(error)}`);
@@ -220,6 +223,7 @@ async function handleGetDocumentWithClassification(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// Dateiname aus Content-Disposition-Header extrahieren
@@ -302,6 +306,7 @@ async function handleGetDocumentVersion(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// Dateiname aus Content-Disposition-Header extrahieren
@@ -442,6 +447,7 @@ async function handleUploadDocument(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		console.log('Upload response:', response);
@@ -517,6 +523,7 @@ async function handleAddDocumentVersion(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return [
@@ -583,6 +590,7 @@ async function handleUploadFile(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return [

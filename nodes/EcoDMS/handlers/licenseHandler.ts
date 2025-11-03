@@ -6,7 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError } from '../utils/errorHandler';
-import { getBaseUrl } from '../utils/helpers';
+import { getBaseUrl, shouldSkipSslValidation } from '../utils/helpers';
 
 interface LicenseResponse extends IDataObject {
 	success?: boolean;
@@ -61,6 +61,7 @@ async function handleGetLicenseInfo(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {

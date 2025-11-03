@@ -6,7 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError } from '../utils/errorHandler';
-import { getBaseUrl } from '../utils/helpers';
+import { getBaseUrl, shouldSkipSslValidation } from '../utils/helpers';
 
 interface SearchResponse extends IDataObject {
 	success?: boolean;
@@ -84,6 +84,7 @@ async function handleSearch(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// Limitiere die Ergebnisse entsprechend dem maxDocuments Parameter
@@ -144,6 +145,7 @@ async function handleAdvancedSearch(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {
@@ -194,6 +196,7 @@ async function handleSearchAndDownload(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		if (!Array.isArray(searchResponse) || searchResponse.length === 0) {
@@ -228,6 +231,7 @@ async function handleSearchAndDownload(
 						username: credentials.username as string,
 						password: credentials.password as string,
 					},
+					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 				});
 
 				// Dateiname aus Content-Disposition oder aus bemerkung extrahieren

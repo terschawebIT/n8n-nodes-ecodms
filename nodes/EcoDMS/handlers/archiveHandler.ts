@@ -6,7 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError } from '../utils/errorHandler';
-import { getBaseUrl } from '../utils/helpers';
+import { getBaseUrl, shouldSkipSslValidation } from '../utils/helpers';
 
 interface ArchiveResponse extends IDataObject {
 	success?: boolean;
@@ -60,6 +60,7 @@ async function handleGetArchiveInfo(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {

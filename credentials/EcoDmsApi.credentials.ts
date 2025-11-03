@@ -57,6 +57,14 @@ export class EcoDmsApi implements ICredentialType {
 			required: false,
 			description: 'Der optionale API-Key, falls dieser aktiviert wurde',
 		},
+		{
+			displayName: 'SSL-Zertifikate ignorieren',
+			name: 'allowUnauthorizedCerts',
+			type: 'boolean',
+			default: false,
+			description:
+				'Erlaubt die Verbindung zu Servern mit selbst-signierten oder ungültigen SSL-Zertifikaten. WARNUNG: Dies reduziert die Sicherheit und sollte nur in vertrauenswürdigen Netzwerken verwendet werden.',
+		},
 	];
 
 	authenticate: IAuthenticateGeneric = {
@@ -70,6 +78,7 @@ export class EcoDmsApi implements ICredentialType {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
+			skipSslCertificateValidation: '={{$credentials.allowUnauthorizedCerts}}',
 		},
 	};
 

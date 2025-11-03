@@ -6,7 +6,7 @@ import {
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
 import { createNodeError } from '../utils/errorHandler';
-import { getBaseUrl } from '../utils/helpers';
+import { getBaseUrl, shouldSkipSslValidation } from '../utils/helpers';
 
 interface DocumentTypeResponse extends IDataObject {
 	success?: boolean;
@@ -66,6 +66,7 @@ async function handleGetTypes(this: IExecuteFunctions, credentials: IDataObject)
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		// API gibt direkt ein Array zurück laut Dokumentation
@@ -97,6 +98,7 @@ async function handleGetTypeClassifications(
 				username: credentials.username as string,
 				password: credentials.password as string,
 			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
 		return {

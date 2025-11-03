@@ -59,6 +59,16 @@ export async function getAuthOptions(
 }
 
 /**
+ * Prüft, ob SSL-Zertifikate ignoriert werden sollen
+ */
+export async function shouldSkipSslValidation(
+	this: IExecuteFunctions | ILoadOptionsFunctions,
+): Promise<boolean> {
+	const credentials = (await this.getCredentials('ecoDmsApi')) as ICredentialDataDecryptedObject;
+	return credentials.allowUnauthorizedCerts === true;
+}
+
+/**
  * Konvertiert einen String in ein Array von Zahlen
  * Nützlich für Listen wie linkIds, die als kommagetrennte Strings kommen
  */
