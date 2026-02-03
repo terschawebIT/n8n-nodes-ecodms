@@ -763,61 +763,94 @@ async function handleClassifyUserFriendly(
 		}
 
 		// Behandle zugewiesene Benutzer
+		// n8n sendet die Struktur als { user: [...] }, nicht als direktes Array
 		const assignedUsers: string[] = [];
-		if (additionalFields.assignedUsers && Array.isArray(additionalFields.assignedUsers)) {
-			const userAssignments = additionalFields.assignedUsers as IDataObject[];
-			for (const userAssignment of userAssignments) {
-				if (userAssignment.user && typeof userAssignment.user === 'object') {
-					const user = userAssignment.user as IDataObject;
-					const userId =
-						typeof user.userId === 'object' ? (user.userId as any).value || user.userId : user.userId;
-					const permission = user.permission || 'read';
+		const assignedUsersData = additionalFields.assignedUsers as IDataObject | undefined;
 
-					if (userId) {
-						assignedUsers.push(`${userId}:${permission}`);
-					}
-				}
+		console.log('=== USERS DEBUG ===');
+		console.log('assignedUsers raw:', JSON.stringify(assignedUsersData, null, 2));
+
+		// Extrahiere das user Array aus dem Objekt
+		let userAssignments: IDataObject[] = [];
+		if (assignedUsersData) {
+			if (Array.isArray(assignedUsersData)) {
+				// Falls es doch ein Array ist (alte Struktur)
+				userAssignments = assignedUsersData;
+			} else if (assignedUsersData.user && Array.isArray(assignedUsersData.user)) {
+				// n8n Collection-Struktur: { user: [...] }
+				userAssignments = assignedUsersData.user as IDataObject[];
+			}
+		}
+
+		for (const userAssignment of userAssignments) {
+			// Extrahiere userId - kann direkt oder als Objekt mit __rl/value sein
+			let userId: string | undefined;
+			const userIdField = userAssignment.userId;
+
+			if (typeof userIdField === 'object' && userIdField !== null) {
+				// n8n Resource Locator Format: { __rl: true, value: "...", mode: "list" }
+				userId = (userIdField as any).value || (userIdField as any).id;
+			} else if (typeof userIdField === 'string') {
+				userId = userIdField;
+			}
+
+			const permission = (userAssignment.permission as string) || 'read';
+
+			if (userId) {
+				assignedUsers.push(`${userId}:${permission}`);
+				console.log('✅ Added to assignedUsers:', `${userId}:${permission}`);
 			}
 		}
 
 		// Behandle zugewiesene Gruppen
+		// n8n sendet die Struktur als { group: [...] }, nicht als direktes Array
 		const assignedGroups: string[] = [];
-		if (additionalFields.assignedGroups && Array.isArray(additionalFields.assignedGroups)) {
-			console.log('=== GROUPS DEBUG ===');
-			console.log('assignedGroups raw:', JSON.stringify(additionalFields.assignedGroups, null, 2));
+		const assignedGroupsData = additionalFields.assignedGroups as IDataObject | undefined;
 
-			const groupAssignments = additionalFields.assignedGroups as IDataObject[];
-			for (const groupAssignment of groupAssignments) {
-				console.log('Processing groupAssignment:', JSON.stringify(groupAssignment, null, 2));
+		console.log('=== GROUPS DEBUG ===');
+		console.log('assignedGroups raw:', JSON.stringify(assignedGroupsData, null, 2));
 
-				if (groupAssignment.group && typeof groupAssignment.group === 'object') {
-					const group = groupAssignment.group as IDataObject;
-					console.log('Group object:', JSON.stringify(group, null, 2));
+		// Extrahiere das group Array aus dem Objekt
+		let groupAssignments: IDataObject[] = [];
+		if (assignedGroupsData) {
+			if (Array.isArray(assignedGroupsData)) {
+				// Falls es doch ein Array ist (alte Struktur)
+				groupAssignments = assignedGroupsData;
+			} else if (assignedGroupsData.group && Array.isArray(assignedGroupsData.group)) {
+				// n8n Collection-Struktur: { group: [...] }
+				groupAssignments = assignedGroupsData.group as IDataObject[];
+			}
+		}
 
-					const groupId =
-						typeof group.groupId === 'object'
-							? (group.groupId as any).value || group.groupId
-							: group.groupId;
-					const permission = group.permission || 'read';
+		console.log('groupAssignments extracted:', JSON.stringify(groupAssignments, null, 2));
 
-					console.log('Extracted groupId:', groupId, 'permission:', permission);
+		for (const groupAssignment of groupAssignments) {
+			console.log('Processing groupAssignment:', JSON.stringify(groupAssignment, null, 2));
 
-					if (groupId) {
-						assignedGroups.push(`${groupId}:${permission}`);
-						console.log('Added to assignedGroups:', `${groupId}:${permission}`);
-					} else {
-						console.log('❌ GroupId is empty, skipping');
-					}
-				} else {
-					console.log('❌ No group object found in groupAssignment');
-				}
+			// Extrahiere groupId - kann direkt oder als Objekt mit __rl/value sein
+			let groupId: string | undefined;
+			const groupIdField = groupAssignment.groupId;
+
+			if (typeof groupIdField === 'object' && groupIdField !== null) {
+				// n8n Resource Locator Format: { __rl: true, value: "...", mode: "list" }
+				groupId = (groupIdField as any).value || (groupIdField as any).id;
+			} else if (typeof groupIdField === 'string') {
+				groupId = groupIdField;
 			}
 
-			console.log('Final assignedGroups array:', assignedGroups);
-		} else {
-			console.log('=== NO GROUPS ASSIGNED ===');
-			console.log('additionalFields.assignedGroups:', additionalFields.assignedGroups);
+			const permission = (groupAssignment.permission as string) || 'read';
+
+			console.log('Extracted groupId:', groupId, 'permission:', permission);
+
+			if (groupId) {
+				assignedGroups.push(`${groupId}:${permission}`);
+				console.log('✅ Added to assignedGroups:', `${groupId}:${permission}`);
+			} else {
+				console.log('❌ GroupId is empty, skipping');
+			}
 		}
+
+		console.log('Final assignedGroups array:', assignedGroups);
 
 		// Verwalte Berechtigungen basierend auf UI-Eingaben
 		const finalEditRoles: string[] = [];
