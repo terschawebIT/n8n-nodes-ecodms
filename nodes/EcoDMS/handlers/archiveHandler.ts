@@ -44,6 +44,7 @@ export async function handleArchiveOperations(
 
 /**
  * Implementiert die Verbindung zum Archiv
+ * GET ohne API-Key, POST mit API-Key (laut API-Doku)
  */
 async function handleConnectArchive(
 	this: IExecuteFunctions,
@@ -53,7 +54,46 @@ async function handleConnectArchive(
 	const apiKey = this.getNodeParameter('apiKey', 0, '') as string;
 
 	try {
-		// Zuerst Status prüfen
+		// Verbindung zum Archiv herstellen
+		const connectUrl = await getBaseUrl.call(this, `connect/${archiveId}`);
+
+		let connectResponse: IDataObject;
+
+		if (apiKey) {
+			// Mit API-Key: POST Request
+			connectResponse = await this.helpers.httpRequest({
+				url: connectUrl,
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: { apiKey },
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+			});
+		} else {
+			// Ohne API-Key: GET Request
+			connectResponse = await this.helpers.httpRequest({
+				url: connectUrl,
+				method: 'GET',
+				headers: {
+					Accept: 'application/json',
+				},
+				json: true,
+				auth: {
+					username: credentials.username as string,
+					password: credentials.password as string,
+				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+			});
+		}
+
+		// Status prüfen nach Verbindung
 		const statusUrl = await getBaseUrl.call(this, 'status');
 		const statusResponse = await this.helpers.httpRequest({
 			url: statusUrl,
@@ -69,37 +109,13 @@ async function handleConnectArchive(
 			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 		});
 
-		// Verbindung zum Archiv herstellen
-		const connectUrl = await getBaseUrl.call(this, `connect/${archiveId}`);
-
-		const connectBody: IDataObject = {};
-		if (apiKey) {
-			connectBody.apiKey = apiKey;
-		}
-
-		const connectResponse = await this.helpers.httpRequest({
-			url: connectUrl,
-			method: 'POST',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-			},
-			body: connectBody,
-			json: true,
-			auth: {
-				username: credentials.username as string,
-				password: credentials.password as string,
-			},
-			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
-		});
-
 		return {
 			success: true,
 			message: 'Erfolgreich mit Archiv verbunden',
 			data: {
 				archiveId,
-				status: statusResponse,
 				connection: connectResponse,
+				status: statusResponse,
 			},
 		};
 	} catch (error: unknown) {
@@ -109,16 +125,29 @@ async function handleConnectArchive(
 
 /**
  * Implementiert das Abrufen der Archiv-Informationen
+ * Ruft /api/archives (Liste) und /api/status (aktueller Status) ab
  */
 async function handleGetArchiveInfo(
 	this: IExecuteFunctions,
 	credentials: IDataObject,
 ): Promise<ArchiveResponse> {
-	const url = await getBaseUrl.call(this, 'archiveInfo');
-
 	try {
-		const response = await this.helpers.httpRequest({
-			url,
+		// 1. Liste aller Archive abrufen (braucht keine Auth!)
+		const archivesUrl = await getBaseUrl.call(this, 'archives');
+		const archivesResponse = await this.helpers.httpRequest({
+			url: archivesUrl,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
+
+		// 2. Status abrufen (braucht Auth)
+		const statusUrl = await getBaseUrl.call(this, 'status');
+		const statusResponse = await this.helpers.httpRequest({
+			url: statusUrl,
 			method: 'GET',
 			headers: {
 				Accept: 'application/json',
@@ -133,7 +162,10 @@ async function handleGetArchiveInfo(
 
 		return {
 			success: true,
-			data: response,
+			data: {
+				archives: archivesResponse,
+				status: statusResponse,
+			},
 		};
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Abrufen der Archiv-Informationen', error);
