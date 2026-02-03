@@ -75,4 +75,5 @@ secrets.*
 .env
 
 # Editor-specific
-.cursorrules 
+.cursorrules
+aktueller_workflow
