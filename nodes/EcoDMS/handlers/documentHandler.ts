@@ -403,14 +403,14 @@ async function handleUploadDocument(
 		console.log('binaryData.mimeType:', binaryData.mimeType);
 		console.log('binaryData.fileName:', binaryData.fileName);
 		console.log('binaryData.fileSize:', binaryData.fileSize);
-		console.log('binaryData.data length:', binaryData.data?.length);
 
 		// FormData erstellen (form-data library)
 		const formData = new FormData();
 
-		// Buffer aus Base64 erstellen
-		const fileBuffer = Buffer.from(binaryData.data, 'base64');
-		console.log('fileBuffer length:', fileBuffer.length);
+		// WICHTIG: getBinaryDataBuffer verwenden, da n8n große Dateien extern speichert!
+		// binaryData.data enthält bei großen Dateien nur eine Referenz-ID, nicht die echten Daten
+		const fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+		console.log('fileBuffer length (actual bytes):', fileBuffer.length);
 
 		// Fallback für fehlende Werte
 		const mimeType = binaryData.mimeType || 'application/pdf';
@@ -499,8 +499,11 @@ async function handleAddDocumentVersion(
 		// FormData erstellen
 		const formData = new FormData();
 
+		// WICHTIG: getBinaryDataBuffer verwenden, da n8n große Dateien extern speichert!
+		const fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+
 		// Dokumentendaten hinzufügen
-		formData.append('file', Buffer.from(binaryData.data, 'base64'), {
+		formData.append('file', fileBuffer, {
 			filename: binaryData.fileName || 'document.pdf',
 			contentType: binaryData.mimeType,
 		});
@@ -566,8 +569,11 @@ async function handleUploadFile(
 		// FormData erstellen
 		const formData = new FormData();
 
+		// WICHTIG: getBinaryDataBuffer verwenden, da n8n große Dateien extern speichert!
+		const fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+
 		// Datei hinzufügen
-		formData.append('file', Buffer.from(binaryData.data, 'base64'), {
+		formData.append('file', fileBuffer, {
 			filename: binaryData.fileName || 'document.pdf',
 			contentType: binaryData.mimeType,
 		});
