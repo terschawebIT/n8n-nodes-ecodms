@@ -800,27 +800,51 @@ export async function getSearchAttributes(
 ): Promise<INodePropertyOptions[]> {
 	// Standard-Attribute
 	const standardAttributes: INodePropertyOptions[] = [
-		{ name: '── Standard-Attribute ──', value: '_header_standard', description: 'Standard ecoDMS Attribute' },
+		{
+			name: '── Standard-Attribute ──',
+			value: '_header_standard',
+			description: 'Standard ecoDMS Attribute',
+		},
 		{ name: 'Bemerkung', value: 'bemerkung', description: 'Dokumentenbemerkung (Textsuche)' },
 		{ name: 'Datum', value: 'cdate', description: 'Klassifizierungsdatum (Datumssuche)' },
 		{ name: 'Dokumentart', value: 'docart', description: 'Art des Dokuments' },
-		{ name: 'Ordner (inkl. Unterordner)', value: 'folder', description: 'Suche in Ordner und allen Unterordnern' },
-		{ name: 'Nur in diesem Ordner', value: 'folderonly', description: 'Suche nur in diesem Ordner (ohne Unterordner)' },
-		{ name: 'Hauptordner (inkl. Unterordner)', value: 'mainfolder', description: 'Suche in Hauptordner und allen Unterordnern' },
-		{ name: 'Nur in diesem Hauptordner', value: 'mainfolderonly', description: 'Suche nur in diesem Hauptordner' },
+		{
+			name: 'Ordner (inkl. Unterordner)',
+			value: 'folder',
+			description: 'Suche in Ordner und allen Unterordnern',
+		},
+		{
+			name: 'Nur in diesem Ordner',
+			value: 'folderonly',
+			description: 'Suche nur in diesem Ordner (ohne Unterordner)',
+		},
+		{
+			name: 'Hauptordner (inkl. Unterordner)',
+			value: 'mainfolder',
+			description: 'Suche in Hauptordner und allen Unterordnern',
+		},
+		{
+			name: 'Nur in diesem Hauptordner',
+			value: 'mainfolderonly',
+			description: 'Suche nur in diesem Hauptordner',
+		},
 		{ name: 'Status', value: 'status', description: 'Dokumentenstatus' },
 		{ name: 'Bearbeiter', value: 'changeid', description: 'Letzte Bearbeiter-ID' },
-		{ name: 'Wiedervorlage-Datum', value: 'defdate', description: 'Wiedervorlagedatum (Datumssuche)' },
+		{
+			name: 'Wiedervorlage-Datum',
+			value: 'defdate',
+			description: 'Wiedervorlagedatum (Datumssuche)',
+		},
 		{ name: 'Zeitstempel', value: 'ctimestamp', description: 'Klassifizierungszeitstempel' },
 	];
 
 	// Custom Fields laden
 	try {
 		const customFields = await getCustomFields.call(this);
-		
+
 		// Filtere die "Bitte auswählen" Option und Header raus
 		const filteredCustomFields = customFields.filter(
-			(field) => field.value && !field.value.toString().startsWith('_header')
+			(field) => field.value && !field.value.toString().startsWith('_header'),
 		);
 
 		if (filteredCustomFields.length > 0) {
