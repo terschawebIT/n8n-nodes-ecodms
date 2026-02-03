@@ -47,7 +47,8 @@
 		"package": "npm run build && npm pack"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"index.js"
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
