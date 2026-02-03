@@ -793,6 +793,62 @@ export async function getCustomFields(
 }
 
 /**
+ * Lädt alle verfügbaren Such-Attribute (Standard + Custom Fields) für die erweiterte Suche
+ */
+export async function getSearchAttributes(
+	this: ILoadOptionsFunctions,
+): Promise<INodePropertyOptions[]> {
+	// Standard-Attribute
+	const standardAttributes: INodePropertyOptions[] = [
+		{ name: '── Standard-Attribute ──', value: '_header_standard', description: 'Standard ecoDMS Attribute' },
+		{ name: 'Bemerkung', value: 'bemerkung', description: 'Dokumentenbemerkung (Textsuche)' },
+		{ name: 'Datum', value: 'cdate', description: 'Klassifizierungsdatum (Datumssuche)' },
+		{ name: 'Dokumentart', value: 'docart', description: 'Art des Dokuments' },
+		{ name: 'Ordner (inkl. Unterordner)', value: 'folder', description: 'Suche in Ordner und allen Unterordnern' },
+		{ name: 'Nur in diesem Ordner', value: 'folderonly', description: 'Suche nur in diesem Ordner (ohne Unterordner)' },
+		{ name: 'Hauptordner (inkl. Unterordner)', value: 'mainfolder', description: 'Suche in Hauptordner und allen Unterordnern' },
+		{ name: 'Nur in diesem Hauptordner', value: 'mainfolderonly', description: 'Suche nur in diesem Hauptordner' },
+		{ name: 'Status', value: 'status', description: 'Dokumentenstatus' },
+		{ name: 'Bearbeiter', value: 'changeid', description: 'Letzte Bearbeiter-ID' },
+		{ name: 'Wiedervorlage-Datum', value: 'defdate', description: 'Wiedervorlagedatum (Datumssuche)' },
+		{ name: 'Zeitstempel', value: 'ctimestamp', description: 'Klassifizierungszeitstempel' },
+	];
+
+	// Custom Fields laden
+	try {
+		const customFields = await getCustomFields.call(this);
+		
+		// Filtere die "Bitte auswählen" Option und Header raus
+		const filteredCustomFields = customFields.filter(
+			(field) => field.value && !field.value.toString().startsWith('_header')
+		);
+
+		if (filteredCustomFields.length > 0) {
+			// Header für Custom Fields hinzufügen
+			standardAttributes.push({
+				name: '── Benutzerdefinierte Felder ──',
+				value: '_header_custom',
+				description: 'Benutzerdefinierte Felder (Custom Fields)',
+			});
+
+			// Custom Fields hinzufügen
+			for (const field of filteredCustomFields) {
+				standardAttributes.push({
+					name: field.name,
+					value: field.value,
+					description: field.description || `Custom Field: ${field.value}`,
+				});
+			}
+		}
+	} catch (error) {
+		console.error('Fehler beim Laden der Custom Fields für Suche:', error);
+		// Bei Fehler nur Standard-Attribute zurückgeben
+	}
+
+	return standardAttributes;
+}
+
+/**
  * Hilfsfunktion um dyn_* Felder aus classifyAttributes zu extrahieren
  */
 async function extractDynFieldsFromAttributes(

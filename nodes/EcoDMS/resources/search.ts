@@ -114,19 +114,21 @@ export const searchFields: INodeProperties[] = [
 						default: 'bemerkung',
 						description: 'Das Attribut, nach dem gesucht werden soll',
 					},
-					// Custom Field Name (nur wenn "Benutzerdefiniertes Feld" gewählt)
+					// Custom Field Dropdown (nur wenn "Benutzerdefiniertes Feld" gewählt)
 					{
-						displayName: 'Feldname',
+						displayName: 'Custom Field',
 						name: 'customFieldName',
-						type: 'string',
-						default: 'dyn_',
-						placeholder: 'dyn_0_meinfeld',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getCustomFields',
+						},
+						default: '',
 						displayOptions: {
 							show: {
 								classifyAttribut: ['custom'],
 							},
 						},
-						description: 'Der Name des benutzerdefinierten Feldes (z.B. dyn_0_kundennummer)',
+						description: 'Das benutzerdefinierte Feld (dyn_*), nach dem gesucht werden soll',
 					},
 					// Operatoren für Textfelder (Bemerkung, Bearbeiter)
 					{

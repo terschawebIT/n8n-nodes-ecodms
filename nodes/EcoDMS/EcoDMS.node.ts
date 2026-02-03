@@ -33,6 +33,7 @@ import {
 	getCustomFieldType,
 	getDocumentTypes,
 	getFolders,
+	getSearchAttributes,
 	getGroups,
 	getStatusValues,
 	getTypeClassifications,
@@ -153,6 +154,10 @@ export class EcoDMS implements INodeType {
 
 			async getCustomFields(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				return await getCustomFields.call(this);
+			},
+
+			async getSearchAttributes(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				return await getSearchAttributes.call(this);
 			},
 
 			async getCustomFieldType(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
