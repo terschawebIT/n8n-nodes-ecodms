@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-ecodms",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "ecoDMS-Integration für n8n - Dokumentenmanagement und Archivierung",
 	"keywords": [
 		"n8n-community-node-package",
