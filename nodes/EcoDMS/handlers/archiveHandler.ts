@@ -26,6 +26,9 @@ export async function handleArchiveOperations(
 	let result: ArchiveResponse;
 
 	switch (operation) {
+		case Operation.Connect:
+			result = await handleConnectArchive.call(this, credentials);
+			break;
 		case Operation.GetInfo:
 			result = await handleGetArchiveInfo.call(this, credentials);
 			break;
@@ -37,6 +40,71 @@ export async function handleArchiveOperations(
 	}
 
 	return [{ json: result }];
+}
+
+/**
+ * Implementiert die Verbindung zum Archiv
+ */
+async function handleConnectArchive(
+	this: IExecuteFunctions,
+	credentials: IDataObject,
+): Promise<ArchiveResponse> {
+	const archiveId = this.getNodeParameter('archiveId', 0) as string;
+	const apiKey = this.getNodeParameter('apiKey', 0, '') as string;
+
+	try {
+		// Zuerst Status prüfen
+		const statusUrl = await getBaseUrl.call(this, 'status');
+		const statusResponse = await this.helpers.httpRequest({
+			url: statusUrl,
+			method: 'GET',
+			headers: {
+				Accept: 'application/json',
+			},
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
+
+		// Verbindung zum Archiv herstellen
+		const connectUrl = await getBaseUrl.call(this, `connect/${archiveId}`);
+
+		const connectBody: IDataObject = {};
+		if (apiKey) {
+			connectBody.apiKey = apiKey;
+		}
+
+		const connectResponse = await this.helpers.httpRequest({
+			url: connectUrl,
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: connectBody,
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
+
+		return {
+			success: true,
+			message: 'Erfolgreich mit Archiv verbunden',
+			data: {
+				archiveId,
+				status: statusResponse,
+				connection: connectResponse,
+			},
+		};
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Verbinden mit dem Archiv', error);
+	}
 }
 
 /**

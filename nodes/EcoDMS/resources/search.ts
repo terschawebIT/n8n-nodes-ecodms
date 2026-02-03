@@ -92,7 +92,7 @@ export const searchFields: INodeProperties[] = [
 				name: 'filters',
 				displayName: 'Filter',
 				values: [
-					// Operator für erweiterte Suche - Textattribute
+					// Attribut-Auswahl für erweiterte Suche
 					{
 						displayName: 'Attribut',
 						name: 'classifyAttribut',
@@ -109,10 +109,48 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Bearbeiter', value: 'changeid' },
 							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
 							{ name: 'Zeitstempel', value: 'ctimestamp' },
+							{ name: '--- Benutzerdefiniertes Feld ---', value: 'custom' },
 						],
 						default: 'bemerkung',
 						description: 'Das Attribut, nach dem gesucht werden soll',
 					},
+					// Custom Field Name (nur wenn "Benutzerdefiniertes Feld" gewählt)
+					{
+						displayName: 'Feldname',
+						name: 'customFieldName',
+						type: 'string',
+						default: 'dyn_',
+						placeholder: 'dyn_0_meinfeld',
+						displayOptions: {
+							show: {
+								classifyAttribut: ['custom'],
+							},
+						},
+						description: 'Der Name des benutzerdefinierten Feldes (z.B. dyn_0_kundennummer)',
+					},
+					// Operatoren für Textfelder (Bemerkung, Bearbeiter)
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+							{ name: 'Enthält (like)', value: 'like' },
+							{ name: 'Enthält nicht (!like)', value: '!like' },
+							{ name: 'Enthält (Groß/Klein ignorieren)', value: 'ilike' },
+							{ name: 'Enthält nicht (Groß/Klein ignorieren)', value: '!ilike' },
+						],
+						displayOptions: {
+							show: {
+								classifyAttribut: ['bemerkung', 'changeid', 'custom'],
+							},
+						},
+						default: 'like',
+						required: true,
+						description: 'Der Vergleichsoperator für die Suche',
+					},
+					// Operatoren für Auswahl-Felder (Dokumentart, Ordner, Status)
 					{
 						displayName: 'Operator',
 						name: 'searchOperator',
@@ -137,25 +175,56 @@ export const searchFields: INodeProperties[] = [
 						required: true,
 						description: 'Der Vergleichsoperator für die Suche',
 					},
+					// Operatoren für Datum-Felder
+					{
+						displayName: 'Operator',
+						name: 'searchOperator',
+						type: 'options',
+						options: [
+							{ name: 'Gleich (=)', value: '=' },
+							{ name: 'Nicht gleich (!=)', value: '!=' },
+							{ name: 'Größer als (>)', value: '>' },
+							{ name: 'Größer oder gleich (>=)', value: '>=' },
+							{ name: 'Kleiner als (<)', value: '<' },
+							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
+						],
+						displayOptions: {
+							show: {
+								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
+							},
+						},
+						default: '=',
+						required: true,
+						description: 'Der Vergleichsoperator für die Datumssuche',
+					},
+					// Suchtext für Textfelder und Custom Fields
 					{
 						displayName: 'Suchtext',
 						name: 'searchValueText',
 						type: 'string',
-						default: 'Suchbegriff eingeben',
+						default: '',
+						placeholder: 'Suchbegriff eingeben',
 						displayOptions: {
-							hide: {
-								classifyAttribut: [
-									'docart',
-									'folder',
-									'folderonly',
-									'mainfolder',
-									'mainfolderonly',
-									'status',
-								],
+							show: {
+								classifyAttribut: ['bemerkung', 'changeid', 'custom'],
 							},
 						},
 						description: 'Der Text, nach dem gesucht werden soll',
 					},
+					// Datum-Eingabe für Datum-Felder
+					{
+						displayName: 'Datum',
+						name: 'searchValueDate',
+						type: 'dateTime',
+						default: '',
+						displayOptions: {
+							show: {
+								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
+							},
+						},
+						description: 'Das Datum, nach dem gesucht werden soll (Format: YYYY-MM-DD)',
+					},
+					// Dropdown für Dokumententyp
 					{
 						displayName: 'Dokumententyp',
 						name: 'searchValueDocumentType',
@@ -171,6 +240,7 @@ export const searchFields: INodeProperties[] = [
 						default: '',
 						description: 'Die Dokumentart, nach der gesucht werden soll',
 					},
+					// Dropdown für Ordner
 					{
 						displayName: 'Ordner',
 						name: 'searchValueFolder',
@@ -186,6 +256,7 @@ export const searchFields: INodeProperties[] = [
 						default: '',
 						description: 'Der Ordner, nach dem gesucht werden soll',
 					},
+					// Dropdown für Status
 					{
 						displayName: 'Status',
 						name: 'searchValueStatus',

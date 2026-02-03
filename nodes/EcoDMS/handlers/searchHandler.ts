@@ -107,6 +107,34 @@ async function handleSearch(
 }
 
 /**
+ * Formatiert einen Datumswert für die ecoDMS API
+ */
+function formatDateValue(dateValue: string | Date): string {
+	if (!dateValue) return '';
+
+	// Wenn es bereits ein String im richtigen Format ist
+	if (typeof dateValue === 'string') {
+		// Prüfe ob es ein ISO-String ist und konvertiere zu YYYY-MM-DD
+		if (dateValue.includes('T')) {
+			return dateValue.split('T')[0];
+		}
+		// Bereits im richtigen Format
+		if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+			return dateValue;
+		}
+	}
+
+	// Date-Objekt zu String konvertieren
+	const date = new Date(dateValue);
+	if (Number.isNaN(date.getTime())) return '';
+
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	return `${year}-${month}-${day}`;
+}
+
+/**
  * Implementiert die erweiterte Suche
  */
 async function handleAdvancedSearch(
@@ -121,16 +149,39 @@ async function handleAdvancedSearch(
 		const url = await getBaseUrl.call(this, 'searchDocuments');
 
 		// Konvertiere die Filter in das richtige Format
-		const searchFilters = filters.map((filter: IDataObject) => ({
-			classifyAttribut: filter.classifyAttribut,
-			searchValue:
-				filter.searchValueText ||
-				filter.searchValueDocumentType ||
-				filter.searchValueFolder ||
-				filter.searchValueStatus ||
-				'',
-			searchOperator: filter.searchOperator || '=',
-		}));
+		const searchFilters = filters.map((filter: IDataObject) => {
+			// Bestimme das Attribut (bei Custom Fields den benutzerdefinierten Namen verwenden)
+			let attributeName = filter.classifyAttribut as string;
+			if (attributeName === 'custom' && filter.customFieldName) {
+				attributeName = filter.customFieldName as string;
+			}
+
+			// Bestimme den Suchwert basierend auf dem Attributtyp
+			let searchValue = '';
+
+			// Datum-Felder
+			if (['cdate', 'defdate', 'ctimestamp'].includes(filter.classifyAttribut as string)) {
+				searchValue = formatDateValue(filter.searchValueDate as string);
+			}
+			// Dropdown-Felder
+			else if (filter.searchValueDocumentType) {
+				searchValue = filter.searchValueDocumentType as string;
+			} else if (filter.searchValueFolder) {
+				searchValue = filter.searchValueFolder as string;
+			} else if (filter.searchValueStatus) {
+				searchValue = filter.searchValueStatus as string;
+			}
+			// Text-Felder (inkl. Custom Fields)
+			else if (filter.searchValueText) {
+				searchValue = filter.searchValueText as string;
+			}
+
+			return {
+				classifyAttribut: attributeName,
+				searchValue: searchValue,
+				searchOperator: filter.searchOperator || '=',
+			};
+		});
 
 		const response = await this.helpers.httpRequest({
 			url,

@@ -6,7 +6,7 @@ import {
 	type INodePropertyOptions,
 	type INodeType,
 	type INodeTypeDescription,
-	NodeConnectionType,
+	NodeConnectionTypes,
 	NodeOperationError,
 } from 'n8n-workflow';
 
@@ -52,8 +52,8 @@ export class EcoDMS implements INodeType {
 		defaults: {
 			name: 'ecoDMS',
 		},
-		inputs: [{ type: NodeConnectionType.Main }],
-		outputs: [{ type: NodeConnectionType.Main }],
+		inputs: [{ type: NodeConnectionTypes.Main }],
+		outputs: [{ type: NodeConnectionTypes.Main }],
 		credentials: [
 			{
 				name: 'ecoDmsApi',

@@ -17,6 +17,12 @@ export const archiveOperations: INodeProperties = {
 			description: 'Verbindung zum Archiv herstellen',
 			action: 'Verbindung zum Archiv herstellen',
 		},
+		{
+			name: 'Archiv-Informationen abrufen',
+			value: Operation.GetInfo,
+			description: 'Informationen über das verbundene Archiv abrufen',
+			action: 'Archiv-Informationen abrufen',
+		},
 	],
 	default: Operation.Connect,
 	noDataExpression: true,

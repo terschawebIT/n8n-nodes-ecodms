@@ -87,6 +87,7 @@ export class EcoDmsApi implements ICredentialType {
 			baseURL: '={{$credentials.serverUrl}}',
 			url: '/api/status',
 			method: 'GET',
+			skipSslCertificateValidation: '={{$credentials.allowUnauthorizedCerts}}',
 		},
 	};
 }

@@ -6,7 +6,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { Operation } from '../utils/constants';
-import { createNodeError, getErrorMessage } from '../utils/errorHandler';
+import { createNodeError } from '../utils/errorHandler';
 import { shouldSkipSslValidation } from '../utils/helpers';
 
 interface ClassificationResponse extends IDataObject {
@@ -257,7 +257,16 @@ async function handleGetClassifyAttributesDetail(
 }
 
 /**
- * Eine neue Klassifikation für ein bestehendes Dokument erstellen
+ * Eine zusätzliche (mehrfache) Klassifikation für ein bestehendes Dokument erstellen
+ * API: POST /api/createNewClassify
+ *
+ * Format gemäß ecoDMS API:
+ * {
+ *   "docId": 1,
+ *   "classifyAttributes": {...},
+ *   "editRoles": [...],
+ *   "readRoles": [...]
+ * }
  */
 async function handleCreateNewClassify(
 	this: IExecuteFunctions,
@@ -266,14 +275,60 @@ async function handleCreateNewClassify(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
-		const fields = this.getNodeParameter('fields', 0) as string;
+		const classifyAttributesJson = this.getNodeParameter('classifyAttributes', 0) as string;
 
-		let fieldsData: IDataObject;
+		// Lese die Berechtigungsfelder aus den UI-Parametern
+		const editRolesParam = this.getNodeParameter('editRoles', 0, '') as string;
+		const readRolesParam = this.getNodeParameter('readRoles', 0, '') as string;
+
+		let classifyAttributes: IDataObject;
 		try {
-			fieldsData = JSON.parse(fields);
+			classifyAttributes = JSON.parse(classifyAttributesJson);
 		} catch (error: unknown) {
-			throw createNodeError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder', error);
+			throw createNodeError(
+				this.getNode(),
+				'Ungültiges JSON-Format für Klassifikationsattribute',
+				error,
+			);
 		}
+
+		// Verarbeite die Berechtigungsfelder zu Arrays
+		const editRoles: string[] = editRolesParam
+			? editRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+		const readRoles: string[] = readRolesParam
+			? readRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+
+		// WICHTIG: Prüfe dass editRoles und readRoles keine gemeinsamen Rollen haben
+		const commonRoles = editRoles.filter((role) => readRoles.includes(role));
+		if (commonRoles.length > 0) {
+			throw createNodeError(
+				this.getNode(),
+				`Die folgenden Rollen sind sowohl in editRoles als auch in readRoles enthalten: ${commonRoles.join(', ')}. Dies ist laut ecoDMS API nicht erlaubt.`,
+				new Error('Duplicate roles in editRoles and readRoles'),
+			);
+		}
+
+		// Erstelle Request Body gemäß ecoDMS API-Dokumentation
+		const requestBody: IDataObject = {
+			docId,
+			classifyAttributes,
+			editRoles,
+			readRoles,
+		};
+
+		console.log('=== CREATE NEW CLASSIFY DEBUG ===');
+		console.log('DocID:', docId);
+		console.log('Edit Roles:', editRoles);
+		console.log('Read Roles:', readRoles);
+		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
 
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/createNewClassify`,
@@ -282,10 +337,7 @@ async function handleCreateNewClassify(
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				docId,
-				...fieldsData,
-			},
+			body: requestBody,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -296,15 +348,34 @@ async function handleCreateNewClassify(
 
 		return {
 			success: true,
-			data: response,
+			message: 'Zusätzliche Klassifikation erfolgreich erstellt',
+			data: {
+				newClDocId: response,
+				appliedEditRoles: editRoles,
+				appliedReadRoles: readRoles,
+			},
 		};
 	} catch (error: unknown) {
-		throw createNodeError(this.getNode(), 'Fehler beim Erstellen der neuen Klassifikation', error);
+		throw createNodeError(
+			this.getNode(),
+			'Fehler beim Erstellen der zusätzlichen Klassifikation',
+			error,
+		);
 	}
 }
 
 /**
  * Ein Dokument aus dem Inbox-Bereich klassifizieren
+ * API: POST /api/classifyInboxDocument
+ *
+ * Format gemäß ecoDMS API:
+ * {
+ *   "docId": 683601,
+ *   "clDocId": -1,  // -1 für neue Klassifikation
+ *   "classifyAttributes": {...},
+ *   "editRoles": [...],
+ *   "readRoles": [...]
+ * }
  */
 async function handleClassifyInboxDocument(
 	this: IExecuteFunctions,
@@ -313,14 +384,63 @@ async function handleClassifyInboxDocument(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
-		const fields = this.getNodeParameter('fields', 0) as string;
+		const clDocId = this.getNodeParameter('clDocId', 0, -1) as number;
+		const classifyAttributesJson = this.getNodeParameter('classifyAttributes', 0) as string;
 
-		let fieldsData: IDataObject;
+		// Lese die Berechtigungsfelder aus den UI-Parametern
+		const editRolesParam = this.getNodeParameter('editRoles', 0, '') as string;
+		const readRolesParam = this.getNodeParameter('readRoles', 0, '') as string;
+
+		let classifyAttributes: IDataObject;
 		try {
-			fieldsData = JSON.parse(fields);
+			classifyAttributes = JSON.parse(classifyAttributesJson);
 		} catch (error: unknown) {
-			throw createNodeError(this.getNode(), 'Ungültiges JSON-Format für Klassifikationsfelder', error);
+			throw createNodeError(
+				this.getNode(),
+				'Ungültiges JSON-Format für Klassifikationsattribute',
+				error,
+			);
 		}
+
+		// Verarbeite die Berechtigungsfelder zu Arrays
+		const editRoles: string[] = editRolesParam
+			? editRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+		const readRoles: string[] = readRolesParam
+			? readRolesParam
+					.split(',')
+					.map((role) => role.trim())
+					.filter((role) => role.length > 0)
+			: [];
+
+		// WICHTIG: Prüfe dass editRoles und readRoles keine gemeinsamen Rollen haben
+		const commonRoles = editRoles.filter((role) => readRoles.includes(role));
+		if (commonRoles.length > 0) {
+			throw createNodeError(
+				this.getNode(),
+				`Die folgenden Rollen sind sowohl in editRoles als auch in readRoles enthalten: ${commonRoles.join(', ')}. Dies ist laut ecoDMS API nicht erlaubt.`,
+				new Error('Duplicate roles in editRoles and readRoles'),
+			);
+		}
+
+		// Erstelle Request Body gemäß ecoDMS API-Dokumentation
+		const requestBody: IDataObject = {
+			docId,
+			clDocId,
+			classifyAttributes,
+			editRoles,
+			readRoles,
+		};
+
+		console.log('=== CLASSIFY INBOX DOCUMENT DEBUG ===');
+		console.log('DocID:', docId);
+		console.log('ClDocID:', clDocId);
+		console.log('Edit Roles:', editRoles);
+		console.log('Read Roles:', readRoles);
+		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
 
 		const response = await this.helpers.httpRequest({
 			url: `${credentials.serverUrl as string}/api/classifyInboxDocument`,
@@ -329,10 +449,7 @@ async function handleClassifyInboxDocument(
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
-			body: {
-				docId,
-				...fieldsData,
-			},
+			body: requestBody,
 			json: true,
 			auth: {
 				username: credentials.username as string,
@@ -343,7 +460,12 @@ async function handleClassifyInboxDocument(
 
 		return {
 			success: true,
-			data: response,
+			message: 'Inbox-Dokument erfolgreich klassifiziert',
+			data: {
+				response,
+				appliedEditRoles: editRoles,
+				appliedReadRoles: readRoles,
+			},
 		};
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Klassifizieren des Inbox-Dokuments', error);
@@ -360,15 +482,16 @@ async function handleClassifyDocument(
 ): Promise<ClassificationResponse> {
 	try {
 		const docId = this.getNodeParameter('docId', 0) as number;
-		const fields = this.getNodeParameter('fields', 0) as string;
+		const clDocId = this.getNodeParameter('clDocId', 0) as number;
+		const classifyAttributesJson = this.getNodeParameter('classifyAttributes', 0) as string;
 
 		// Lese die Berechtigungsfelder aus den UI-Parametern
 		const editRolesParam = this.getNodeParameter('editRoles', 0, '') as string;
 		const readRolesParam = this.getNodeParameter('readRoles', 0, '') as string;
 
-		let fieldsData: IDataObject;
+		let classifyAttributes: IDataObject;
 		try {
-			fieldsData = JSON.parse(fields);
+			classifyAttributes = JSON.parse(classifyAttributesJson);
 		} catch (error: unknown) {
 			throw createNodeError(
 				this.getNode(),
@@ -377,7 +500,7 @@ async function handleClassifyDocument(
 			);
 		}
 
-		// Verarbeite die Berechtigungsfelder
+		// Verarbeite die Berechtigungsfelder zu Arrays
 		const editRoles: string[] = editRolesParam
 			? editRolesParam
 					.split(',')
@@ -391,120 +514,62 @@ async function handleClassifyDocument(
 					.filter((role) => role.length > 0)
 			: [];
 
-		// Erstelle Request Body mit Berechtigungen
+		// WICHTIG: Prüfe dass editRoles und readRoles keine gemeinsamen Rollen haben
+		const commonRoles = editRoles.filter((role) => readRoles.includes(role));
+		if (commonRoles.length > 0) {
+			throw createNodeError(
+				this.getNode(),
+				`Die folgenden Rollen sind sowohl in editRoles als auch in readRoles enthalten: ${commonRoles.join(', ')}. Dies ist laut ecoDMS API nicht erlaubt.`,
+				new Error('Duplicate roles in editRoles and readRoles'),
+			);
+		}
+
+		// Erstelle Request Body gemäß ecoDMS API-Dokumentation
+		// Format: { docId, clDocId, classifyAttributes: {...}, editRoles: [...], readRoles: [...] }
 		const requestBody: IDataObject = {
 			docId,
-			...fieldsData,
+			clDocId,
+			classifyAttributes,
 		};
 
-		// Füge Berechtigungen hinzu, falls vorhanden
-		if (editRoles.length > 0) {
-			requestBody.editRoles = editRoles;
-		}
-		if (readRoles.length > 0) {
-			requestBody.readRoles = readRoles;
-		}
+		// Füge Berechtigungen hinzu (immer als Arrays, auch wenn leer)
+		// ecoDMS erwartet die Arrays, auch wenn sie leer sind
+		requestBody.editRoles = editRoles;
+		requestBody.readRoles = readRoles;
 
 		console.log('=== CLASSIFY DOCUMENT DEBUG ===');
 		console.log('DocID:', docId);
+		console.log('ClDocID:', clDocId);
 		console.log('Edit Roles:', editRoles);
 		console.log('Read Roles:', readRoles);
-		console.log('Request Body:', JSON.stringify(requestBody, null, 2));
+		console.log('Classify Attributes:', JSON.stringify(classifyAttributes, null, 2));
+		console.log('Full Request Body:', JSON.stringify(requestBody, null, 2));
 
-		// Versuche verschiedene API-Endpunkte
-		try {
-			// Primärer API-Endpunkt
-			const response = await this.helpers.httpRequest({
-				url: `${credentials.serverUrl as string}/api/classifyDocument`,
-				method: 'POST',
-				headers: {
-					Accept: 'application/json',
-					'Content-Type': 'application/json',
-				},
-				body: requestBody,
-				json: true,
-				auth: {
-					username: credentials.username as string,
-					password: credentials.password as string,
-				},
-				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
-			});
+		const response = await this.helpers.httpRequest({
+			url: `${credentials.serverUrl as string}/api/classifyDocument`,
+			method: 'POST',
+			headers: {
+				Accept: 'application/json',
+				'Content-Type': 'application/json',
+			},
+			body: requestBody,
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
 
-			return {
-				success: true,
-				data: response,
-			};
-		} catch (error: unknown) {
-			console.debug(`Primärer API-Endpunkt fehlgeschlagen: ${getErrorMessage(error)}`);
-
-			try {
-				// Versuche API-Pfad mit IDs
-				const response = await this.helpers.httpRequest({
-					url: `${credentials.serverUrl as string}/api/classifyDocument`,
-					method: 'POST',
-					headers: {
-						Accept: 'application/json',
-						'Content-Type': 'application/json',
-					},
-					body: {
-						...requestBody,
-						useIds: true,
-					},
-					json: true,
-					auth: {
-						username: credentials.username as string,
-						password: credentials.password as string,
-					},
-					skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
-				});
-
-				return {
-					success: true,
-					data: response,
-				};
-			} catch (error2: unknown) {
-				console.debug(`API-Pfad mit IDs fehlgeschlagen: ${getErrorMessage(error2)}`);
-
-				try {
-					// Versuche Version 2 API
-					const response = await this.helpers.httpRequest({
-						url: `${credentials.serverUrl as string}/api/v2/classifyDocument`,
-						method: 'POST',
-						headers: {
-							Accept: 'application/json',
-							'Content-Type': 'application/json',
-						},
-						body: requestBody,
-						json: true,
-						auth: {
-							username: credentials.username as string,
-							password: credentials.password as string,
-						},
-						skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
-					});
-
-					return {
-						success: true,
-						data: response,
-					};
-				} catch (error3: unknown) {
-					console.debug(`Version 2 API fehlgeschlagen: ${getErrorMessage(error3)}`);
-
-					// Wenn alle Versuche fehlschlagen, werfe einen zusammengefassten Fehler
-					const errorMessage =
-						'Alle API-Endpunkte fehlgeschlagen:\n' +
-						`Primärer Endpunkt: ${getErrorMessage(error)}\n` +
-						`ID-basierter Pfad: ${getErrorMessage(error2)}\n` +
-						`V2 API: ${getErrorMessage(error3)}`;
-
-					throw createNodeError(
-						this.getNode(),
-						'Fehler beim Klassifizieren des Dokuments',
-						new Error(errorMessage),
-					);
-				}
-			}
-		}
+		return {
+			success: true,
+			message: 'Klassifikation erfolgreich aktualisiert',
+			data: {
+				response,
+				appliedEditRoles: editRoles,
+				appliedReadRoles: readRoles,
+			},
+		};
 	} catch (error: unknown) {
 		throw createNodeError(
 			this.getNode(),
@@ -797,6 +862,22 @@ async function handleClassifyUserFriendly(
 			}
 		}
 
+		// WICHTIG: Prüfe dass editRoles und readRoles keine gemeinsamen Rollen haben
+		// ecoDMS API lehnt Requests ab, wenn dieselbe Rolle in beiden Arrays ist
+		const commonRoles = finalEditRoles.filter((role) => finalReadRoles.includes(role));
+		if (commonRoles.length > 0) {
+			// Entferne gemeinsame Rollen aus readRoles (editRoles hat Vorrang)
+			console.log(
+				`⚠️ Gemeinsame Rollen gefunden: ${commonRoles.join(', ')} - werden aus readRoles entfernt`,
+			);
+			for (const role of commonRoles) {
+				const index = finalReadRoles.indexOf(role);
+				if (index > -1) {
+					finalReadRoles.splice(index, 1);
+				}
+			}
+		}
+
 		// API-Aufruf zur Klassifizierung (korrekte ecoDMS API-Struktur)
 		const requestBody = {
 			docId,
@@ -830,6 +911,7 @@ async function handleClassifyUserFriendly(
 					username: credentials.username as string,
 					password: credentials.password as string,
 				},
+				skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
 			})
 			.catch((error: any) => {
 				console.log('=== API ERROR DETAILS ===');

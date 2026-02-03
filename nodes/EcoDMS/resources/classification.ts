@@ -533,10 +533,56 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.CreateNewClassify],
 			},
 		},
-		description: 'Die ID des Dokuments, für das eine neue Klassifikation erstellt werden soll',
+		description: 'Die ID des Dokuments, für das eine zusätzliche Klassifikation erstellt werden soll',
 	},
 	{
-		displayName: 'Dokument-ID',
+		displayName: 'Klassifikationsattribute',
+		name: 'classifyAttributes',
+		type: 'json',
+		default:
+			'{\n  "docart": "1",\n  "folder": "1.4",\n  "cdate": "",\n  "bemerkung": "Zusätzliche Klassifikation",\n  "status": "1"\n}',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.CreateNewClassify],
+			},
+		},
+		description:
+			'Die Klassifikationsattribute im JSON-Format. Pflichtfelder: docart, folder, bemerkung. Empfehlung: Attribute von /api/documentInfo/{docId} abrufen und anpassen.',
+	},
+	{
+		displayName: 'Bearbeitungsrollen (editRoles)',
+		name: 'editRoles',
+		type: 'string',
+		default: '',
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.CreateNewClassify],
+			},
+		},
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument BEARBEITEN dürfen. Wenn leer, wird die Benutzer-Rolle des API-Benutzers verwendet.',
+	},
+	{
+		displayName: 'Leserollen (readRoles)',
+		name: 'readRoles',
+		type: 'string',
+		default: '',
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.CreateNewClassify],
+			},
+		},
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument NUR LESEN dürfen. WICHTIG: Darf keine Rolle enthalten, die auch in Bearbeitungsrollen steht!',
+	},
+	{
+		displayName: 'Inbox-Dokument-ID',
 		name: 'docId',
 		type: 'number',
 		default: 0,
@@ -547,21 +593,22 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.ClassifyInboxDocument],
 			},
 		},
-		description: 'Die ID des Inbox-Dokuments, das klassifiziert werden soll',
+		description: 'Die ID des Inbox-Dokuments (aus /api/uploadFileToInbox)',
 	},
 	{
-		displayName: 'Klassifikations-ID',
+		displayName: 'Klassifikations-ID (clDocId)',
 		name: 'clDocId',
 		type: 'number',
-		default: 0,
+		default: -1,
 		required: true,
 		displayOptions: {
 			show: {
 				resource: [Resource.Classification],
-				operation: [Operation.ClassifyDocument],
+				operation: [Operation.ClassifyInboxDocument],
 			},
 		},
-		description: 'Die ID der Dokumentklassifikation, die aktualisiert werden soll',
+		description:
+			'Verwenden Sie -1 für eine NEUE Klassifikation. Für Aktualisierungen verwenden Sie die bestehende clDocId (abrufbar über /api/getInboxClassifications)',
 	},
 	{
 		displayName: 'Dokument-ID',
@@ -575,14 +622,14 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.ClassifyDocument],
 			},
 		},
-		description: 'Die ID des Dokuments, dessen Klassifikation aktualisiert werden soll',
+		description:
+			'Die ID des Dokuments, dessen Klassifikation aktualisiert werden soll (ermittelbar über "Dokumentinformationen abrufen")',
 	},
 	{
-		displayName: 'Klassifikationsattribute',
-		name: 'classifyAttributes',
-		type: 'json',
-		default:
-			'{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "status": "1"\n}',
+		displayName: 'Klassifikations-ID (clDocId)',
+		name: 'clDocId',
+		type: 'number',
+		default: 0,
 		required: true,
 		displayOptions: {
 			show: {
@@ -590,13 +637,30 @@ export const classificationFields: INodeProperties[] = [
 				operation: [Operation.ClassifyDocument],
 			},
 		},
-		description: 'Die Klassifikationsattribute im JSON-Format (z.B. docart, revision, folder, etc.)',
+		description:
+			'Die Klassifikations-ID des Dokuments (ermittelbar über "Dokumentinformationen abrufen")',
 	},
 	{
-		displayName: 'Bearbeitungsrollen',
+		displayName: 'Klassifikationsattribute',
+		name: 'classifyAttributes',
+		type: 'json',
+		default:
+			'{\n  "docart": "1",\n  "revision": "1.0",\n  "bemerkung": "Aktualisierte Klassifikation",\n  "folder": "1.4",\n  "cdate": "",\n  "status": "1"\n}',
+		required: true,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.ClassifyDocument],
+			},
+		},
+		description:
+			'Die Klassifikationsattribute im JSON-Format. Wichtig: "revision" muss dem aktuellen Wert aus documentInfo entsprechen. Pflichtfelder: docart, folder, status, bemerkung',
+	},
+	{
+		displayName: 'Bearbeitungsrollen (editRoles)',
 		name: 'editRoles',
 		type: 'string',
-		default: 'Elite',
+		default: '',
 		required: false,
 		displayOptions: {
 			show: {
@@ -605,10 +669,10 @@ export const classificationFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Kommagetrennte Liste von Rollen, die das Dokument bearbeiten dürfen (z.B. "r_ecodms,Elite")',
+			'Kommagetrennte Liste von Rollen, die das Dokument BEARBEITEN dürfen (z.B. "r_ecodms,Elite"). WICHTIG: Darf keine Rolle enthalten, die auch in Leserollen steht!',
 	},
 	{
-		displayName: 'Leserollen',
+		displayName: 'Leserollen (readRoles)',
 		name: 'readRoles',
 		type: 'string',
 		default: '',
@@ -620,7 +684,7 @@ export const classificationFields: INodeProperties[] = [
 			},
 		},
 		description:
-			'Kommagetrennte Liste von Rollen, die das Dokument lesen dürfen (z.B. "ecoSIMSUSER,Gast")',
+			'Kommagetrennte Liste von Rollen, die das Dokument NUR LESEN dürfen (z.B. "ecoSIMSUSER,Gast"). WICHTIG: Darf keine Rolle enthalten, die auch in Bearbeitungsrollen steht!',
 	},
 	{
 		displayName: 'Klassifikations-ID',
@@ -638,18 +702,50 @@ export const classificationFields: INodeProperties[] = [
 			'Die ID der Dokumentklassifikation, für die Links entfernt oder hinzugefügt werden sollen',
 	},
 	{
-		displayName: 'Felder',
-		name: 'fields',
+		displayName: 'Klassifikationsattribute',
+		name: 'classifyAttributes',
 		type: 'json',
-		default: '{}',
+		default:
+			'{\n  "docart": "1",\n  "folder": "1.4",\n  "cdate": "",\n  "bemerkung": "Inbox-Klassifikation",\n  "status": "1"\n}',
 		required: true,
 		displayOptions: {
 			show: {
 				resource: [Resource.Classification],
-				operation: [Operation.CreateNewClassify, Operation.ClassifyInboxDocument],
+				operation: [Operation.ClassifyInboxDocument],
 			},
 		},
-		description: 'Die Klassifikationsfelder im JSON-Format',
+		description:
+			'Die Klassifikationsattribute im JSON-Format. Pflichtfelder: docart, folder, bemerkung. Abrufbar mit /api/classifyAttributes',
+	},
+	{
+		displayName: 'Bearbeitungsrollen (editRoles)',
+		name: 'editRoles',
+		type: 'string',
+		default: '',
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.ClassifyInboxDocument],
+			},
+		},
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument BEARBEITEN dürfen. WICHTIG: Darf keine Rolle enthalten, die auch in Leserollen steht!',
+	},
+	{
+		displayName: 'Leserollen (readRoles)',
+		name: 'readRoles',
+		type: 'string',
+		default: '',
+		required: false,
+		displayOptions: {
+			show: {
+				resource: [Resource.Classification],
+				operation: [Operation.ClassifyInboxDocument],
+			},
+		},
+		description:
+			'Kommagetrennte Liste von Rollen, die das Dokument NUR LESEN dürfen. WICHTIG: Darf keine Rolle enthalten, die auch in Bearbeitungsrollen steht!',
 	},
 
 	// ===== DETAILLIERTE KLASSIFIKATIONSATTRIBUTE ABRUFEN =====
