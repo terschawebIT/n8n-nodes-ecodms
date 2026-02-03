@@ -130,7 +130,7 @@ export const searchFields: INodeProperties[] = [
 						},
 						description: 'Das benutzerdefinierte Feld (dyn_*), nach dem gesucht werden soll',
 					},
-					// Operatoren für Textfelder (Bemerkung, Bearbeiter)
+					// Operator (ein Feld für alle Attributtypen)
 					{
 						displayName: 'Operator',
 						name: 'searchOperator',
@@ -138,66 +138,17 @@ export const searchFields: INodeProperties[] = [
 						options: [
 							{ name: 'Gleich (=)', value: '=' },
 							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Enthält (like)', value: 'like' },
-							{ name: 'Enthält nicht (!like)', value: '!like' },
-							{ name: 'Enthält (Groß/Klein ignorieren)', value: 'ilike' },
-							{ name: 'Enthält nicht (Groß/Klein ignorieren)', value: '!ilike' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['bemerkung', 'changeid', 'custom'],
-							},
-						},
-						default: 'like',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					// Operatoren für Auswahl-Felder (Dokumentart, Ordner, Status)
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: [
-									'docart',
-									'folder',
-									'folderonly',
-									'mainfolder',
-									'mainfolderonly',
-									'status',
-								],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					// Operatoren für Datum-Felder
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
+							{ name: 'Enthält (ilike)', value: 'ilike' },
+							{ name: 'Enthält nicht (not ilike)', value: 'not ilike' },
 							{ name: 'Größer als (>)', value: '>' },
 							{ name: 'Größer oder gleich (>=)', value: '>=' },
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
-							},
-						},
 						default: '=',
 						required: true,
-						description: 'Der Vergleichsoperator für die Datumssuche',
+						description:
+							'Der Vergleichsoperator. Für Text: =, !=, ilike, not ilike. Für Datum/Zahlen: =, !=, >, >=, <, <=. Für Auswahl: =, !=',
 					},
 					// Suchtext für Textfelder und Custom Fields
 					{
@@ -381,57 +332,17 @@ export const searchFields: INodeProperties[] = [
 						options: [
 							{ name: 'Gleich (=)', value: '=' },
 							{ name: 'Nicht gleich (!=)', value: '!=' },
-							{ name: 'Enthält (like)', value: 'like' },
-							{ name: 'Enthält nicht (!like)', value: '!like' },
-							{ name: 'Enthält (Groß/Klein ignorieren, ilike)', value: 'ilike' },
-							{ name: 'Enthält nicht (Groß/Klein ignorieren, !ilike)', value: '!ilike' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['bemerkung', 'changeid'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
-						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['docart', 'folder', 'status'],
-							},
-						},
-						default: '=',
-						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
-					},
-					{
-						displayName: 'Operator',
-						name: 'searchOperator',
-						type: 'options',
-						options: [
-							{ name: 'Gleich (=)', value: '=' },
-							{ name: 'Nicht gleich (!=)', value: '!=' },
+							{ name: 'Enthält (ilike)', value: 'ilike' },
+							{ name: 'Enthält nicht (not ilike)', value: 'not ilike' },
 							{ name: 'Größer als (>)', value: '>' },
 							{ name: 'Größer oder gleich (>=)', value: '>=' },
 							{ name: 'Kleiner als (<)', value: '<' },
 							{ name: 'Kleiner oder gleich (<=)', value: '<=' },
 						],
-						displayOptions: {
-							show: {
-								classifyAttribut: ['cdate', 'defdate', 'ctimestamp'],
-							},
-						},
 						default: '=',
 						required: true,
-						description: 'Der Vergleichsoperator für die Suche',
+						description:
+							'Der Vergleichsoperator. Für Text: =, !=, ilike, not ilike. Für Datum/Zahlen: =, !=, >, >=, <, <=. Für Auswahl: =, !=',
 					},
 					{
 						displayName: 'Wert',
