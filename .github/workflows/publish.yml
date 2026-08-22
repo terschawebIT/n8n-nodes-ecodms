@@ -1,0 +1,45 @@
+# Tag vX.Y.Z → lint, build, GitHub Release.
+#
+# npm publish is not enabled yet (npmjs 2FA reset pending).
+# After that, add a Trusted Publishing / NPM_TOKEN step.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Build and GitHub Release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            See [CHANGELOG.md](https://github.com/terschawebIT/n8n-nodes-ecodms/blob/main/CHANGELOG.md) for details.
+
+            Install in n8n from npm (`n8n-nodes-ecodms`) or from this GitHub repository for the latest tag.

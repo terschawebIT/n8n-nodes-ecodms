@@ -1,224 +1,203 @@
 # n8n-nodes-ecodms
 
-Diese Node ermöglicht die Integration von [ecoDMS](https://www.ecodms.de/) in n8n, um Dokumente automatisiert zu verwalten, zu archivieren und zu klassifizieren.
+[![CI](https://github.com/terschawebIT/n8n-nodes-ecodms/actions/workflows/ci.yml/badge.svg)](https://github.com/terschawebIT/n8n-nodes-ecodms/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/terschawebIT/n8n-nodes-ecodms)](https://github.com/terschawebIT/n8n-nodes-ecodms/releases/latest)
+[![npm](https://img.shields.io/npm/v/n8n-nodes-ecodms)](https://www.npmjs.com/package/n8n-nodes-ecodms)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE.md)
+
+n8n Community-Node für [ecoDMS](https://www.ecodms.de/) — Dokumente suchen, hochladen, klassifizieren und archivieren.
+
+Aktuelles GitHub-Release: [v1.0.7](https://github.com/terschawebIT/n8n-nodes-ecodms/releases/tag/v1.0.7). npm kann etwas hinterherhinken.
 
 ## Inhaltsverzeichnis
+
 - [Installation](#installation)
+- [Credentials](#credentials)
 - [Funktionen](#funktionen)
-- [Konfiguration](#konfiguration)
 - [API-Hinweise](#api-hinweise)
 - [Nutzung](#nutzung)
 - [Nutzung mit dem AI-Agent](#nutzung-mit-dem-ai-agent)
 - [Fehlerbehandlung](#fehlerbehandlung)
 - [Entwicklung](#entwicklung)
+- [Publish](#publish)
 - [Projektstruktur](#projektstruktur)
 - [Beitragen](#beitragen)
 
 ## Installation
 
+Braucht n8n 1.x/2.x und Node.js 20+.
+
+### Community Nodes (empfohlen)
+
+**n8n → Settings → Community Nodes → Install**
+
+Paketname (npm, zuletzt **1.0.6**):
+
+```text
+n8n-nodes-ecodms
+```
+
+Oder die Git-URL für den aktuellen Stand (1.0.7+):
+
+```text
+https://github.com/terschawebIT/n8n-nodes-ecodms.git
+```
+
+CLI:
+
 ```bash
-# Community-Paket (npm, zuletzt 1.0.6)
+n8n install n8n-nodes-ecodms
+# oder
+n8n install https://github.com/terschawebIT/n8n-nodes-ecodms.git
+```
+
+### Manuell im n8n-Datenordner
+
+```bash
 cd ~/.n8n/nodes
 npm install n8n-nodes-ecodms
-
-# 1.0.7 (checkDuplicates / uploadToInbox) von GitHub, bis npm nachzieht
-cd ~/.n8n/nodes
+# aktueller GitHub-Stand:
 npm install github:terschawebIT/n8n-nodes-ecodms
 ```
 
-Bei Docker-basierten Installationen können Sie die Node in einem benutzerdefinierten Container einbinden. Fügen Sie dazu folgende Zeile in Ihr Dockerfile hinzu:
+Danach n8n neu starten. Die Node erscheint als **ecoDMS**.
+
+### Docker
 
 ```dockerfile
 RUN cd /usr/local/lib/node_modules/n8n && npm install n8n-nodes-ecodms
 ```
 
+Bei Image-Varianten mit User `node` oft:
+
+```dockerfile
+RUN mkdir -p /home/node/.n8n/nodes \
+	&& cd /home/node/.n8n/nodes \
+	&& npm install n8n-nodes-ecodms
+```
+
+## Credentials
+
+Unter **Credentials** einen Eintrag **ecoDMS API** anlegen:
+
+| Feld | Beschreibung |
+|------|----------------|
+| **Server URL** | Basis-URL inkl. Port, ohne `/api` (z. B. `https://ecodms.example.com:8080`) |
+| **Benutzername** | ecoDMS-Benutzer mit API-Recht |
+| **Passwort** | Passwort dieses Benutzers |
+| **Archiv-ID** | ID des Archivs (`GET /api/archives`) |
+| **API-Key** | optional, nur wenn am Server aktiviert |
+| **SSL-Zertifikate ignorieren** | für selbst-signierte Zertifikate (nur in vertrauenswürdigen Netzen) |
+
+Auth: HTTP Basic. Rollen je nach Operation, u. a. `ecoSIMSCLASSIFY` (Klassifikation) und `ecoICELogon` (Inbox).
+
 ## Funktionen
 
-Diese Node unterstützt folgende Funktionen:
+- **Dokumente**: herunterladen und hochladen, Klassifikationen und Versionen, Verknüpfungen, Duplikate prüfen (`checkDuplicates`), PDF in die Inbox (`uploadToInbox`)
+- **Archive**: auflisten, verbinden, Infos
+- **Suche**: Volltext, erweiterte Filter (inkl. Custom-Felder `dyn_*` und Operatoren), Suche und Download
+- **Ordner**: Struktur, anlegen, Attribute, Rechte
+- **Klassifikation**: Attribute, Dokumenttypen, klassifizieren (Archiv und Inbox)
+- **Dokumenttypen**: Liste und Details
+- **Thumbnails**: Vorschaubilder
+- **Lizenz**: Lizenzinfo und API-Connects
 
-- **Dokumente**: 
-   - Dokumente herunterladen und hochladen
-   - Spezifische Klassifikationen und Versionen von Dokumenten abrufen
-   - Dokument-Versionen herunterladen
-   - Klassifikationen erstellen und aktualisieren
-   - Dokument-Verknüpfungen hinzufügen und entfernen
-   - Versionen zu bestehenden Dokumenten hinzufügen
-   - Duplikate prüfen (`checkDuplicates`, API `/api/checkDuplicates/{maxMatchValue}`)
-   - PDF in die ecoDMS-Inbox hochladen (`uploadToInbox`)
-   - Template-Erkennung für Dokumente
-- **Archive**: 
-  - Verfügbare Archive auflisten und verbinden
-  - Archiv-Informationen abrufen
-- **Suche**: 
-  - Einfache und erweiterte Dokumentsuche
-  - Komplexe Suchfilter mit mehreren Kriterien
-  - Sortierung und Filterung von Suchergebnissen
-  - Kombinierte Suche mit Dokumenten-Download
-- **Ordner**: 
-  - Komplette Ordnerstruktur abrufen
-  - Ordner und Unterordner erstellen
-  - Ordner-Attribute bearbeiten
-  - Berechtigungen für Ordner festlegen
-- **Klassifikation**:
-  - Klassifikationsattribute abrufen (normal und detailliert)
-  - Dokumenttyp-Klassifikationen abrufen
-  - Dokumente klassifizieren und Klassifikationen aktualisieren
-- **Dokumenttypen**:
-  - Liste aller verfügbaren Dokumenttypen abrufen
-  - Dokumenttyp-Details wie IDs und Namen für die Suche verwenden
-- **Thumbnails**: 
-  - Vorschaubilder von Dokumenten herunterladen
-  - Miniaturansichten für die Anzeige in Oberflächen generieren
-- **Lizenzinformationen**: 
-  - Informationen zur ecoDMS-Lizenz abrufen
-  - Verfügbare API-Connects einsehen
-- **Workflow**:
-  - Kombinierte Operationen für häufige Anwendungsfälle
-  - Optimierte Abläufe für Standard-Szenarien
-
-## Konfiguration
-
-Um die ecoDMS-Node zu verwenden, benötigen Sie:
-
-1. Die URL Ihres ecoDMS-Servers (mit Port, z.B. http://ecodms.example.com:8080)
-2. Einen gültigen Benutzernamen und Passwort mit API-Zugriff
-3. Die entsprechenden Berechtigungen im ecoDMS-System:
-   - Rolle `ecoSIMSCLASSIFY` für Klassifikationen
-   - Lese- und/oder Schreibberechtigungen für die entsprechenden Dokumente
-
-Für die Einrichtung:
-1. Fügen Sie in n8n unter "Credentials" einen neuen "ecoDMS account" hinzu
-2. Geben Sie die Server-URL, Benutzername und Passwort ein
-3. Speichern Sie die Anmeldedaten
+Details zu 1.0.7: [CHANGELOG.md](CHANGELOG.md).
 
 ## API-Hinweise
 
-Die ecoDMS-API verwendet HTTP Basic Authentication und benötigt für bestimmte Funktionen spezielle Accept-Header:
+- Antworten standardmäßig `application/json`, Downloads/Thumbnails `Accept: */*`
+- Kodierung nur UTF-8
+- **`checkDuplicates`**: `POST /api/checkDuplicates/{maxMatchValue}`. Leere `duplicates: []` heißt oft: Duplikaterkennung in den ecoDMS-Einstellungen **aus** — nicht „kein Duplikat“.
+- **`uploadToInbox`**: nur PDF, Rolle `ecoICELogon`. Antwort ist eine Inbox-ID, keine Archiv-DocID.
 
-- Standardmäßig werden Antworten im Format `application/json` zurückgegeben
-- Für Dokument-Downloads und Thumbnails muss der Accept-Header `*/*` verwendet werden
-- Die API unterstützt nur UTF-8-Kodierung
-- **`checkDuplicates`**: `POST /api/checkDuplicates/{maxMatchValue}`. Leere `duplicates: []` bedeutet oft, dass die Duplikaterkennung in den ecoDMS-Einstellungen **aus** ist (nicht: „kein Duplikat gefunden“).
-- **`uploadToInbox`**: nur PDF, Rolle `ecoICELogon`. Liefert eine Inbox-ID, keine Archiv-DocID.
+API-Connects (Lizenz):
 
-Beachten Sie, dass für die Verwendung der API sogenannte "API connects" benötigt werden:
-- 1 API connect = 1 monatlicher Upload oder Download über die ecoDMS API
-- Die Anzahl der verfügbaren API connects wird mit dem ersten Upload oder Download in einem neuen Monat zurückgesetzt
-- Die verfügbare Anzahl an API connects hängt von Ihrem ecoDMS-Lizenzmodell ab
+- 1 Connect = 1 monatlicher Upload oder Download über die API
+- Zähler setzt sich zu Monatsbeginn zurück
+- Anzahl hängt vom Lizenzmodell ab
+
+Offizielle Doku: [ecoDMS API](https://www.ecodms.de/index.php/de/api-schnittstelle).
 
 ## Nutzung
 
-Nach der Installation können Sie die ecoDMS-Node in Ihren Workflows verwenden:
+1. ecoDMS-Node in den Workflow ziehen
+2. Ressource und Operation wählen
+3. Credential und Parameter setzen
 
-1. Ziehen Sie die ecoDMS-Node in Ihren Workflow
-2. Wählen Sie die gewünschte Ressource (Dokument, Archiv, Suche, Ordner, etc.)
-3. Wählen Sie die entsprechende Operation
-4. Konfigurieren Sie die erforderlichen Parameter
-5. Verbinden Sie die Node mit anderen Nodes in Ihrem Workflow
+Typische Ketten:
 
-Typische Anwendungsfälle:
-
-### Beispiel 1: Dokumente automatisiert archivieren
 ```
-E-Mail-Eingang → E-Mail-Anhänge extrahieren → ecoDMS (Dokument hochladen)
-```
-
-### Beispiel 2: Dokumente suchen und verarbeiten
-```
-ecoDMS (Dokument suchen) → HTTP Request (Daten an externes System senden)
-```
-
-### Beispiel 3: Dokumentenklassifikation aktualisieren
-```
-HTTP Webhook (neues Ereignis) → ecoDMS (Dokument-Klassifikation aktualisieren)
+E-Mail-Anhang → ecoDMS (Dokument hochladen)
+ecoDMS (Suche) → HTTP Request
+Webhook → ecoDMS (Klassifikation aktualisieren)
+Datei → ecoDMS (checkDuplicates) → upload / uploadToInbox
 ```
 
 ## Nutzung mit dem AI-Agent
 
-Diese Node ist vollständig mit dem n8n AI-Agent kompatibel. Folgende Beispielanweisungen können Sie dem AI-Agent geben:
+Die Node ist mit dem n8n AI-Agent nutzbar. Beispiele:
 
-- "Suche nach allen Dokumenten mit dem Stichwort 'Rechnung' im Ordner 'Finanzen'"
-- "Lade das Dokument mit der ID 123 herunter und speichere es als PDF"
-- "Erstelle einen neuen Ordner für das Jahr 2025"
-- "Aktualisiere die Klassifikation des Dokuments mit der ID 456"
-- "Zeige mir alle verfügbaren Dokumenttypen im System an"
+- „Suche nach allen Dokumenten mit dem Stichwort Rechnung im Ordner Finanzen“
+- „Lade das Dokument mit der ID 123 herunter und speichere es als PDF“
+- „Erstelle einen neuen Ordner für das Jahr 2026“
+- „Aktualisiere die Klassifikation des Dokuments mit der ID 456“
+- „Zeige alle verfügbaren Dokumenttypen“
 
 ## Fehlerbehandlung
 
-Die Node beinhaltet umfangreiche Fehlerbehandlung, um typische Probleme zu diagnostizieren:
-
-- **404-Fehler**: Deuten oft auf falsche Dokument- oder Klassifikations-IDs hin
-- **401-Fehler**: Probleme mit Authentifizierung oder fehlenden Berechtigungen
-- **`checkDuplicates` immer leer**: Duplikaterkennung in ecoDMS aktivieren, sonst filtert kein Workflow
+- **404**: falsche Dokument-, Klassifikations- oder Ordner-ID
+- **401**: Auth oder fehlende Rolle
+- **413**: Upload größer als das Limit des ecoDMS-REST-Dienstes
+- **`checkDuplicates` immer leer**: Duplikaterkennung am Server einschalten
 - **`Die Operation wird nicht unterstützt`**: UI-Eintrag ohne Handler (siehe [CHANGELOG](CHANGELOG.md) 1.0.7)
-- **Fehlgeschlagene API-Aufrufe**: Die Node liefert detaillierte Fehlermeldungen mit konkreten Hinweisen zur Behebung
+- **self-signed certificate**: Checkbox „SSL-Zertifikate ignorieren“ in den Credentials, ab 1.0.7 auch im Credential-Test
 
-Sollten Sie auf Probleme stoßen, prüfen Sie:
-1. Ob die Server-URL korrekt ist (inkl. Port)
-2. Ob die Anmeldedaten gültig sind
-3. Ob der Benutzer die notwendigen Berechtigungen hat
-4. Ob die angegebenen IDs (Dokument, Klassifikation, Ordner) existieren
+Prüfen: Server-URL inkl. Port, Credentials, Rollen, existierende IDs.
 
 ## Entwicklung
 
 ```bash
-# Installation
 npm install
-
-# Bauen
+npm run lint
 npm run build
-
-# Entwicklung mit automatischem Rebuild
-npm run dev
 ```
 
-### Modul-Tests
+Siehe [CONTRIBUTING.md](CONTRIBUTING.md). Sicherheitslücken: [SECURITY.md](SECURITY.md).
 
-Das Projekt enthält Tests, die Sie wie folgt ausführen können:
+## Publish
 
 ```bash
-npm run test
+npm run lint
+npm run build
+git tag vX.Y.Z
+git push origin vX.Y.Z
 ```
+
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml) lintet, baut und legt ein GitHub Release an.
+
+npm publish folgt, sobald der npmjs-Zugang (2FA) wiedersteht. Bis dahin: GitHub-Release oder `npm install github:terschawebIT/n8n-nodes-ecodms`.
 
 ## Projektstruktur
 
-Dieses Projekt verwendet eine modulare Struktur, um die Wartbarkeit und Übersichtlichkeit zu verbessern:
-
 ```
 nodes/EcoDMS/
-├── EcoDMS.node.ts         # Hauptdatei, die alle Module zusammenführt
-├── ecoDms.svg             # Icon für die Node
-├── handlers/              # Handler für die API-Aufrufe
-│   ├── documentHandler.ts # Handler für Dokument-Operationen
-│   ├── searchHandler.ts   # Handler für Such-Operationen
-│   └── ...                # Weitere Handler
-├── resources/
-│   ├── document.ts        # Modul für Dokument-Ressource
-│   ├── classification.ts  # Modul für Klassifikations-Ressource
-│   ├── documentType.ts    # Modul für Dokumenttyp-Ressource
-│   ├── archive.ts         # Modul für Archiv-Ressource
-│   ├── search.ts          # Modul für Such-Ressource
-│   ├── folder.ts          # Modul für Ordner-Ressource
-│   ├── license.ts         # Modul für Lizenz-Ressource
+├── EcoDMS.node.ts
+├── ecoDms.svg
+├── handlers/              # API-Aufrufe
+├── resources/             # UI-Felder je Ressource
 └── utils/
-    ├── constants.ts       # Gemeinsame Konstanten (Resource, Operation)
-    └── helpers.ts         # Hilfsfunktionen
+credentials/EcoDmsApi.credentials.ts
 ```
 
-Diese Struktur bietet folgende Vorteile:
-- **Bessere Übersichtlichkeit**: Jede Ressource hat eine eigene Datei
-- **Einfachere Wartung**: Änderungen an einer bestimmten Ressource betreffen nur eine Datei
-- **Vermeidung von Duplikaten**: Parameter, die mehrfach verwendet werden, können in einer Datei definiert werden
-- **Leichteres Hinzufügen neuer Funktionalitäten**: Neue Ressourcen können einfach als neue Module hinzugefügt werden
-
-Um neue Ressourcen hinzuzufügen:
-1. Erstelle eine neue Datei unter `resources/`
-2. Definiere die Operations und Fields für diese Ressource
-3. Erstelle einen Handler unter `handlers/`
-4. Importiere die neue Datei in `EcoDMS.node.ts` und füge die Operations und Fields hinzu
+Neue Ressource: Datei unter `resources/`, Handler unter `handlers/`, in `EcoDMS.node.ts` einhängen.
 
 ## Beitragen
 
-Contributions sind willkommen! Bitte erstellen Sie einen Issue oder Pull Request auf GitHub. 
+Issues und Pull Requests: [terschawebIT/n8n-nodes-ecodms](https://github.com/terschawebIT/n8n-nodes-ecodms/issues).
 
-Bei Fragen oder Problemen können Sie auch einen Issue auf dem GitHub-Repository erstellen: [terschawebIT/n8n-nodes-ecodms](https://github.com/terschawebIT/n8n-nodes-ecodms/issues) 
+Bitte [CONTRIBUTING.md](CONTRIBUTING.md) lesen. Dieses Repo ist öffentlich — keine internen Hosts, Tokens oder Kundendaten.
+
+## License
+
+[MIT](LICENSE.md)

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- GitHub Actions: CI auf `main`, Release bei Tag `v*.*.*`
+- README: Community-Nodes-Installation, Credentials-Tabelle, Publish
+- CONTRIBUTING, SECURITY, LICENSE, PR-Template
+
 ## 1.0.7 — 2026-08-22
 
 Handler nachgezogen, die in der UI schon existierten, aber `Die Operation wird nicht unterstützt` warfen.

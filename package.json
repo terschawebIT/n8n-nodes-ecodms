@@ -48,7 +48,8 @@
 	},
 	"files": [
 		"dist",
-		"index.js"
+		"index.js",
+		"LICENSE.md"
 	],
 	"n8n": {
 		"n8nNodesApiVersion": 1,
