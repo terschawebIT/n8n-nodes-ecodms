@@ -321,9 +321,25 @@ export const searchFields: INodeProperties[] = [
 							{ name: 'Bearbeiter', value: 'changeid' },
 							{ name: 'Wiedervorlage-Datum', value: 'defdate' },
 							{ name: 'Zeitstempel', value: 'ctimestamp' },
+							{ name: '--- Benutzerdefiniertes Feld ---', value: 'custom' },
 						],
 						default: 'bemerkung',
 						description: 'Das Attribut, nach dem gesucht werden soll',
+					},
+					{
+						displayName: 'Custom Field',
+						name: 'customFieldName',
+						type: 'options',
+						typeOptions: {
+							loadOptionsMethod: 'getCustomFields',
+						},
+						default: '',
+						displayOptions: {
+							show: {
+								classifyAttribut: ['custom'],
+							},
+						},
+						description: 'Das benutzerdefinierte Feld (dyn_*), nach dem gesucht werden soll',
 					},
 					{
 						displayName: 'Operator',
@@ -348,7 +364,8 @@ export const searchFields: INodeProperties[] = [
 						displayName: 'Wert',
 						name: 'searchValue',
 						type: 'string',
-						default: 'Suchbegriff eingeben',
+						default: '',
+						placeholder: 'Suchbegriff eingeben',
 						displayOptions: {
 							hide: {
 								classifyAttribut: ['docart', 'folder', 'status'],

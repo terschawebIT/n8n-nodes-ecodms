@@ -137,10 +137,24 @@ export const documentFields: INodeProperties[] = [
 		displayOptions: {
 			show: {
 				resource: [Resource.Document],
-				operation: [Operation.Upload],
+				operation: [Operation.Upload, Operation.UploadToInbox],
 			},
 		},
 		description: 'Name der binären Eigenschaft, die hochgeladen werden soll',
+	},
+	{
+		displayName: 'Inbox-Rechte',
+		name: 'inboxRights',
+		type: 'string',
+		default: '',
+		displayOptions: {
+			show: {
+				resource: [Resource.Document],
+				operation: [Operation.UploadToInbox],
+			},
+		},
+		description:
+			'Optionale Rollen (kommagetrennt), die das Dokument in der Inbox sehen dürfen. Leer = Rolle des API-Users.',
 	},
 	{
 		displayName: 'Versionierung aktivieren',

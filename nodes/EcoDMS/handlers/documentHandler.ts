@@ -50,6 +50,12 @@ export async function handleDocumentOperations(
 		case Operation.UploadFile:
 			result = await handleUploadFile.call(this, _items, credentials);
 			break;
+		case Operation.CheckDuplicates:
+			result = await handleCheckDuplicates.call(this, _items, credentials);
+			break;
+		case Operation.UploadToInbox:
+			result = await handleUploadToInbox.call(this, _items, credentials);
+			break;
 		default:
 			throw new NodeOperationError(
 				this.getNode(),
@@ -607,5 +613,171 @@ async function handleUploadFile(
 		];
 	} catch (error: unknown) {
 		throw createNodeError(this.getNode(), 'Fehler beim Hochladen der Datei', error);
+	}
+}
+
+/**
+ * Prüft, ob die Datei bereits im Archiv liegt.
+ * API: POST /api/checkDuplicates/{maxMatchValue}
+ */
+async function handleCheckDuplicates(
+	this: IExecuteFunctions,
+	items: INodeExecutionData[],
+	credentials: IDataObject,
+): Promise<INodeExecutionData[]> {
+	const binaryPropertyName = this.getNodeParameter('binaryPropertyName', 0, 'data') as string;
+	const maxMatchValue = this.getNodeParameter('maxMatchValue', 0, 80) as number;
+	const item = items[0];
+
+	if (item.binary === undefined || item.binary[binaryPropertyName] === undefined) {
+		throw new NodeOperationError(
+			this.getNode(),
+			`Keine binären Daten in "${binaryPropertyName}" gefunden!`,
+		);
+	}
+
+	if (maxMatchValue < 1 || maxMatchValue > 100) {
+		throw new NodeOperationError(
+			this.getNode(),
+			`Übereinstimmungswert muss zwischen 1 und 100 liegen (ist ${maxMatchValue}).`,
+		);
+	}
+
+	const binaryData = item.binary[binaryPropertyName];
+
+	try {
+		const formData = new FormData();
+		const fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+		const mimeType = binaryData.mimeType || 'application/pdf';
+		const fileName = binaryData.fileName || 'document.pdf';
+
+		formData.append('file', fileBuffer, {
+			filename: fileName,
+			contentType: mimeType,
+		});
+
+		const url = await getBaseUrl.call(this, `checkDuplicates/${maxMatchValue}`);
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'POST',
+			headers: {
+				...formData.getHeaders(),
+				Accept: 'application/json',
+			},
+			body: formData,
+			json: true,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
+
+		const responseData = (typeof response === 'string' ? JSON.parse(response) : response) as {
+			duplicates?: IDataObject[];
+		};
+		const duplicates = Array.isArray(responseData?.duplicates) ? responseData.duplicates : [];
+
+		return [
+			{
+				json: {
+					success: true,
+					hasDuplicates: duplicates.length > 0,
+					duplicateCount: duplicates.length,
+					maxMatchValue,
+					fileName,
+					duplicates,
+				},
+				binary: item.binary,
+			},
+		];
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Duplizierungscheck', error);
+	}
+}
+
+/**
+ * Lädt eine PDF-Datei in die ecoDMS-Inbox.
+ * API: POST /api/uploadFileToInbox
+ */
+async function handleUploadToInbox(
+	this: IExecuteFunctions,
+	items: INodeExecutionData[],
+	credentials: IDataObject,
+): Promise<INodeExecutionData[]> {
+	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
+	const rightsParam = this.getNodeParameter('inboxRights', 0, '') as string;
+	const item = items[0];
+
+	if (item.binary === undefined || item.binary[binaryPropertyName] === undefined) {
+		throw new NodeOperationError(
+			this.getNode(),
+			`Keine binären Daten in "${binaryPropertyName}" gefunden!`,
+		);
+	}
+
+	const binaryData = item.binary[binaryPropertyName];
+
+	try {
+		const formData = new FormData();
+		const fileBuffer = await this.helpers.getBinaryDataBuffer(0, binaryPropertyName);
+		const mimeType = binaryData.mimeType || 'application/pdf';
+		const fileName = binaryData.fileName || 'document.pdf';
+
+		formData.append('file', fileBuffer, {
+			filename: fileName,
+			contentType: mimeType,
+		});
+
+		let endpoint = 'uploadFileToInbox';
+		const rights = rightsParam
+			.split(',')
+			.map((role) => role.trim())
+			.filter((role) => role.length > 0);
+		if (rights.length > 0) {
+			const query = rights.map((role) => `rights=${encodeURIComponent(role)}`).join('&');
+			endpoint = `${endpoint}?${query}`;
+		}
+
+		const url = await getBaseUrl.call(this, endpoint);
+		const response = await this.helpers.httpRequest({
+			url,
+			method: 'POST',
+			headers: {
+				...formData.getHeaders(),
+				Accept: '*/*',
+			},
+			body: formData,
+			json: false,
+			auth: {
+				username: credentials.username as string,
+				password: credentials.password as string,
+			},
+			skipSslCertificateValidation: await shouldSkipSslValidation.call(this),
+		});
+
+		let inboxId: string | number = typeof response === 'number' ? response : String(response);
+		if (typeof response === 'string') {
+			const trimmed = response.trim();
+			try {
+				const parsed = JSON.parse(trimmed) as string | number;
+				inboxId = parsed;
+			} catch {
+				inboxId = trimmed;
+			}
+		}
+
+		return [
+			{
+				json: {
+					success: true,
+					inboxId,
+					fileName,
+				},
+				binary: item.binary,
+			},
+		];
+	} catch (error: unknown) {
+		throw createNodeError(this.getNode(), 'Fehler beim Hochladen in die Inbox', error);
 	}
 }

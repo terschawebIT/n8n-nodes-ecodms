@@ -134,6 +134,37 @@ function formatDateValue(dateValue: string | Date): string {
 	return `${year}-${month}-${day}`;
 }
 
+function buildSearchFilters(filters: IDataObject[]): IDataObject[] {
+	return filters.map((filter: IDataObject) => {
+		let attributeName = filter.classifyAttribut as string;
+		if (attributeName === 'custom' && filter.customFieldName) {
+			attributeName = filter.customFieldName as string;
+		}
+
+		let searchValue = '';
+
+		if (['cdate', 'defdate', 'ctimestamp'].includes(filter.classifyAttribut as string)) {
+			searchValue = formatDateValue(filter.searchValueDate as string);
+		} else if (filter.searchValueDocumentType) {
+			searchValue = filter.searchValueDocumentType as string;
+		} else if (filter.searchValueFolder) {
+			searchValue = filter.searchValueFolder as string;
+		} else if (filter.searchValueStatus) {
+			searchValue = filter.searchValueStatus as string;
+		} else if (filter.searchValueText) {
+			searchValue = filter.searchValueText as string;
+		} else if (filter.searchValue) {
+			searchValue = filter.searchValue as string;
+		}
+
+		return {
+			classifyAttribut: attributeName,
+			searchValue,
+			searchOperator: filter.searchOperator || '=',
+		};
+	});
+}
+
 /**
  * Implementiert die erweiterte Suche
  */
@@ -148,40 +179,7 @@ async function handleAdvancedSearch(
 		// Verwende die korrekte ecoDMS API URL
 		const url = await getBaseUrl.call(this, 'searchDocuments');
 
-		// Konvertiere die Filter in das richtige Format
-		const searchFilters = filters.map((filter: IDataObject) => {
-			// Bestimme das Attribut (bei Custom Fields den benutzerdefinierten Namen verwenden)
-			let attributeName = filter.classifyAttribut as string;
-			if (attributeName === 'custom' && filter.customFieldName) {
-				attributeName = filter.customFieldName as string;
-			}
-
-			// Bestimme den Suchwert basierend auf dem Attributtyp
-			let searchValue = '';
-
-			// Datum-Felder
-			if (['cdate', 'defdate', 'ctimestamp'].includes(filter.classifyAttribut as string)) {
-				searchValue = formatDateValue(filter.searchValueDate as string);
-			}
-			// Dropdown-Felder
-			else if (filter.searchValueDocumentType) {
-				searchValue = filter.searchValueDocumentType as string;
-			} else if (filter.searchValueFolder) {
-				searchValue = filter.searchValueFolder as string;
-			} else if (filter.searchValueStatus) {
-				searchValue = filter.searchValueStatus as string;
-			}
-			// Text-Felder (inkl. Custom Fields)
-			else if (filter.searchValueText) {
-				searchValue = filter.searchValueText as string;
-			}
-
-			return {
-				classifyAttribut: attributeName,
-				searchValue: searchValue,
-				searchOperator: filter.searchOperator || '=',
-			};
-		});
+		const searchFilters = buildSearchFilters(filters);
 
 		const response = await this.helpers.httpRequest({
 			url,
@@ -219,20 +217,14 @@ async function handleSearchAndDownload(
 	_items: INodeExecutionData[],
 	credentials: IDataObject,
 ): Promise<INodeExecutionData[]> {
-	const searchTerm = this.getNodeParameter('searchText', 0) as string;
 	const binaryPropertyName = this.getNodeParameter('binaryProperty', 0, 'data') as string;
+	const filters = this.getNodeParameter('searchFilters.filters', 0, []) as IDataObject[];
 
 	try {
 		// Erst suchen
 		const searchUrl = await getBaseUrl.call(this, 'searchDocuments');
 
-		const searchFilters = [
-			{
-				classifyAttribut: 'fulltext-ext',
-				searchValue: searchTerm,
-				searchOperator: '=',
-			},
-		];
+		const searchFilters = buildSearchFilters(filters);
 
 		const searchResponse = await this.helpers.httpRequest({
 			url: searchUrl,
@@ -256,7 +248,6 @@ async function handleSearchAndDownload(
 					json: {
 						success: true,
 						message: 'Keine Dokumente gefunden',
-						searchTerm,
 					},
 				},
 			];
@@ -301,7 +292,7 @@ async function handleSearchAndDownload(
 					json: {
 						...document,
 						downloadSuccess: true,
-						searchTerm,
+						searchFilters,
 					},
 					binary: {},
 				};
@@ -320,7 +311,7 @@ async function handleSearchAndDownload(
 						...document,
 						downloadSuccess: false,
 						downloadError: (downloadError as Error).message,
-						searchTerm,
+						searchFilters,
 					},
 				});
 			}

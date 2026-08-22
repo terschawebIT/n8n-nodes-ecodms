@@ -78,7 +78,7 @@ export class EcoDmsApi implements ICredentialType {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
 			},
-			skipSslCertificateValidation: '={{$credentials.allowUnauthorizedCerts}}',
+			skipSslCertificateValidation: '={{ $credentials.allowUnauthorizedCerts === true }}',
 		},
 	};
 
@@ -87,7 +87,7 @@ export class EcoDmsApi implements ICredentialType {
 			baseURL: '={{$credentials.serverUrl}}',
 			url: '/api/status',
 			method: 'GET',
-			skipSslCertificateValidation: '={{$credentials.allowUnauthorizedCerts}}',
+			skipSslCertificateValidation: '={{ $credentials.allowUnauthorizedCerts === true }}',
 		},
 	};
 }

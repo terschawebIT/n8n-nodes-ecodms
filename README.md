@@ -16,15 +16,14 @@ Diese Node ermöglicht die Integration von [ecoDMS](https://www.ecodms.de/) in n
 
 ## Installation
 
-Folgen Sie diesen Schritten, um die Node zu installieren:
-
 ```bash
-# Globale Installation
-npm install -g n8n-nodes-ecodms
-
-# Installation in Ihrer n8n-Installation
-cd ~/.n8n/
+# Community-Paket (npm, zuletzt 1.0.6)
+cd ~/.n8n/nodes
 npm install n8n-nodes-ecodms
+
+# 1.0.7 (checkDuplicates / uploadToInbox) von GitHub, bis npm nachzieht
+cd ~/.n8n/nodes
+npm install github:terschawebIT/n8n-nodes-ecodms
 ```
 
 Bei Docker-basierten Installationen können Sie die Node in einem benutzerdefinierten Container einbinden. Fügen Sie dazu folgende Zeile in Ihr Dockerfile hinzu:
@@ -38,14 +37,15 @@ RUN cd /usr/local/lib/node_modules/n8n && npm install n8n-nodes-ecodms
 Diese Node unterstützt folgende Funktionen:
 
 - **Dokumente**: 
-  - Dokumente herunterladen und hochladen
-  - Spezifische Klassifikationen und Versionen von Dokumenten abrufen
-  - Dokument-Versionen herunterladen
-  - Klassifikationen erstellen und aktualisieren
-  - Dokument-Verknüpfungen hinzufügen und entfernen
-  - Versionen zu bestehenden Dokumenten hinzufügen
-  - Duplikate prüfen
-  - Template-Erkennung für Dokumente
+   - Dokumente herunterladen und hochladen
+   - Spezifische Klassifikationen und Versionen von Dokumenten abrufen
+   - Dokument-Versionen herunterladen
+   - Klassifikationen erstellen und aktualisieren
+   - Dokument-Verknüpfungen hinzufügen und entfernen
+   - Versionen zu bestehenden Dokumenten hinzufügen
+   - Duplikate prüfen (`checkDuplicates`, API `/api/checkDuplicates/{maxMatchValue}`)
+   - PDF in die ecoDMS-Inbox hochladen (`uploadToInbox`)
+   - Template-Erkennung für Dokumente
 - **Archive**: 
   - Verfügbare Archive auflisten und verbinden
   - Archiv-Informationen abrufen
@@ -98,6 +98,8 @@ Die ecoDMS-API verwendet HTTP Basic Authentication und benötigt für bestimmte 
 - Standardmäßig werden Antworten im Format `application/json` zurückgegeben
 - Für Dokument-Downloads und Thumbnails muss der Accept-Header `*/*` verwendet werden
 - Die API unterstützt nur UTF-8-Kodierung
+- **`checkDuplicates`**: `POST /api/checkDuplicates/{maxMatchValue}`. Leere `duplicates: []` bedeutet oft, dass die Duplikaterkennung in den ecoDMS-Einstellungen **aus** ist (nicht: „kein Duplikat gefunden“).
+- **`uploadToInbox`**: nur PDF, Rolle `ecoICELogon`. Liefert eine Inbox-ID, keine Archiv-DocID.
 
 Beachten Sie, dass für die Verwendung der API sogenannte "API connects" benötigt werden:
 - 1 API connect = 1 monatlicher Upload oder Download über die ecoDMS API
@@ -147,6 +149,8 @@ Die Node beinhaltet umfangreiche Fehlerbehandlung, um typische Probleme zu diagn
 
 - **404-Fehler**: Deuten oft auf falsche Dokument- oder Klassifikations-IDs hin
 - **401-Fehler**: Probleme mit Authentifizierung oder fehlenden Berechtigungen
+- **`checkDuplicates` immer leer**: Duplikaterkennung in ecoDMS aktivieren, sonst filtert kein Workflow
+- **`Die Operation wird nicht unterstützt`**: UI-Eintrag ohne Handler (siehe [CHANGELOG](CHANGELOG.md) 1.0.7)
 - **Fehlgeschlagene API-Aufrufe**: Die Node liefert detaillierte Fehlermeldungen mit konkreten Hinweisen zur Behebung
 
 Sollten Sie auf Probleme stoßen, prüfen Sie:
@@ -196,7 +200,6 @@ nodes/EcoDMS/
 │   ├── search.ts          # Modul für Such-Ressource
 │   ├── folder.ts          # Modul für Ordner-Ressource
 │   ├── license.ts         # Modul für Lizenz-Ressource
-│   └── workflow.ts        # Modul für kombinierte Workflows
 └── utils/
     ├── constants.ts       # Gemeinsame Konstanten (Resource, Operation)
     └── helpers.ts         # Hilfsfunktionen
