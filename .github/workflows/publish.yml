@@ -1,11 +1,25 @@
-# Tag vX.Y.Z (oder workflow_dispatch) → lint, build, npm publish mit Provenance, GitHub Release.
+# Tag vX.Y.Z → lint, build, npm publish mit Provenance, GitHub Release.
 #
-# n8n verlangt seit Mai 2026 Community-Nodes mit npm-Provenance aus GitHub Actions.
-# Lokal `npm publish` nicht verwenden.
+# n8n-Vorgabe seit 1. Mai 2026: Community-Nodes für Creator-Portal-Verifizierung
+# nur aus GitHub Actions mit npm-Provenance.
+# Vorlage: https://github.com/n8n-io/n8n-nodes-starter/blob/master/.github/workflows/publish.yml
+# Doku:    https://docs.n8n.io/integrations/community-nodes/building-community-nodes/
 #
-# Erstveröffentlichung / bis Trusted Publisher steht: GitHub Secret NPM_TOKEN
-# (Granular Access Token, package write). Danach OIDC Trusted Publisher setzen
-# und das Secret entfernen.
+# Option A (empfohlen für öffentliche Repos) — OIDC Trusted Publishing:
+#   Kein npm-Token, kein GitHub-Secret. Auf npmjs.com am Paket:
+#   Publish access → Trusted Publishers → GitHub Actions
+#     Repository owner: terschawebIT
+#     Repository name:  n8n-nodes-ecodms
+#     Workflow name:    publish.yml
+#     Environment:      (leer)
+#     Allowed action:   npm publish
+#
+# Option B (Fallback, nicht für öffentliche Repos nötig):
+#   Granular Access Token als GitHub-Secret NPM_TOKEN. Den Wert niemals
+#   in Dateien, Commits oder Workflow-YAML schreiben.
+#
+# setup-node bewusst OHNE registry-url: ein generiertes .npmrc mit leerem
+# _authToken blockiert die OIDC-Anmeldung bei npm.
 
 name: Release
 
@@ -21,8 +35,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
       id-token: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v5
@@ -31,7 +45,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -50,7 +63,6 @@ jobs:
           npm publish --provenance --access public
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
