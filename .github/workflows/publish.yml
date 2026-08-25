@@ -1,7 +1,11 @@
-# Tag vX.Y.Z → lint, build, GitHub Release.
+# Tag vX.Y.Z (oder workflow_dispatch) → lint, build, npm publish mit Provenance, GitHub Release.
 #
-# npm publish is not enabled yet (npmjs 2FA reset pending).
-# After that, add a Trusted Publishing / NPM_TOKEN step.
+# n8n verlangt seit Mai 2026 Community-Nodes mit npm-Provenance aus GitHub Actions.
+# Lokal `npm publish` nicht verwenden.
+#
+# Erstveröffentlichung / bis Trusted Publisher steht: GitHub Secret NPM_TOKEN
+# (Granular Access Token, package write). Danach OIDC Trusted Publisher setzen
+# und das Secret entfernen.
 
 name: Release
 
@@ -9,14 +13,16 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
 
 jobs:
   release:
-    name: Build and GitHub Release
+    name: Build, npm publish, GitHub Release
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v5
@@ -25,6 +31,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -35,11 +42,22 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Publish to npm
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken "$NPM_TOKEN"
+          fi
+          npm publish --provenance --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           body: |
-            See [CHANGELOG.md](https://github.com/terschawebIT/n8n-nodes-ecodms/blob/main/CHANGELOG.md) for details.
+            npm: [`n8n-nodes-ecodms`](https://www.npmjs.com/package/n8n-nodes-ecodms)
 
-            Install in n8n from npm (`n8n-nodes-ecodms`) or from this GitHub repository for the latest tag.
+            See [CHANGELOG.md](https://github.com/terschawebIT/n8n-nodes-ecodms/blob/main/CHANGELOG.md) for details.
